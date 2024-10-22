@@ -1,0 +1,22 @@
+<div class="navbar grid-middle">
+    <a href="/">
+        <img href="/" src="/static/pr-logo.svg" alt="logo">
+    </a>
+    <div class="p c-off-white col ta-r">
+        {% if ! bannerInfo.username.is_empty() %}
+        <b>{{bannerInfo.username}}</b> |
+        <a class="c-off-white td-n a-bb-offwhite" href="/logout">Logout</a>
+        {% endif %}
+
+
+        {% if ! bannerInfo.adminText.is_empty() %}
+        | <a class="c-off-white td-n a-bb-offwhite" href="/admin">{{bannerInfo.adminText}}</a>
+        {% endif %}
+
+    </div>
+</div>
+
+
+
+
+

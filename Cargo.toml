@@ -1,0 +1,22 @@
+[package]
+name = "perry"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+actix-web = "4"
+sqlx = { version = "0.8", features = [ "runtime-tokio", "postgres" ] }
+#diesel = { version = "2.2.4", features = ["postgres"] }
+#pq-sys = { version = "0.6.3", features = ["bundled"] }
+#openssl-sys = { version = "0.9.104", features = ["vendored"] }
+dotenvy = "0.15.7"
+bon = "2.3.0"
+futures = "0.3.31"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
+env_logger = "0.11.5"
+#ramhorns = "1.0.1" # {  version ="1.0.1", features = [ "default" ] }
+handlebars = "6.1.0"
+serde = "1.0.211"
+askama = "0.12.1"
+#sea-orm = { version = "1.1.0", features = [ "sqlx-mysql", "runtime-async-std-native-tls", "macros" ] }
+
