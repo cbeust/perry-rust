@@ -1,0 +1,106 @@
+body {
+  background-color: #fff8de;
+  color: #404040;
+  padding-bottom: 6rem;    /* Footer height */
+}
+
+#footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  height: 6rem;            /* Footer height */
+  background-color: #fff8de;
+  padding: 20px;
+}
+
+#page-container {
+  position: relative;
+  min-height: 100vh;
+}
+
+table {
+  font-size: 14pt;
+  font-family: Times New Roman, serif;
+}
+
+thead {
+  font-weight: bold;
+}
+
+a {
+  text-decoration: none;
+}
+
+input {
+  color: black;
+  font-family: arial, verdana, ms sans serif;
+  font-weight: bold;
+  font-size: 12pt;
+}
+
+/* Main page */
+
+td.cycle {
+  text-align: right;
+  vertical-align: top;
+  font-family: "Archivo Narrow";
+  font-size: 1rem;
+  letter-spacing: 0.8px;
+  font-style: italic;
+  /*color: rgb(239, 239, 239);*/
+}
+
+div.range {
+  vertical-align: top;
+  font-family: "Archivo Narrow";
+  font-size: 1rem;
+  letter-spacing: 0.8px;
+  /*color: rgb(239, 239, 239);*/
+}
+
+div.english-title {
+  font-family: "Archivo Narrow SemiBold";
+  /*color: rgb(239, 222, 0);*/
+  font-size: 2.5rem;
+  letter-spacing: -0.19px;
+  border-collapse: separate;
+  border-spacing: 0px 2em;
+}
+
+div.german-title {
+  font-family: "Archivo Narrow";
+  font-size: 1.25rem;
+  border-collapse: separate;
+  border-spacing: 0px 2em;
+}
+
+span.recent-date {
+  font-size: 0.875rem;
+  font-family: "Archivo Narrow", sans-serif;
+}
+
+span.recent-number {
+  font-weight: bold;
+  font-family: Archivo Narrow;
+  font-size: 1rem;
+  letter-spacing: 0.8px;
+}
+
+table.recent {
+  margin-top: 1.5rem;
+}
+
+td.recent-line {
+  vertical-align: center;
+  padding-left: 1rem;
+}
+
+.number {  font-size: 20pt; font-weight: bold; color: #FF0000}
+.number-small { font-size: 12pt; }
+.german-title {  font-size: 20pt; font-weight: bold; color: #FF0000}
+.german-title-small {  font-size: 12pt; color: #FF0000}
+.english-title { font-size : 16pt }
+.english-title-small { font-size : 12pt }
+.author {  font-size: 14pt; font-style: italic}
+.created-by { font-size: 60%; }
+

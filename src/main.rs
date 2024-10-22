@@ -1,14 +1,13 @@
 mod db;
 mod entities;
 
-use std::collections::HashMap;
-use std::io::Cursor;
+use std::env::current_dir;
+use std::fs;
 use std::sync::Arc;
 use actix_web::{get, web, App, HttpServer, Responder, HttpResponse};
 use askama::Template;
-use bon::{bon, Builder};
+use bon::{Builder};
 use env_logger::Env;
-use handlebars::{Handlebars, RenderError};
 use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -71,7 +70,7 @@ async fn index(data: web::Data<PerryState>) -> HttpResponse {
         }
     };
     let result = template.render().unwrap();
-    println!("Template: {result}");
+    // println!("Template: {result}");
 
     HttpResponse::Ok()
         .content_type("text/html")
@@ -108,6 +107,7 @@ fn init_logging() {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    println!("Current dir: {:#?}", current_dir().unwrap());
     env_logger::init_from_env(Env::default().default_filter_or("debug"));
     match DbPostgres::new().await {
         Ok(db) => {
@@ -120,6 +120,7 @@ async fn main() -> std::io::Result<()> {
                 App::new()
                     .app_data(web::Data::new(state.clone()))
                     .service(index)
+                    .service(actix_files::Files::new("static", "static").show_files_listing())
             })
                 .bind(("127.0.0.1", 8080))?
                 .run()
