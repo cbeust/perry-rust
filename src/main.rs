@@ -91,16 +91,6 @@ pub struct PerryState {
     pub db: Arc<Box<dyn Db>>
 }
 
-
-// use async_trait::async_trait;
-//
-// // Our trait and implementations
-#[async_trait]
-trait Animal: Send + Sync {
-    async fn make_sound(&self) -> String;
-    fn get_name(&self) -> &str;
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // println!("ENV DB: {}", std::env::var("DATABASE_URL").unwrap());
@@ -108,6 +98,11 @@ async fn main() -> std::io::Result<()> {
     let config: Config = Figment::new()
         .merge(Env::raw())
         .extract().unwrap();
+    // Heroku: get port from environment variable or use default
+    let port = std::env::var("PORT")
+        .unwrap_or_else(|_| "8080".to_string())
+        .parse::<u16>()
+        .expect("PORT must be a number");
     env_logger::init_from_env(env_logger::Env::default().default_filter_or("debug"));
 
     let db: Box<dyn Db> = match DbPostgres::maybe_new(config.database_url).await {
@@ -127,7 +122,7 @@ async fn main() -> std::io::Result<()> {
             .service(index)
             .service(actix_files::Files::new("static", "static").show_files_listing())
     })
-        .bind(("127.0.0.1", 8080))?
+        .bind(("127.0.0.1", port))?
         .run()
         .await;
     println!("Server exiting");
