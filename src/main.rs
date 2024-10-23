@@ -37,7 +37,7 @@ struct BannerInfo {
 #[derive(Template)]
 #[template(path = "cycles.html")]
 struct TemplateCycles {
-    summaryCount: u16,
+    summary_count: u16,
     percentage: u8,
     banner_info: BannerInfo,
 }
@@ -56,7 +56,7 @@ struct Item {
 async fn index(data: Data<PerryState>) -> HttpResponse {
 
     let template = TemplateCycles {
-        summaryCount: 42,
+        summary_count: 42,
         percentage: 85,
         banner_info: BannerInfo {
             username: data.db.username().await,
