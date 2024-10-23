@@ -54,10 +54,11 @@ struct Item {
 
 #[get("/")]
 async fn index(data: Data<PerryState>) -> HttpResponse {
-
+    let summary_count = data.db.fetch_summary_count().await;
+    let book_count = data.db.fetch_book_count().await;
     let template = TemplateCycles {
-        summary_count: 42,
-        percentage: 85,
+        summary_count,
+        percentage: (summary_count as u32 * 100 / book_count as u32) as u8,
         banner_info: BannerInfo {
             username: data.db.username().await,
             is_admin: false,
@@ -108,11 +109,16 @@ async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
     info!("Starting server on port {port}");
 
+    let url = config.database_url.clone();
     let db: Box<dyn Db> = match DbPostgres::maybe_new(config.database_url).await {
         Some(db) => {
+            info!("Connected to database {}", url.unwrap());
             Box::new(db)
         }
-        _ => { Box::new(db::DbInMemory) }
+        _ => {
+            info!("Using in-memory database");
+            Box::new(db::DbInMemory)
+        }
     };
 
     let state = Data::new(PerryState {
