@@ -103,6 +103,7 @@ async fn main() -> std::io::Result<()> {
         .unwrap_or_else(|_| "8080".to_string())
         .parse::<u16>()
         .expect("PORT must be a number");
+    println!("Found port {port}");
     env_logger::init_from_env(env_logger::Env::default().default_filter_or("debug"));
 
     let db: Box<dyn Db> = match DbPostgres::maybe_new(config.database_url).await {
