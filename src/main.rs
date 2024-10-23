@@ -24,8 +24,8 @@ struct PageATemplate {
 
 struct BannerInfo {
     username: String,
-    isAdmin: bool,
-    adminText: String,
+    is_admin: bool,
+    admin_text: String,
     // adminLink: Option<String>
     // val username: String? = user?.fullName
     // val isAdmin = user?.level == 0
@@ -39,7 +39,7 @@ struct BannerInfo {
 struct TemplateCycles {
     summaryCount: u16,
     percentage: u8,
-    bannerInfo: BannerInfo,
+    banner_info: BannerInfo,
 }
 
 struct Item {
@@ -58,10 +58,10 @@ async fn index(data: Data<PerryState>) -> HttpResponse {
     let template = TemplateCycles {
         summaryCount: 42,
         percentage: 85,
-        bannerInfo: BannerInfo {
+        banner_info: BannerInfo {
             username: data.db.username().await,
-            isAdmin: false,
-            adminText: "Admin text".to_string(),
+            is_admin: false,
+            admin_text: "Admin text".to_string(),
         }
     };
     let result = template.render().unwrap();

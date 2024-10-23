@@ -3,20 +3,18 @@
         <img href="/" src="/static/pr-logo.svg" alt="logo">
     </a>
     <div class="p c-off-white col ta-r">
-        {% if ! bannerInfo.username.is_empty() %}
-        <b>{{bannerInfo.username}}</b> |
+        {% if ! banner_info.username.is_empty() %}
+        <b>{{banner_info.username}}</b> |
         <a class="c-off-white td-n a-bb-offwhite" href="/logout">Logout</a>
         {% endif %}
 
 
-        {% if ! bannerInfo.adminText.is_empty() %}
-        | <a class="c-off-white td-n a-bb-offwhite" href="/admin">{{bannerInfo.adminText}}</a>
+        {% if ! banner_info.admin_text.is_empty() %}
+        | <a class="c-off-white td-n a-bb-offwhite" href="/admin">{{banner_info.admin_text}}</a>
         {% endif %}
 
     </div>
 </div>
-
-
 
 
 
