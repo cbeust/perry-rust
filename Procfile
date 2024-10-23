@@ -1,1 +1,1 @@
-web: ./target/release/perry.exe
+web: ./target/release/perry
