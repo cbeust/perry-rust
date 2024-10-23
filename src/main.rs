@@ -2,24 +2,18 @@ mod db;
 mod entities;
 
 use std::env::current_dir;
-use std::fs;
 use std::sync::Arc;
 use actix_web::{get, web, App, HttpServer, Responder, HttpResponse};
+use actix_web::web::Data;
 use askama::Template;
-use bon::{Builder};
-use env_logger::Env;
+use async_trait::async_trait;
+use figment::Figment;
+use figment::providers::Env;
+use serde::Deserialize;
 use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use crate::db::{Db, DbPostgres};
-
-type PerryState = Arc<AppState>;
-
-#[derive(Builder, Clone)]
-struct AppState {
-    pub app_name: String,
-    pub db: DbPostgres,
-}
+use crate::db::{Db, Db2, DbPostgres};
 
 #[derive(Template)]
 #[template(path = "a.html")]
@@ -58,13 +52,13 @@ struct Item {
 // }
 
 #[get("/")]
-async fn index(data: web::Data<PerryState>) -> HttpResponse {
+async fn index(data: Data<PerryState>) -> HttpResponse {
 
     let template = TemplateCycles {
         summaryCount: 42,
         percentage: 85,
         bannerInfo: BannerInfo {
-            username: "Atlan".to_string(),
+            username: data.db.username().await,
             isAdmin: false,
             adminText: "Admin text".to_string(),
         }
@@ -77,25 +71,6 @@ async fn index(data: web::Data<PerryState>) -> HttpResponse {
         .body(result)
 }
 
-async fn test() {
-    if let Ok(db) = DbPostgres::new().await {
-        let users = db.fetch_users().await;
-        println!("Users:");
-        for u in users.iter() {
-            println!("User: {u}");
-        }
-        match db.fetch_summary(2000).await {
-            Some(summary) => {
-                println!("Found summary: \"{}\" date:{} time:{}",
-                    summary.english_title, summary.date, summary.time)
-            }
-            None => {
-                println!("Couldn't find summary");
-            }
-        }
-    }
-}
-
 fn init_logging() {
     tracing_subscriber::registry()
         .with(fmt::layer())
@@ -105,33 +80,56 @@ fn init_logging() {
         .init();
 }
 
+#[derive(Debug, PartialEq, Deserialize)]
+pub struct Config {
+    pub database_url: Option<String>,
+}
+
+// #[derive(Builder, Clone)]
+pub struct PerryState {
+    pub app_name: String,
+    pub db: Arc<Box<dyn Db>>
+}
+
+
+// use async_trait::async_trait;
+//
+// // Our trait and implementations
+#[async_trait]
+trait Animal: Send + Sync {
+    async fn make_sound(&self) -> String;
+    fn get_name(&self) -> &str;
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    // println!("ENV DB: {}", std::env::var("DATABASE_URL").unwrap());
     println!("Current dir: {:#?}", current_dir().unwrap());
-    env_logger::init_from_env(Env::default().default_filter_or("debug"));
-    match DbPostgres::new().await {
-        Ok(db) => {
-            println!("Launching server");
-            let result = HttpServer::new(move || {
-                let state = Arc::new(AppState::builder()
-                    .app_name("Perry Rust".into())
-                    .db(db.clone())
-                    .build());
-                App::new()
-                    .app_data(web::Data::new(state.clone()))
-                    .service(index)
-                    .service(actix_files::Files::new("static", "static").show_files_listing())
-            })
-                .bind(("127.0.0.1", 8080))?
-                .run()
-                .await;
-            println!("Server exiting");
-            result
+    let config: Config = Figment::new()
+        .merge(Env::raw())
+        .extract().unwrap();
+    env_logger::init_from_env(env_logger::Env::default().default_filter_or("debug"));
+
+    let db: Box<dyn Db> = match DbPostgres::maybe_new(config.database_url).await {
+        Some(db) => {
+            Box::new(db)
         }
-        Err(e) => {
-            Ok({
-                println!("Couldn't connect to database: {e}");
-            })
-        }
-    }
+        _ => { Box::new(db::DbInMemory) }
+    };
+
+    let state = Data::new(PerryState {
+        app_name: "Perry Rust".into(),
+        db: Arc::new(db),
+    });
+    let result = HttpServer::new(move || {
+        App::new()
+            .app_data(state.clone())
+            .service(index)
+            .service(actix_files::Files::new("static", "static").show_files_listing())
+    })
+        .bind(("127.0.0.1", 8080))?
+        .run()
+        .await;
+    println!("Server exiting");
+    result
 }

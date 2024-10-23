@@ -1,3 +1,4 @@
+use async_trait::async_trait;
 use bon::Builder;
 use sqlx::{Error, Pool, Postgres};
 use sqlx::postgres::{PgPoolOptions, PgRow};
@@ -5,9 +6,24 @@ use sqlx::postgres::{PgPoolOptions, PgRow};
 use futures::{StreamExt, TryStreamExt};
 // provides `try_get`
 use sqlx::Row;
+use crate::Config;
 use crate::entities::{Summary, User};
 
-pub trait Db {
+pub trait Db2 {
+    fn fetch_users(&self) -> Vec<User>;
+}
+
+pub struct SDB2;
+
+impl Db2 for SDB2 {
+    fn fetch_users(&self) -> Vec<User> {
+        Vec::new()
+    }
+}
+
+#[async_trait]
+pub trait Db: Send + Sync {
+    async fn username(&self) -> String;
     async fn fetch_users(&self) -> Vec<User>;
     async fn fetch_summary(&self, number: i32) -> Option<Summary>;
 }
@@ -17,16 +33,39 @@ pub struct DbPostgres {
     pool: Pool<Postgres>,
 }
 
+#[derive(Clone, Copy)]
+pub struct DbInMemory;
+
+#[async_trait]
+impl Db for DbInMemory {
+    async fn username(&self) -> String {
+        "InMemory".into()
+    }
+
+    async fn fetch_users(&self) -> Vec<User> {
+        Vec::new()
+    }
+
+    async fn fetch_summary(&self, number: i32) -> Option<Summary> {
+        None
+    }
+}
+
 impl DbPostgres {
-    pub async fn new() -> Result<Self, Error> {
-        match PgPoolOptions::new()
-            .max_connections(5)
-            .connect("postgres://postgres:luna@localhost/perry").await
-        {
-            Ok(pool) => {
-                Ok(Self { pool })
+    pub async fn maybe_new(database_url: Option<String>) -> Option<Self> {
+        match database_url {
+            None => { None }
+            Some(database_url) => {
+                match PgPoolOptions::new()
+                    .max_connections(5)
+                    .connect(&database_url).await
+                {
+                    Ok(pool) => {
+                        Some(Self { pool })
+                    }
+                    _ => None
+                }
             }
-            Err(e) => { Err(e) }
         }
     }
 
@@ -59,7 +98,12 @@ impl DbPostgres {
 
 }
 
+#[async_trait]
 impl Db for DbPostgres {
+    async fn username(&self) -> String {
+        "Atlan".into()
+    }
+
     async fn fetch_users(&self) -> Vec<User> {
         self.fetch2().await
     }
