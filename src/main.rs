@@ -10,6 +10,7 @@ use async_trait::async_trait;
 use figment::Figment;
 use figment::providers::Env;
 use serde::Deserialize;
+use tracing::info;
 use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -103,8 +104,9 @@ async fn main() -> std::io::Result<()> {
         .unwrap_or_else(|_| "8080".to_string())
         .parse::<u16>()
         .expect("PORT must be a number");
-    println!("Found port {port}");
-    env_logger::init_from_env(env_logger::Env::default().default_filter_or("debug"));
+
+    env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
+    info!("Starting server on port {port}");
 
     let db: Box<dyn Db> = match DbPostgres::maybe_new(config.database_url).await {
         Some(db) => {
