@@ -54,6 +54,8 @@ struct Item {
 
 #[get("/")]
 async fn index(data: Data<PerryState>) -> HttpResponse {
+    let recent_summaries = data.db.fetch_most_recent_summaries().await;
+    info!("Recent summaries: {}", recent_summaries.len());
     let summary_count = data.db.fetch_summary_count().await;
     let book_count = data.db.fetch_book_count().await;
     let template = TemplateCycles {
@@ -73,11 +75,16 @@ async fn index(data: Data<PerryState>) -> HttpResponse {
         .body(result)
 }
 
-fn init_logging() {
+fn init_logging(sqlx: bool) {
+    let debug_sqlx = if sqlx {
+        "debug"
+    } else {
+        "info"
+    };
     tracing_subscriber::registry()
         .with(fmt::layer())
         .with(tracing_subscriber::EnvFilter::new(
-            "sqlx=debug",
+            format!("sqlx={debug_sqlx},info")
         ))
         .init();
 }
@@ -105,7 +112,8 @@ async fn main() -> std::io::Result<()> {
     // Heroku: get port from environment variable or use default
     let port = config.port.unwrap_or(8080);
 
-    env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
+    init_logging(true);
+
     info!("Starting server on port {port}, config.database_url: {}",
         config.database_url.clone().unwrap_or("<none found>".into()));
 

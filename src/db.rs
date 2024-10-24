@@ -29,6 +29,7 @@ pub trait Db: Send + Sync {
     async fn fetch_summary(&self, number: i32) -> Option<Summary> { None }
     async fn fetch_summary_count(&self) -> u16 { 4200 }
     async fn fetch_book_count(&self) -> u16 { 4200 }
+    async fn fetch_most_recent_summaries(&self) -> Vec<Summary> { Vec::new() }
 }
 
 #[derive(Clone)]
@@ -102,7 +103,7 @@ impl Db for DbPostgres {
     }
 
     async fn fetch_summary(&self, number: i32) -> Option<Summary> {
-        let mut s = sqlx::query_as::<_, Summary>("SELECT * FROM SUMMARIES where number = $1")
+        let s = sqlx::query_as::<_, Summary>("SELECT * FROM SUMMARIES where number = $1")
             .bind(number)
             .fetch_optional(&self.pool)
             .await;
@@ -122,5 +123,24 @@ impl Db for DbPostgres {
 
     async fn fetch_book_count(&self) -> u16 {
         self.fetch_count("hefte").await
+    }
+
+    async fn fetch_most_recent_summaries(&self) -> Vec<Summary> {
+        let mut result = Vec::new();
+        match sqlx::query_as::<_, Summary>(
+            "select * from (select * from summaries where date != '') order by date desc limit 5")
+            .fetch_all(&self.pool)
+            .await
+        {
+            Ok(summaries) => {
+                info!("Found {} recent summaries", summaries.len());
+                result = summaries
+            }
+            Err(e) => {
+                error!("Couldn't retrieve recent summaries: {e}");
+            }
+        }
+
+        result
     }
 }
