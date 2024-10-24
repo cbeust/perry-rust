@@ -96,7 +96,7 @@ pub struct PerryState {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // println!("ENV DB: {}", std::env::var("DATABASE_URL").unwrap());
-    println!("Current dir: {:#?}", current_dir().unwrap());
+    info!("Current dir: {:#?}", current_dir().unwrap());
     let config: Config = Figment::new()
         .merge(Env::raw())
         .extract().unwrap();
@@ -107,7 +107,8 @@ async fn main() -> std::io::Result<()> {
         .expect("PORT must be a number");
 
     env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
-    info!("Starting server on port {port}");
+    info!("Starting server on port {port}, config.database_url: {}",
+        config.database_url.clone().unwrap_or("<none found>".into()));
 
     let url = config.database_url.clone();
     let db: Box<dyn Db> = match DbPostgres::maybe_new(config.database_url).await {
