@@ -56,7 +56,7 @@ impl DbPostgres {
             Some(database_url) => {
                 match PgPoolOptions::new()
                     .max_connections(5)
-                    .connect(&database_url).await
+                    .connect(&format!("{database_url}?ssl_mode=require")).await
                 {
                     Ok(pool) => {
                         info!("Successfully connected to database URL:{database_url}");
