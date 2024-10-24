@@ -49,17 +49,21 @@ impl Db for DbInMemory {
 impl DbPostgres {
     pub async fn maybe_new(database_url: Option<String>) -> Option<Self> {
         match database_url {
-            None => { None }
+            None => {
+                info!("No database URL was provided");
+                None
+            }
             Some(database_url) => {
                 match PgPoolOptions::new()
                     .max_connections(5)
                     .connect(&database_url).await
                 {
                     Ok(pool) => {
+                        info!("Successfully connected to database URL:{database_url}");
                         Some(Self { pool })
                     }
                     Err(e) => {
-                        error!("Wasn't able to connect to URL: {}, reason: {e}", database_url);
+                        error!("Wasn't able to connect to database URL:{database_url}, reason: {e}");
                         None
                     }
                 }
