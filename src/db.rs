@@ -47,23 +47,30 @@ impl Db for DbInMemory {
 }
 
 impl DbPostgres {
-    pub async fn maybe_new(database_url: Option<String>) -> Option<Self> {
+    pub async fn maybe_new(config: &Config) -> Option<Self> {
+        let database_url = &config.database_url;
         match database_url {
             None => {
                 info!("No database URL was provided");
                 None
             }
-            Some(database_url) => {
+            Some(url) => {
+                let url = if config.is_heroku.is_some() && config.is_heroku.unwrap() {
+                    format!("{url}?sslmode=require")
+                } else {
+                    url.into()
+                };
+
                 match PgPoolOptions::new()
                     .max_connections(5)
-                    .connect(&format!("{database_url}?sslmode=require")).await
+                    .connect(&url).await
                 {
                     Ok(pool) => {
-                        info!("Successfully connected to database URL:{database_url}");
+                        info!("Successfully connected to database URL:{url}");
                         Some(Self { pool })
                     }
                     Err(e) => {
-                        error!("Wasn't able to connect to database URL:{database_url}, reason: {e}");
+                        error!("Wasn't able to connect to database URL:{url}, reason: {e}");
                         None
                     }
                 }

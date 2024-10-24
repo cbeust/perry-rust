@@ -85,6 +85,8 @@ fn init_logging() {
 #[derive(Debug, PartialEq, Deserialize)]
 pub struct Config {
     pub database_url: Option<String>,
+    pub port: Option<u16>,
+    pub is_heroku: Option<bool>,
 }
 
 // #[derive(Builder, Clone)]
@@ -101,17 +103,14 @@ async fn main() -> std::io::Result<()> {
         .merge(Env::raw())
         .extract().unwrap();
     // Heroku: get port from environment variable or use default
-    let port = std::env::var("PORT")
-        .unwrap_or_else(|_| "8080".to_string())
-        .parse::<u16>()
-        .expect("PORT must be a number");
+    let port = config.port.unwrap_or(8080);
 
     env_logger::init_from_env(env_logger::Env::default().default_filter_or("info"));
     info!("Starting server on port {port}, config.database_url: {}",
         config.database_url.clone().unwrap_or("<none found>".into()));
 
     let url = config.database_url.clone();
-    let db: Box<dyn Db> = match DbPostgres::maybe_new(config.database_url).await {
+    let db: Box<dyn Db> = match DbPostgres::maybe_new(&config).await {
         Some(db) => {
             info!("Connected to database {}", url.unwrap());
             Box::new(db)
