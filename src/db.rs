@@ -6,7 +6,7 @@ use sqlx::postgres::{PgPoolOptions, PgRow};
 use futures::{StreamExt, TryStreamExt};
 // provides `try_get`
 use sqlx::Row;
-use tracing::info;
+use tracing::{error, info};
 use crate::Config;
 use crate::entities::{Summary, User};
 
@@ -58,7 +58,10 @@ impl DbPostgres {
                     Ok(pool) => {
                         Some(Self { pool })
                     }
-                    _ => None
+                    Err(e) => {
+                        error!("Wasn't able to connect to URL: {}, reason: {e}", database_url);
+                        None
+                    }
                 }
             }
         }
