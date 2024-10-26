@@ -5,12 +5,9 @@ mod url;
 mod pages;
 
 use std::env::current_dir;
-use std::process::exit;
 use std::sync::Arc;
-use actix_web::{get, web, App, HttpServer, Responder, HttpResponse};
+use actix_web::{App, HttpServer};
 use actix_web::web::Data;
-use askama::Template;
-use async_trait::async_trait;
 use figment::Figment;
 use figment::providers::Env;
 use serde::Deserialize;
@@ -18,9 +15,7 @@ use tracing::info;
 use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use crate::db::{Db, Db2, DbPostgres};
-use crate::entities::Summary;
-use crate::perrypedia::PerryPedia;
+use crate::db::{Db, DbPostgres};
 use crate::url::index;
 
 fn init_logging(sqlx: bool) {

@@ -1,9 +1,7 @@
 use async_trait::async_trait;
-use bon::Builder;
-use sqlx::{Error, Pool, Postgres};
-use sqlx::postgres::{PgPoolOptions, PgRow};
+use sqlx::{Pool, Postgres};
+use sqlx::postgres::{PgPoolOptions};
 // provides `try_next`
-use futures::{StreamExt, TryStreamExt};
 // provides `try_get`
 use sqlx::Row;
 use tracing::{error, info};

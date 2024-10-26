@@ -1,4 +1,3 @@
-use reqwest::Response;
 use tracing::warn;
 use regex::Regex;
 

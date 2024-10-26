@@ -1,7 +1,6 @@
 use actix_web::{get, HttpResponse};
 use actix_web::web::Data;
 use askama::Template;
-use tracing::info;
 use crate::entities::Summary;
 use crate::{PerryState};
 use crate::pages::cycles::{BannerInfo, TemplateCycle, TemplateCycles, TemplateSummary};
