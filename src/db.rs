@@ -56,7 +56,7 @@ impl DbPostgres {
                 None
             }
             Some(url) => {
-                let url = if config.is_heroku.is_some() && config.is_heroku.unwrap() {
+                let url = if config.is_heroku {
                     format!("{url}?sslmode=require")
                 } else {
                     url.into()
