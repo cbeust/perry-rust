@@ -8,7 +8,7 @@ use futures::{StreamExt, TryStreamExt};
 use sqlx::Row;
 use tracing::{error, info};
 use crate::Config;
-use crate::entities::{Summary, User};
+use crate::entities::{Cycle, Summary, User};
 
 pub trait Db2 {
     fn fetch_users(&self) -> Vec<User>;
@@ -25,8 +25,9 @@ impl Db2 for SDB2 {
 #[async_trait]
 pub trait Db: Send + Sync {
     async fn username(&self) -> String;
+    async fn fetch_cycles(&self) -> Vec<Cycle> { Vec::new() }
     async fn fetch_users(&self) -> Vec<User> { Vec::new() }
-    async fn fetch_summary(&self, number: i32) -> Option<Summary> { None }
+    async fn fetch_summary(&self, _number: i32) -> Option<Summary> { None }
     async fn fetch_summary_count(&self) -> u16 { 4200 }
     async fn fetch_book_count(&self) -> u16 { 4200 }
     async fn fetch_most_recent_summaries(&self) -> Vec<Summary> { Vec::new() }
@@ -100,6 +101,25 @@ impl DbPostgres {
 impl Db for DbPostgres {
     async fn username(&self) -> String {
         "Atlan".into()
+    }
+
+    async fn fetch_cycles(&self) -> Vec<Cycle> {
+        let mut result = Vec::new();
+        match sqlx::query_as::<_, Cycle>(
+            "select * from cycles order by number desc")
+            .fetch_all(&self.pool)
+            .await
+        {
+            Ok(cycles) => {
+                info!("Found {} cycles", cycles.len());
+                result = cycles
+            }
+            Err(e) => {
+                error!("Couldn't retrieve recent summaries: {e}");
+            }
+        }
+
+        result
     }
 
     async fn fetch_summary(&self, number: i32) -> Option<Summary> {

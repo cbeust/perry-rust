@@ -22,3 +22,14 @@ pub struct Summary {
     pub summary: String,
     pub time: Option<String>,
 }
+
+#[derive(Builder, Clone, Debug, sqlx::FromRow)]
+pub struct Cycle{
+    pub number: i32,
+    pub german_title: String,
+    pub english_title: String,
+    pub short_title: String,
+    pub start: i32,
+    pub end: i32,
+
+}

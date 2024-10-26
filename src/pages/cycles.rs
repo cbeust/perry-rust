@@ -1,13 +1,34 @@
 use askama::Template;
 use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
 use tracing::warn;
-use crate::entities::Summary;
+use crate::entities::{Cycle, Summary};
 use crate::perrypedia::PerryPedia;
 
 pub struct TemplateSummary {
     pub summary: Summary,
     pub cover_url: String,
     pub pretty_date: String,
+}
+
+pub struct TemplateCycle {
+    pub cycle: Cycle,
+    pub number_string: String,
+    pub href: String,
+}
+
+impl TemplateCycle {
+    pub(crate) async fn new(cycle: Cycle, cycle_count: i32) -> Self {
+        let number_string = if cycle.number == cycle_count {
+            format!("cycle {}", cycle.number)
+        } else {
+            cycle.number.to_string()
+        };
+        Self {
+            cycle,
+            number_string,
+            href: "".into()
+        }
+    }
 }
 
 impl TemplateSummary {
@@ -59,4 +80,5 @@ pub struct TemplateCycles {
     pub percentage: u8,
     pub banner_info: BannerInfo,
     pub recent_summaries: Vec<TemplateSummary>,
+    pub cycles: Vec<TemplateCycle>,
 }
