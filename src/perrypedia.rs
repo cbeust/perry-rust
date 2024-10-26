@@ -13,7 +13,7 @@ impl PerryPedia {
         match Self::read_url(url).await {
             Some(text) => {
                 let re = Regex::new(&format!(".*(/mediawiki.*/PR{number}.jpg)\"")).unwrap();
-                println!("URL content: {text}");
+                // println!("URL content: {text}");
                 if let Some(cap) = re.captures(&text) {
                     let link = cap.get(1).unwrap().as_str();
                     format!("{HOST}{link}")

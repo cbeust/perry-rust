@@ -24,4 +24,5 @@ figment = { version = "0.10.19", features = [ "env" ] }
 async-trait = "0.1.83"
 reqwest = "0.12.8"
 regex = "1.11.0"
+chrono = "0.4.38"
 
