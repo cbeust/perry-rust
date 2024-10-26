@@ -1,7 +1,10 @@
 mod db;
 mod entities;
+mod perrypedia;
+mod templates;
 
 use std::env::current_dir;
+use std::process::exit;
 use std::sync::Arc;
 use actix_web::{get, web, App, HttpServer, Responder, HttpResponse};
 use actix_web::web::Data;
@@ -15,6 +18,9 @@ use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use crate::db::{Db, Db2, DbPostgres};
+use crate::entities::Summary;
+use crate::perrypedia::PerryPedia;
+use crate::templates::TemplateSummary;
 
 #[derive(Template)]
 #[template(path = "a.html")]
@@ -40,6 +46,7 @@ struct TemplateCycles {
     summary_count: u16,
     percentage: u8,
     banner_info: BannerInfo,
+    recent_summaries: Vec<TemplateSummary>,
 }
 
 struct Item {
@@ -54,13 +61,18 @@ struct Item {
 
 #[get("/")]
 async fn index(data: Data<PerryState>) -> HttpResponse {
-    let recent_summaries = data.db.fetch_most_recent_summaries().await;
+    let rs: Vec<Summary> = data.db.fetch_most_recent_summaries().await;
+    let mut recent_summaries: Vec<TemplateSummary> = Vec::new();
+    for s in rs {
+        recent_summaries.push(TemplateSummary::new(s.clone()).await);
+    }
     info!("Recent summaries: {}", recent_summaries.len());
     let summary_count = data.db.fetch_summary_count().await;
     let book_count = data.db.fetch_book_count().await;
     let template = TemplateCycles {
         summary_count,
         percentage: (summary_count as u32 * 100 / book_count as u32) as u8,
+        recent_summaries,
         banner_info: BannerInfo {
             username: data.db.username().await,
             is_admin: false,
@@ -92,8 +104,23 @@ fn init_logging(sqlx: bool) {
 #[derive(Debug, PartialEq, Deserialize)]
 pub struct Config {
     pub database_url: Option<String>,
-    pub port: Option<u16>,
-    pub is_heroku: Option<bool>,
+    #[serde(default = "default_port")]
+    pub port: u16,
+    #[serde(default = "default_is_heroku")]
+    pub is_heroku: bool,
+}
+
+fn default_port() -> u16 { 8080 }
+fn default_is_heroku() -> bool { false }
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            database_url: None,
+            port: default_port(),
+            is_heroku: default_is_heroku(),
+        }
+    }
 }
 
 // #[derive(Builder, Clone)]
@@ -104,17 +131,20 @@ pub struct PerryState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    let text = PerryPedia::find_cover_url(2000).await;
+    println!("url: {text}");
+    // exit(0);
+
     // println!("ENV DB: {}", std::env::var("DATABASE_URL").unwrap());
     info!("Current dir: {:#?}", current_dir().unwrap());
     let config: Config = Figment::new()
         .merge(Env::raw())
         .extract().unwrap();
     // Heroku: get port from environment variable or use default
-    let port = config.port.unwrap_or(8080);
 
-    init_logging(true);
+    init_logging(false);
 
-    info!("Starting server on port {port}, config.database_url: {}",
+    info!("Starting server on port {}, config.database_url: {}", config.port,
         config.database_url.clone().unwrap_or("<none found>".into()));
 
     let url = config.database_url.clone();
@@ -139,7 +169,7 @@ async fn main() -> std::io::Result<()> {
             .service(index)
             .service(actix_files::Files::new("static", "static").show_files_listing())
     })
-        .bind(("0.0.0.0", port))?
+        .bind(("0.0.0.0", config.port))?
         .run()
         .await;
     println!("Server exiting");
