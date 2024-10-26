@@ -1,7 +1,8 @@
 mod db;
 mod entities;
 mod perrypedia;
-mod templates;
+mod url;
+mod pages;
 
 use std::env::current_dir;
 use std::process::exit;
@@ -20,72 +21,7 @@ use tracing_subscriber::util::SubscriberInitExt;
 use crate::db::{Db, Db2, DbPostgres};
 use crate::entities::Summary;
 use crate::perrypedia::PerryPedia;
-use crate::templates::TemplateSummary;
-
-#[derive(Template)]
-#[template(path = "a.html")]
-struct PageATemplate {
-    items: Vec<Item>,
-}
-
-struct BannerInfo {
-    username: String,
-    is_admin: bool,
-    admin_text: String,
-    // adminLink: Option<String>
-    // val username: String? = user?.fullName
-    // val isAdmin = user?.level == 0
-    // val adminText: String? = if (isAdmin) "Admin" else null
-    // val adminLink: String? = if (isAdmin) "/admin" else null
-
-}
-
-#[derive(Template)]
-#[template(path = "cycles.html")]
-struct TemplateCycles {
-    summary_count: u16,
-    percentage: u8,
-    banner_info: BannerInfo,
-    recent_summaries: Vec<TemplateSummary>,
-}
-
-struct Item {
-    name: String,
-}
-
-// #[derive(Template)]
-// #[template(path = "b.html")]
-// struct PageBTemplate {
-//     // items: Vec<Item>,
-// }
-
-#[get("/")]
-async fn index(data: Data<PerryState>) -> HttpResponse {
-    let rs: Vec<Summary> = data.db.fetch_most_recent_summaries().await;
-    let mut recent_summaries: Vec<TemplateSummary> = Vec::new();
-    for s in rs {
-        recent_summaries.push(TemplateSummary::new(s.clone()).await);
-    }
-    info!("Recent summaries: {}", recent_summaries.len());
-    let summary_count = data.db.fetch_summary_count().await;
-    let book_count = data.db.fetch_book_count().await;
-    let template = TemplateCycles {
-        summary_count,
-        percentage: (summary_count as u32 * 100 / book_count as u32) as u8,
-        recent_summaries,
-        banner_info: BannerInfo {
-            username: data.db.username().await,
-            is_admin: false,
-            admin_text: "Admin text".to_string(),
-        }
-    };
-    let result = template.render().unwrap();
-    // println!("Template: {result}");
-
-    HttpResponse::Ok()
-        .content_type("text/html")
-        .body(result)
-}
+use crate::url::index;
 
 fn init_logging(sqlx: bool) {
     let debug_sqlx = if sqlx {
@@ -131,8 +67,8 @@ pub struct PerryState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    let text = PerryPedia::find_cover_url(2000).await;
-    println!("url: {text}");
+    // let text = PerryPedia::find_cover_url(2000).await;
+    // println!("url: {text}");
     // exit(0);
 
     // println!("ENV DB: {}", std::env::var("DATABASE_URL").unwrap());

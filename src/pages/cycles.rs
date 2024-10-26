@@ -1,7 +1,8 @@
+use askama::Template;
+use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
+use tracing::warn;
 use crate::entities::Summary;
 use crate::perrypedia::PerryPedia;
-use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime, ParseResult, TimeZone};
-use tracing::warn;
 
 pub struct TemplateSummary {
     pub summary: Summary,
@@ -37,4 +38,25 @@ impl TemplateSummary {
             pretty_date,
         }
     }
+}
+
+pub struct BannerInfo {
+    pub username: String,
+    pub is_admin: bool,
+    pub admin_text: String,
+    // adminLink: Option<String>
+    // val username: String? = user?.fullName
+    // val isAdmin = user?.level == 0
+    // val adminText: String? = if (isAdmin) "Admin" else null
+    // val adminLink: String? = if (isAdmin) "/admin" else null
+
+}
+
+#[derive(Template)]
+#[template(path = "cycles.html")]
+pub struct TemplateCycles {
+    pub summary_count: u16,
+    pub percentage: u8,
+    pub banner_info: BannerInfo,
+    pub recent_summaries: Vec<TemplateSummary>,
 }
