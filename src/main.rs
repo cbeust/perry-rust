@@ -84,7 +84,6 @@ async fn main() -> std::io::Result<()> {
     info!("Starting server on port {}, config.database_url: {}", config.port,
         config.database_url.clone().unwrap_or("<none found>".into()));
 
-    let url = config.database_url.clone();
     let db: Box<dyn Db> = match DbPostgres::maybe_new(&config).await {
         Some(db) => {
             // info!("Connected to database {}", url.unwrap());
