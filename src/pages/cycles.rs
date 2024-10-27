@@ -3,6 +3,7 @@ use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
 use tracing::warn;
 use crate::entities::{Cycle, Summary};
 use crate::perrypedia::PerryPedia;
+use crate::url::Urls;
 
 pub struct TemplateSummary {
     pub summary: Summary,
@@ -18,6 +19,7 @@ pub struct TemplateCycle {
 
 impl TemplateCycle {
     pub(crate) async fn new(cycle: Cycle, cycle_count: i32) -> Self {
+        let number = cycle.number;
         let number_string = if cycle.number == cycle_count {
             format!("cycle {}", cycle.number)
         } else {
@@ -26,7 +28,7 @@ impl TemplateCycle {
         Self {
             cycle,
             number_string,
-            href: "".into()
+            href: Urls::cycles(number)
         }
     }
 }

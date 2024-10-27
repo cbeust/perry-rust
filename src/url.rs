@@ -5,6 +5,16 @@ use crate::entities::Summary;
 use crate::{PerryState};
 use crate::pages::cycles::{BannerInfo, TemplateCycle, TemplateCycles, TemplateSummary};
 
+pub struct Urls;
+
+const CYCLES: String = "cycles".to_string();
+
+impl Urls {
+    pub fn cycles(number: i32) -> String {
+        format!("/{CYCLES}/{number}")
+    }
+}
+
 #[get("/")]
 async fn index(data: Data<PerryState>) -> HttpResponse {
     // Cycles
