@@ -4,7 +4,6 @@ mod perrypedia;
 mod url;
 mod pages;
 
-use std::env::current_dir;
 use std::process::exit;
 use std::sync::Arc;
 use actix_web::{App, HttpServer};
@@ -68,7 +67,7 @@ async fn main() -> std::io::Result<()> {
     // exit(0);
 
     // println!("ENV DB: {}", std::env::var("DATABASE_URL").unwrap());
-    info!("Current dir: {:#?}", current_dir().unwrap());
+    // info!("Current dir: {:#?}", current_dir().unwrap());
 
     let config: Config = match Figment::new()
         .merge(Env::raw())
@@ -80,7 +79,9 @@ async fn main() -> std::io::Result<()> {
             exit(1);
         }
     };
+    info!("Config was read successuflly");
     init_logging(false);
+    info!("logging was initialized successfully");
 
     info!("Starting server on port {}, config.database_url: {}", config.port,
         config.database_url.clone().unwrap_or("<none found>".into()));
