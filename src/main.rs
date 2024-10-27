@@ -5,13 +5,14 @@ mod url;
 mod pages;
 
 use std::env::current_dir;
+use std::process::exit;
 use std::sync::Arc;
 use actix_web::{App, HttpServer};
 use actix_web::web::Data;
 use figment::Figment;
 use figment::providers::Env;
 use serde::Deserialize;
-use tracing::info;
+use tracing::{error, info};
 use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
@@ -68,11 +69,17 @@ async fn main() -> std::io::Result<()> {
 
     // println!("ENV DB: {}", std::env::var("DATABASE_URL").unwrap());
     info!("Current dir: {:#?}", current_dir().unwrap());
-    let config: Config = Figment::new()
-        .merge(Env::raw())
-        .extract().unwrap();
-    // Heroku: get port from environment variable or use default
 
+    let config: Config = match Figment::new()
+        .merge(Env::raw())
+        .extract()
+    {
+        Ok(config) => { config }
+        Err(e) => {
+            error!("Couldn't parse the config: {e}");
+            exit(1);
+        }
+    };
     init_logging(false);
 
     info!("Starting server on port {}, config.database_url: {}", config.port,
