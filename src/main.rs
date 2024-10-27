@@ -66,9 +66,6 @@ async fn main() -> std::io::Result<()> {
     // println!("url: {text}");
     // exit(0);
 
-    // println!("ENV DB: {}", std::env::var("DATABASE_URL").unwrap());
-    // info!("Current dir: {:#?}", current_dir().unwrap());
-
     let config: Config = match Figment::new()
         .merge(Env::raw())
         .extract()
@@ -89,7 +86,7 @@ async fn main() -> std::io::Result<()> {
     let url = config.database_url.clone();
     let db: Box<dyn Db> = match DbPostgres::maybe_new(&config).await {
         Some(db) => {
-            info!("Connected to database {}", url.unwrap());
+            // info!("Connected to database {}", url.unwrap());
             Box::new(db)
         }
         _ => {
