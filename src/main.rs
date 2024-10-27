@@ -62,6 +62,7 @@ pub struct PerryState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    info!("Starting perry-rust");
     // let text = PerryPedia::find_cover_url(2000).await;
     // println!("url: {text}");
     // exit(0);
