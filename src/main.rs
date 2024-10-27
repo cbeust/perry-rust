@@ -62,6 +62,8 @@ pub struct PerryState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    init_logging(false);
+    info!("logging was initialized successfully");
     info!("Starting perry-rust");
     // let text = PerryPedia::find_cover_url(2000).await;
     // println!("url: {text}");
@@ -78,8 +80,6 @@ async fn main() -> std::io::Result<()> {
         }
     };
     info!("Config was read successuflly");
-    init_logging(false);
-    info!("logging was initialized successfully");
 
     info!("Starting server on port {}, config.database_url: {}", config.port,
         config.database_url.clone().unwrap_or("<none found>".into()));
