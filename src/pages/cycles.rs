@@ -1,8 +1,9 @@
+use std::time::Instant;
 use actix_web::{get, HttpResponse};
 use actix_web::web::Data;
 use askama::Template;
 use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
-use tracing::warn;
+use tracing::{info, warn};
 use crate::banner_info::BannerInfo;
 use crate::entities::{Cycle, Summary};
 use crate::perrypedia::PerryPedia;
@@ -21,9 +22,19 @@ async fn index(data: Data<PerryState>) -> HttpResponse {
 
     // Summaries
     let rs: Vec<Summary> = data.db.fetch_most_recent_summaries().await;
+    let numbers: Vec<i32> = rs.iter().map(|s| s.number).collect();
+    let start = Instant::now();
+    let cover_urls: Vec<String> = PerryPedia::find_cover_urls(numbers).await
+        .iter().map(|url| {
+        match url {
+            None => { "".to_string() }
+            Some(s) => { s.clone() }
+        }
+    }).collect();
+    info!("Time to fetch recent summaries: {} ms", start.elapsed().as_millis());
     let mut recent_summaries: Vec<TemplateSummary> = Vec::new();
-    for s in rs {
-        recent_summaries.push(TemplateSummary::new(s.clone()).await);
+    for (i, s) in rs.iter().enumerate() {
+        recent_summaries.push(TemplateSummary::new(s.clone(), cover_urls[i].clone()).await);
     }
     let summary_count = data.db.fetch_summary_count().await;
     let book_count = data.db.fetch_book_count().await;
@@ -42,13 +53,13 @@ async fn index(data: Data<PerryState>) -> HttpResponse {
         .body(result)
 }
 
-struct TemplateSummary {
+pub struct TemplateSummary {
     pub summary: Summary,
     pub cover_url: String,
     pub pretty_date: String,
 }
 
-struct TemplateCycle {
+pub struct TemplateCycle {
     pub cycle: Cycle,
     pub number_string: String,
     pub href: String,
@@ -71,8 +82,7 @@ impl TemplateCycle {
 }
 
 impl TemplateSummary {
-    pub(crate) async fn new(summary: Summary) -> Self {
-        let n = summary.number;
+    pub(crate) async fn new(summary: Summary, cover_url: String) -> Self {
         let pretty_date = if ! summary.date.is_empty() {
             match NaiveDate::parse_from_str(&summary.date, "%Y-%m-%d %H:%M") {
                 Ok(date) => {
@@ -94,7 +104,7 @@ impl TemplateSummary {
         };
         Self {
             summary,
-            cover_url: PerryPedia::find_cover_url(n).await,
+            cover_url,
             pretty_date,
         }
     }
