@@ -1,10 +1,8 @@
 use actix_web::{get, HttpResponse};
 use actix_web::web::{Data, Path};
-use askama::Template;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::warn;
-use crate::banner_info::BannerInfo;
 use crate::entities::{Book, Cycle};
 use crate::PerryState;
 

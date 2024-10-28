@@ -66,6 +66,13 @@ pub struct PerryState {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     init_logging(false);
+
+    // let covers = PerryPedia::find_cover_urls(vec![2000, 2001, 2002]).await;
+    // for (i, c) in covers.iter().enumerate() {
+    //     println!("Cover {i}: {c:#?}");
+    // }
+    // exit(0);
+
     info!("logging was initialized successfully");
     info!("Starting perry-rust");
     // let text = PerryPedia::find_cover_url(2000).await;
