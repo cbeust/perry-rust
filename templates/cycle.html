@@ -1,0 +1,72 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<html lang="en">
+
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+    {% include "header.html" %}
+</head>
+
+<body class="bg-gr">
+
+<img src="/static/wanderer.png" alt="wanderer" class="po-f img-wanderer-2 op-7 sm-no">
+
+<div id="app" v-cloak>
+    {% include "border.html" %}
+    {% include "header-login.html" %}
+
+    <section class="grid-center">
+        <!-- CYCLE TITLE -->
+
+        <div class="col-4_sm-11 mt-10" data-push-left="off-0_sm-1">
+            <div>
+                <div class="title-xs i c-off-white">cycle {{cycle.number}}</div>
+                <div class="title-xl c-off-white mt-05">{{cycle.english_title}}</div>
+                <div class="title-sm c-off-white mt-05">{{cycle.german_title}}</div>
+            </div>
+
+            <img src="/static/sol.png" alt="sol" class="img-sol">
+
+            <!-- SC INFO -->
+            <div class="c-off-white sm-hidden mt-10" style="bottom: 0">
+                <div class="mb-05"><i class="fas fa-rss"></i><a href="https://feeds.feedburner.com/PerryRhodanSummaries" class="p c-off-white td-n ml-05">PerryRhodanSummaries</a></div>
+                <div><i class="fab fa-twitter"></i><a href="https://twitter.com/PerryRhodanUS" class="p c-off-white td-n ml-05">PerryRhodanUS</a></div>
+            </div>
+        </div>
+
+
+        <!-- TITLES -->
+
+        <div class="col-6_sm-11 mt-8 mb-10">
+            <table class="t-titles">
+                {% for book in books %}
+                <tr class="csr-p">
+                    <td class="title-xs c-off-white i ta-r">{{book.number_string}}</td>
+                    <td class="pl-2">
+                        <a href="{{book.href}}" class="a-titles">
+                            <div class="title c-yellow">{{book.english_title}}</div>
+                            <div class="title-sm c-yellow2">{{book.book.title}}</div>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        <!-- FOOTER -->
+        <section class="footer ft-cycle grid-center">
+            <a v-on:click="previous" href="#">
+                <button class="ic-ac-tr c-baby-blue va-m mr-25"><i class="fa fa-chevron-left fa"></i></button>
+            </a>
+            <a v-bind:href="result.hrefBack"><button class="ft-home c-baby-blue mr-2">PR</button></a>
+            <a v-on:click="next" href="#">
+                <button class="ic-ac-tr c-baby-blue va-m"><i class="fa fa-chevron-right fa"></i></button>
+            </a>
+        </section>
+
+    </section>
+</div>
+
+</body>
+<script src="/static/js/displayCycle.js"></script>
+</html>

@@ -3,6 +3,7 @@ mod entities;
 mod perrypedia;
 mod url;
 mod pages;
+mod banner_info;
 
 use std::process::exit;
 use std::sync::Arc;
@@ -16,7 +17,8 @@ use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use crate::db::{Db, DbPostgres};
-use crate::url::index;
+use crate::pages::cycle::cycle2;
+use crate::pages::cycles::index;
 
 fn init_logging(sqlx: bool) {
     let debug_sqlx = if sqlx {
@@ -103,6 +105,7 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(state.clone())
             .service(index)
+            .service(cycle2)
             .service(actix_files::Files::new("static", "static").show_files_listing())
     })
         .bind(("0.0.0.0", config.port))?

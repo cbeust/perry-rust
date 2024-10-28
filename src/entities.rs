@@ -24,7 +24,7 @@ pub struct Summary {
 }
 
 #[derive(Builder, Clone, Debug, sqlx::FromRow)]
-pub struct Cycle{
+pub struct Cycle {
     pub number: i32,
     pub german_title: String,
     pub english_title: String,
@@ -32,4 +32,10 @@ pub struct Cycle{
     pub start: i32,
     pub end: i32,
 
+}
+
+#[derive(Builder, Clone, Debug, sqlx::FromRow)]
+pub struct Book {
+    pub number: i32,
+    pub title: String,
 }

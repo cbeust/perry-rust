@@ -1,17 +1,54 @@
+use actix_web::{get, HttpResponse};
+use actix_web::web::Data;
 use askama::Template;
 use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
 use tracing::warn;
+use crate::banner_info::BannerInfo;
 use crate::entities::{Cycle, Summary};
 use crate::perrypedia::PerryPedia;
+use crate::PerryState;
 use crate::url::Urls;
 
-pub struct TemplateSummary {
+#[get("/")]
+async fn index(data: Data<PerryState>) -> HttpResponse {
+    // Cycles
+    let mut cycles: Vec<TemplateCycle> = Vec::new();
+    let all_cycles = data.db.fetch_cycles().await;
+    let cycles_count = all_cycles.len() as i32;
+    for cycle in all_cycles {
+        cycles.push(TemplateCycle::new(cycle, cycles_count).await);
+    }
+
+    // Summaries
+    let rs: Vec<Summary> = data.db.fetch_most_recent_summaries().await;
+    let mut recent_summaries: Vec<TemplateSummary> = Vec::new();
+    for s in rs {
+        recent_summaries.push(TemplateSummary::new(s.clone()).await);
+    }
+    let summary_count = data.db.fetch_summary_count().await;
+    let book_count = data.db.fetch_book_count().await;
+    let template = TemplateCycles {
+        summary_count,
+        percentage: (summary_count as u32 * 100 / book_count as u32) as u8,
+        recent_summaries,
+        cycles,
+        banner_info: BannerInfo::new(&data.db).await,
+    };
+    let result = template.render().unwrap();
+    // println!("Template: {result}");
+
+    HttpResponse::Ok()
+        .content_type("text/html")
+        .body(result)
+}
+
+struct TemplateSummary {
     pub summary: Summary,
     pub cover_url: String,
     pub pretty_date: String,
 }
 
-pub struct TemplateCycle {
+struct TemplateCycle {
     pub cycle: Cycle,
     pub number_string: String,
     pub href: String,
@@ -61,18 +98,6 @@ impl TemplateSummary {
             pretty_date,
         }
     }
-}
-
-pub struct BannerInfo {
-    pub username: String,
-    pub is_admin: bool,
-    pub admin_text: String,
-    // adminLink: Option<String>
-    // val username: String? = user?.fullName
-    // val isAdmin = user?.level == 0
-    // val adminText: String? = if (isAdmin) "Admin" else null
-    // val adminLink: String? = if (isAdmin) "/admin" else null
-
 }
 
 #[derive(Template)]

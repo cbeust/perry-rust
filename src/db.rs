@@ -6,7 +6,7 @@ use sqlx::postgres::{PgPoolOptions};
 use sqlx::Row;
 use tracing::{error, info};
 use crate::Config;
-use crate::entities::{Cycle, Summary, User};
+use crate::entities::{Book, Cycle, Summary, User};
 
 pub trait Db2 {
     fn fetch_users(&self) -> Vec<User>;
@@ -25,10 +25,13 @@ pub trait Db: Send + Sync {
     async fn username(&self) -> String;
     async fn fetch_cycles(&self) -> Vec<Cycle> { Vec::new() }
     async fn fetch_users(&self) -> Vec<User> { Vec::new() }
-    async fn fetch_summary(&self, _number: i32) -> Option<Summary> { None }
+    async fn find_summary(&self, _number: i32) -> Option<Summary> { None }
     async fn fetch_summary_count(&self) -> u16 { 4200 }
     async fn fetch_book_count(&self) -> u16 { 4200 }
     async fn fetch_most_recent_summaries(&self) -> Vec<Summary> { Vec::new() }
+    async fn find_cycle(&self, _number: u32) -> Option<Cycle> { None }
+    async fn find_books(&self, _cycle_number: u32) -> Vec<Book> { Vec::new() }
+    async fn find_book(&self, _book_number: u32) -> Option<Book> { None }
 }
 
 #[derive(Clone)]
@@ -113,14 +116,14 @@ impl Db for DbPostgres {
                 result = cycles
             }
             Err(e) => {
-                error!("Couldn't retrieve recent summaries: {e}");
+                error!("Couldn't retrieve cycles: {e}");
             }
         }
 
         result
     }
 
-    async fn fetch_summary(&self, number: i32) -> Option<Summary> {
+    async fn find_summary(&self, number: i32) -> Option<Summary> {
         let s = sqlx::query_as::<_, Summary>("SELECT * FROM SUMMARIES where number = $1")
             .bind(number)
             .fetch_optional(&self.pool)
@@ -156,6 +159,76 @@ impl Db for DbPostgres {
             }
             Err(e) => {
                 error!("Couldn't retrieve recent summaries: {e}");
+            }
+        }
+
+        result
+    }
+
+    async fn find_cycle(&self, number: u32) -> Option<Cycle> {
+        let mut result = None;
+        match sqlx::query_as::<_, Cycle>(
+            "select * from cycles where number = $1")
+            .bind(number as i32)
+            .fetch_one(&self.pool)
+            .await
+        {
+            Ok(cycle) => {
+                info!("Found cycle {}: {}", number, cycle.german_title);
+                result = Some(cycle)
+            }
+            Err(e) => {
+                error!("Couldn't retrieve cycle {number}: {e}");
+            }
+        }
+
+        result
+    }
+
+    async fn find_books(&self, cycle_number: u32) -> Vec<Book> {
+        let mut result = Vec::new();
+        match self.find_cycle(cycle_number).await {
+            Some(cycle) => {
+                let start = cycle.start;
+                let end = cycle.end;
+                match sqlx::query_as::<_, Book>(
+                        "select * from hefte where number >= $1 and number <= $2")
+                    .bind(start)
+                    .bind(end)
+                    .fetch_all(&self.pool)
+                    .await
+                {
+                    Ok(books) => {
+                        info!("Found {} books in cycle {cycle_number}", books.len());
+                        result = books;
+                    }
+                    Err(e) => {
+                        error!("Couldn't retrieve book for cycle {cycle_number}: {e}");
+                    }
+                }
+            }
+            None => {
+                info!("Couldn't find book in cycle {cycle_number}");
+            }
+        }
+
+        result
+    }
+
+    async fn find_book(&self, number: u32) -> Option<Book> {
+        let mut result = None;
+        match sqlx::query_as::<_, Book>(
+            "select * from hefte where number = $1")
+            .bind(number as i32)
+            .fetch_one(&self.pool)
+            .await
+        {
+            Ok(book) => {
+                info!("Found book {}: {}", number, book.title);
+                result = Some(book)
+            }
+            Err(e) => {
+                error!("Couldn't retrieve book {number}: {e}");
             }
         }
 
