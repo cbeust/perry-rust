@@ -20,9 +20,9 @@
 
         <div class="col-4_sm-11 mt-10" data-push-left="off-0_sm-1">
             <div>
-                <div class="title-xs i c-off-white">cycle {{cycle.number}}</div>
-                <div class="title-xl c-off-white mt-05">{{cycle.english_title}}</div>
-                <div class="title-sm c-off-white mt-05">{{cycle.german_title}}</div>
+                <div class="title-xs i c-off-white">cycle {{result.cycle.number}}</div>
+                <div class="title-xl c-off-white mt-05">{{result.cycle.english_title}}</div>
+                <div class="title-sm c-off-white mt-05">{{result.cycle.german_title}}</div>
             </div>
 
             <img src="/static/sol.png" alt="sol" class="img-sol">
@@ -39,8 +39,7 @@
 
         <div class="col-6_sm-11 mt-8 mb-10">
             <table class="t-titles">
-                {% for book in books %}
-                <tr class="csr-p">
+                <tr class="csr-p" v-for="book in result.books">
                     <td class="title-xs c-off-white i ta-r">{{book.number_string}}</td>
                     <td class="pl-2">
                         <a href="{{book.href}}" class="a-titles">
@@ -49,7 +48,6 @@
                         </a>
                     </td>
                 </tr>
-                {% endfor %}
             </table>
         </div>
 

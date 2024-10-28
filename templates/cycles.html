@@ -20,7 +20,6 @@
         <div class="col-3 sm-hidden mt-10">
             <div>
                 <div class="title-xs i c-off-white mb-15">
-                    Total written summaries: {{summary_count}} ({{percentage}}%)
                 </div>
 
                 <form action = "/summaries" method="get">
@@ -39,14 +38,14 @@
                     {% for s in recent_summaries %}
                     <tr>
                         <td>
-                            <img width="60px" src="{{s.cover_url}}" alt="cover image">
+                            <img width="60px" src="[[s.cover_url]]" alt="cover image">
                         </td>
                         <td class="t-latest pl-1">
-                            <div class="p-xs f-h c-off-white">{{s.pretty_date}}</div>
+                            <div class="p-xs f-h c-off-white">[[s.pretty_date]]</div>
                             <div class="title-xs b c-yellow ls-04">
                                 <span class="title-xs b ls-04 c-offwhite tc-n">
-                                    <a href="/summaries/{{s.summary.number}}" class="c-yellow">
-                                        {{s.summary.number}} {{s.summary.english_title}}
+                                    <a href="/summaries/[[s.summary.number]]" class="c-yellow">
+                                        [[s.summary.number]] [[s.summary.english_title]]
                                     </a>
                                 </span>
                             </div>
@@ -71,12 +70,12 @@
             <table class="t-titles">
                 {% for c in cycles %}
                 <tr class="csr-p">
-                    <td class="title-xs c-off-white i ta-r va-t">{{c.number_string}}</td>
+                    <td class="title-xs c-off-white i ta-r va-t">[[c.number_string]]</td>
                     <td class="pl-2 pb-1">
-                        <a href="{{c.href}}" class="a-titles">
-                            <div class="title-xs c-off-white i mb-015">{{c.cycle.start}}-{{c.cycle.end}}</div>
-                            <div class="title c-yellow">{{c.cycle.english_title}}</div>
-                            <div class="title-sm c-yellow">{{c.cycle.german_title}}</div>
+                        <a href="[[c.href]]" class="a-titles">
+                            <div class="title-xs c-off-white i mb-015">[[c.cycle.start]]-[[c.cycle.end]]</div>
+                            <div class="title c-yellow">[[c.cycle.english_title]]</div>
+                            <div class="title-sm c-yellow">[[c.cycle.german_title]]</div>
                         </a>
                     </td>
                 </tr>

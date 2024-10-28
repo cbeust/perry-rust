@@ -1,5 +1,6 @@
 use std::fmt::{Display, Formatter};
 use bon::Builder;
+use serde::{Deserialize, Serialize};
 
 #[derive(Builder, Debug, sqlx::FromRow)]
 pub struct User {
@@ -23,7 +24,7 @@ pub struct Summary {
     pub time: Option<String>,
 }
 
-#[derive(Builder, Clone, Debug, sqlx::FromRow)]
+#[derive(Builder, Clone, Debug, Deserialize, Serialize, sqlx::FromRow)]
 pub struct Cycle {
     pub number: i32,
     pub german_title: String,
@@ -34,7 +35,7 @@ pub struct Cycle {
 
 }
 
-#[derive(Builder, Clone, Debug, sqlx::FromRow)]
+#[derive(Builder, Clone, Debug, Deserialize, Serialize, sqlx::FromRow)]
 pub struct Book {
     pub number: i32,
     pub title: String,

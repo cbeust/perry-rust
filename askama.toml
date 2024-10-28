@@ -1,0 +1,9 @@
+[general]
+default_syntax = "perry"
+
+[[syntax]]
+name = "perry"
+expr_start = "[["
+expr_end = "]]"
+block_start = "{%"
+block_end = "%}"

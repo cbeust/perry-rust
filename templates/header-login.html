@@ -4,13 +4,13 @@
     </a>
     <div class="p c-off-white col ta-r">
         {% if ! banner_info.username.is_empty() %}
-        <b>{{banner_info.username}}</b> |
+        <b>[[banner_info.username]]</b> |
         <a class="c-off-white td-n a-bb-offwhite" href="/logout">Logout</a>
         {% endif %}
 
 
         {% if ! banner_info.admin_text.is_empty() %}
-        | <a class="c-off-white td-n a-bb-offwhite" href="/admin">{{banner_info.admin_text}}</a>
+        | <a class="c-off-white td-n a-bb-offwhite" href="/admin">[[banner_info.admin_text]]</a>
         {% endif %}
 
     </div>
