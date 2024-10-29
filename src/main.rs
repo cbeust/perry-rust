@@ -74,7 +74,6 @@ async fn main() -> std::io::Result<()> {
     // }
     // exit(0);
 
-    info!("logging was initialized successfully");
     info!("Starting perry-rust");
     // let text = PerryPedia::find_cover_url(2000).await;
     // println!("url: {text}");

@@ -30,7 +30,6 @@ pub async fn api_cycles(data: Data<PerryState>, path: Path<u32>) -> HttpResponse
     let number = path.into_inner();
     match data.db.find_cycle(number).await {
         Some(cycle) => {
-            println!("Displaying cycle {number}");
             let mut books: Vec<TemplateBook> = Vec::new();
             let db_books = data.db.find_books(number).await;
             let db_summaries = data.db.find_summaries(number).await;
