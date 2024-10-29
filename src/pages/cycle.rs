@@ -14,7 +14,6 @@ struct TemplateCycle {
 pub async fn cycle2(data: Data<PerryState>, _path: Path<u32>) -> HttpResponse {
     let template = TemplateCycle{
         banner_info: BannerInfo::new(&data.db).await,
-
     };
     let result = template.render().unwrap();
     HttpResponse::Ok()

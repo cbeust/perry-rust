@@ -11,8 +11,8 @@ use crate::PerryState;
 struct TemplateBook {
     book: Book,
     english_title: String,
-    href: String,
     number_string: String,
+    href: String,
 }
 
 #[derive(Deserialize, Serialize)]
@@ -44,11 +44,12 @@ pub async fn api_cycles(data: Data<PerryState>, path: Path<u32>) -> HttpResponse
                     book.number.to_string()
                 };
                 let english_title = map.get(&book.number).unwrap_or(&"".to_string()).clone();
+                let book_number = book.number;
                 books.push(TemplateBook {
                     book,
                     english_title,
                     number_string,
-                    href: "href_for_book".into(),
+                    href: format!("/summaries/{book_number}"),
                 })
             }
 

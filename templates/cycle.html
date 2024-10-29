@@ -42,7 +42,7 @@
                 <tr class="csr-p" v-for="book in result.books">
                     <td class="title-xs c-off-white i ta-r">{{book.number_string}}</td>
                     <td class="pl-2">
-                        <a href="{{book.href}}" class="a-titles">
+                        <a v-bind:href="book.href" class="a-titles">
                             <div class="title c-yellow">{{book.english_title}}</div>
                             <div class="title-sm c-yellow2">{{book.book.title}}</div>
                         </a>
