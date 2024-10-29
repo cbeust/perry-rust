@@ -30,7 +30,8 @@ fn init_logging(sqlx: bool) {
     tracing_subscriber::registry()
         .with(fmt::layer())
         .with(tracing_subscriber::EnvFilter::new(
-            format!("sqlx={debug_sqlx},info")
+            format!("crate=debug,sqlx={debug_sqlx},info")
+            // format!("sqlx={debug_sqlx},reqwest=info,hyper_util:info,debug")
         ))
         .init();
 }
