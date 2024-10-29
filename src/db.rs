@@ -31,6 +31,7 @@ pub trait Db: Send + Sync {
     async fn fetch_most_recent_summaries(&self) -> Vec<Summary> { Vec::new() }
     async fn find_cycle(&self, _number: u32) -> Option<Cycle> { None }
     async fn find_books(&self, _cycle_number: u32) -> Vec<Book> { Vec::new() }
+    async fn find_summaries(&self, _cycle_number: u32) -> Vec<Summary> { Vec::new() }
     async fn find_book(&self, _book_number: u32) -> Option<Book> { None }
 }
 
@@ -90,7 +91,7 @@ impl DbPostgres {
                 row.get::<i64, _>(0) as u16
             }
             Err(e) => {
-                info!("Couldn't retrieve summary count: {e}. Returning 0");
+                error!("Couldn't retrieve summary count: {e}. Returning 0");
                 0
             }
         };
@@ -101,7 +102,7 @@ impl DbPostgres {
 #[async_trait]
 impl Db for DbPostgres {
     async fn username(&self) -> String {
-        "Atlan".into()
+        "Cedric Beust".into()
     }
 
     async fn fetch_cycles(&self) -> Vec<Cycle> {
@@ -132,7 +133,7 @@ impl Db for DbPostgres {
         match s {
             Ok(s) => { s }
             Err(e ) => {
-                println!("Couldn't find summary {number}: {e}");
+                error!("Couldn't find summary {number}: {e}");
                 None
             }
         }
@@ -208,7 +209,37 @@ impl Db for DbPostgres {
                 }
             }
             None => {
-                info!("Couldn't find book in cycle {cycle_number}");
+                error!("Couldn't find book in cycle {cycle_number}");
+            }
+        }
+
+        result
+    }
+
+    async fn find_summaries(&self, cycle_number: u32) -> Vec<Summary> {
+        let mut result = Vec::new();
+        match self.find_cycle(cycle_number).await {
+            Some(cycle) => {
+                let start = cycle.start;
+                let end = cycle.end;
+                match sqlx::query_as::<_, Summary>(
+                    "select * from summaries where number >= $1 and number <= $2")
+                    .bind(start)
+                    .bind(end)
+                    .fetch_all(&self.pool)
+                    .await
+                {
+                    Ok(summaries) => {
+                        info!("Found {} summaries in cycle {cycle_number}", summaries.len());
+                        result = summaries;
+                    }
+                    Err(e) => {
+                        error!("Couldn't retrieve book for cycle {cycle_number}: {e}");
+                    }
+                }
+            }
+            None => {
+                error!("Couldn't find book in cycle {cycle_number}");
             }
         }
 
