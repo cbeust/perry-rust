@@ -18,7 +18,7 @@ impl BannerInfo {
         Self {
             username: db.username().await,
             is_admin: false,
-            admin_text: "Admin text".to_string(),
+            admin_text: "Admin".to_string(),
         }
     }
 }
