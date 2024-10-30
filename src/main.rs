@@ -20,6 +20,7 @@ use crate::db::{Db, DbPostgres};
 use crate::pages::api::{api_cycles, api_summaries};
 use crate::pages::cycle::cycle;
 use crate::pages::cycles::index;
+use crate::pages::edit::edit_summary;
 use crate::pages::summaries::summaries;
 
 fn init_logging(sqlx: bool) {
@@ -116,6 +117,7 @@ async fn main() -> std::io::Result<()> {
             .service(index)
             .service(cycle)
             .service(summaries)
+            .service(edit_summary)
             .service(api_cycles)
             .service(api_summaries)
             .service(actix_files::Files::new("static", "static").show_files_listing())
