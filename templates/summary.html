@@ -1,0 +1,96 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width, initial-scale=1" xmlns:v-bind="https://www.w3.org/1999/xhtml">
+<html lang="en">
+
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.14"></script>
+    {% include "header.html" %}
+</head>
+
+<body class="bg-gr-dk">
+
+<div id="app" v-cloak>
+    {% include "border.html" %}
+
+    <div class="mt-25">
+        <section class="grid-center col">
+
+            <div class="col-3">
+                <div class="pl-4">
+                    <div class="title-xs c-off-white i">cycle {{result.cycle.number}}</div>
+                    <div class="title-h-xs c-off-white mt-05">
+                        {{result.cycle.german_title}} • {{result.cycle.english_title}}</div>
+                </div>
+            </div>
+
+            <div class="col-6">
+                <div class="title-xs c-off-white i">heft {{result.summary.number}}</div>
+                <div class="title-h-xs c-off-white mt-05">by {{result.book_author}}</div>
+            </div>
+
+            <div class="col-3">
+                <div class="title-xs c-off-white i">summarized on {{result.summary.date}}</div>
+                <div class="title-h-xs c-off-white mt-05">by {{result.summary.author_name}}</div>
+            </div>
+
+        </section>
+    </div>
+
+    <section class="grid-center col">
+
+        <div class="col-6_lg-8_md-11">
+            <div class="title-xl c-yellow mt-3">{{result.summary.english_title}}
+                <a v-bind:href="'/summaries/' + result.summary.number + '/edit'">
+                    <button class="ic-ac-dk ml-0 va-m"><i class="fa fa-pencil-alt fa"></i></button>
+                </a>
+            </div>
+            <div class="title-sm c-yellow mt-05">{{result.german_title}}</div>
+
+            <div class="mt-4 mb-10">
+                <div id="img-cover" class="ml--65 fl-l">
+                    <img v-bind:src="result.cover_url" alt="cover image" class="img-cover">
+                </div>
+                <p class="p-lg c-off-white lh-15 op-8" v-html="result.summary.summary">
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="grid-center col" style="padding-bottom: 150px">
+        <div class="col-6 c-off-white">
+            <table align="center" width="50%" border="0">
+                <tr>
+                    {% if ! banner_info.admin_text.is_empty() %}
+                    <td align="center">
+                        {% if banner_info.is_admin %}
+                        <a class="c-off-white" v-bind:href="result.perryPedia">PerryPedia</a>
+                        |
+                        <a class="c-off-white" href="#" v-on:click="sendEmailMailingList(result.summary.number)">
+                            Email mailing list
+                        </a>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                </tr>
+            </table>
+        </div>
+
+    </section>
+
+    <!-- FOOTER -->
+    <section class="footer ft-summary grid-center">
+        <a v-on:click="previous" href="#">
+            <button class="ic-ac-tr c-baby-blue va-m mr-25"><i class="fa fa-chevron-left fa"></i></button>
+        </a>
+        <a v-bind:href="result.href_back"><button class="ft-home c-baby-blue mr-2">PR</button></a>
+        <a v-on:click="next" href="#">
+            <button class="ic-ac-tr c-baby-blue va-m"><i class="fa fa-chevron-right fa"></i></button>
+        </a>
+    </section>
+
+</div>
+
+</body>
+<script src="/static/js/displaySummary.js"></script>
+</html>
+

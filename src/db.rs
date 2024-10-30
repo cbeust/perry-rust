@@ -1,6 +1,7 @@
 use async_trait::async_trait;
 use sqlx::{Pool, Postgres};
 use sqlx::postgres::{PgPoolOptions};
+use sqlx::query::QueryAs;
 // provides `try_next`
 // provides `try_get`
 use sqlx::Row;
@@ -8,28 +9,35 @@ use tracing::{error, info};
 use crate::Config;
 use crate::entities::{Book, Cycle, Summary, User};
 
-pub trait Db2 {
-    fn fetch_users(&self) -> Vec<User>;
+fn query_one<O, U>(query: QueryAs<Postgres, O, U>) {
+
 }
 
-pub struct SDB2;
+// fn query<'a, O, U> (q: String) -> QueryAs<'a, Postgres, O, U> {
+//     sqlx::query_as::<Postgres, Cycle>(
+//         "select * from cycles where cycle.start <= $1 and $1 <= cycle.end")
+// }
 
-impl Db2 for SDB2 {
-    fn fetch_users(&self) -> Vec<User> {
-        Vec::new()
-    }
+fn f() {
+    let a = 42;
+    query_one(sqlx::query_as::<Postgres, Cycle>(
+            "select * from cycles where cycle.start <= $1 and $1 <= cycle.end")
+        .bind(a)
+        .bind(a));
 }
+
 
 #[async_trait]
 pub trait Db: Send + Sync {
     async fn username(&self) -> String;
     async fn fetch_cycles(&self) -> Vec<Cycle> { Vec::new() }
     async fn fetch_users(&self) -> Vec<User> { Vec::new() }
-    async fn find_summary(&self, _number: i32) -> Option<Summary> { None }
+    async fn find_summary(&self, _number: u32) -> Option<Summary> { None }
     async fn fetch_summary_count(&self) -> u16 { 4200 }
     async fn fetch_book_count(&self) -> u16 { 4200 }
     async fn fetch_most_recent_summaries(&self) -> Vec<Summary> { Vec::new() }
-    async fn find_cycle(&self, _number: u32) -> Option<Cycle> { None }
+    async fn find_cycle(&self, _cycle_number: u32) -> Option<Cycle> { None }
+    async fn find_cycle_by_book(&self, _book_number: u32) -> Option<Cycle> { None }
     async fn find_books(&self, _cycle_number: u32) -> Vec<Book> { Vec::new() }
     async fn find_summaries(&self, _cycle_number: u32) -> Vec<Summary> { Vec::new() }
     async fn find_book(&self, _book_number: u32) -> Option<Book> { None }
@@ -124,15 +132,15 @@ impl Db for DbPostgres {
         result
     }
 
-    async fn find_summary(&self, number: i32) -> Option<Summary> {
+    async fn find_summary(&self, number: u32) -> Option<Summary> {
         let s = sqlx::query_as::<_, Summary>("SELECT * FROM SUMMARIES where number = $1")
-            .bind(number)
+            .bind(number as i32)
             .fetch_optional(&self.pool)
             .await;
 
         match s {
             Ok(s) => { s }
-            Err(e ) => {
+            Err(e) => {
                 error!("Couldn't find summary {number}: {e}");
                 None
             }
@@ -193,7 +201,7 @@ impl Db for DbPostgres {
                 let start = cycle.start;
                 let end = cycle.end;
                 match sqlx::query_as::<_, Book>(
-                        "select * from hefte where number >= $1 and number <= $2")
+                    "select * from hefte where number >= $1 and number <= $2")
                     .bind(start)
                     .bind(end)
                     .fetch_all(&self.pool)
@@ -214,6 +222,25 @@ impl Db for DbPostgres {
         }
 
         result
+    }
+
+    async fn find_cycle_by_book(&self, book_number: u32) -> Option<Cycle> {
+        let book_number = book_number as i32;
+        match sqlx::query_as::<_, Cycle>(
+            "select * from cycles where $1 between start and \"end\"")
+            .bind(book_number)
+            .bind(book_number)
+            .fetch_one(&self.pool)
+            .await
+        {
+            Ok(cycle) => {
+                Some(cycle)
+            }
+            Err(e) => {
+                error!("Couldn't retrieve cycle from book {book_number}: {e}");
+                None
+            }
+        }
     }
 
     async fn find_summaries(&self, cycle_number: u32) -> Vec<Summary> {

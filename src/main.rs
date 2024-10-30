@@ -17,9 +17,10 @@ use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use crate::db::{Db, DbPostgres};
-use crate::pages::api::api_cycles;
-use crate::pages::cycle::cycle2;
+use crate::pages::api::{api_cycles, api_summaries};
+use crate::pages::cycle::cycle;
 use crate::pages::cycles::index;
+use crate::pages::summaries::summaries;
 
 fn init_logging(sqlx: bool) {
     let debug_sqlx = if sqlx {
@@ -113,8 +114,10 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .app_data(state.clone())
             .service(index)
-            .service(cycle2)
+            .service(cycle)
+            .service(summaries)
             .service(api_cycles)
+            .service(api_summaries)
             .service(actix_files::Files::new("static", "static").show_files_listing())
     })
         .bind(("0.0.0.0", config.port))?

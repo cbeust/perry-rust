@@ -6,4 +6,5 @@ impl Urls {
     pub fn cycles(number: i32) -> String {
         format!("/{CYCLES}/{number}")
     }
+    pub fn root() -> String { "/".into() }
 }

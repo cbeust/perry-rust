@@ -4,8 +4,10 @@ use actix_web::web::{Data, Path};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::warn;
-use crate::entities::{Book, Cycle};
+use crate::entities::{Book, Cycle, Summary};
+use crate::perrypedia::PerryPedia;
 use crate::PerryState;
+use crate::url::Urls;
 
 #[derive(Deserialize, Serialize)]
 struct TemplateBook {
@@ -22,8 +24,70 @@ struct TemplateCycle {
     pub number: u32,
     pub english_title: String,
     pub german_title: String,
+    pub href_back: String,
 }
 
+fn empty_json(message: String) -> HttpResponse {
+    warn!(message);
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .json(json!({}))
+}
+
+#[derive(Deserialize, Serialize)]
+struct TemplateSummary {
+    found: bool,
+    number: u32,
+    summary: Summary,
+    cycle: Cycle,
+    cover_url: String,
+    hide_left: bool,
+    href_back: String,
+    href_edit: String,
+    perry_pedia: String,
+    email_mailing_list: String,
+    book_author: String,
+    german_title: String,
+}
+
+#[get("/api/summaries/{number}")]
+pub async fn api_summaries(data: Data<PerryState>, path: Path<u32>) -> HttpResponse {
+    let number = path.into_inner();
+    let (summary, cycle, book, cover_url) = tokio::join!(
+        data.db.find_summary(number),
+        data.db.find_cycle_by_book(number),
+        data.db.find_book(number),
+        PerryPedia::find_cover_urls(vec![number as i32]),
+    );
+
+    let cover_url = cover_url[0].clone().unwrap_or("".to_string());
+    match (summary, cycle, book) {
+        (Some(summary), Some(cycle), Some(book)) => {
+            let cycle_number = cycle.number;
+            let result = TemplateSummary {
+                found: true,
+                number,
+                summary,
+                cycle,
+                book_author: book.author,
+                german_title: book.title,
+                cover_url,
+                hide_left: false,
+                href_back: Urls::cycles(cycle_number),
+                href_edit: "".into(),
+                perry_pedia: "".into(),
+                email_mailing_list: "".into(),
+            };
+            let string = serde_json::to_string(&json!(result)).unwrap();
+            HttpResponse::Ok()
+                .content_type("application/json")
+                .body(string)
+        }
+        _ => {
+            empty_json(format!("Couldn't retrieve summary for {number}"))
+        }
+    }
+}
 
 #[get("/api/cycles/{number}")]
 pub async fn api_cycles(data: Data<PerryState>, path: Path<u32>) -> HttpResponse {
@@ -53,35 +117,22 @@ pub async fn api_cycles(data: Data<PerryState>, path: Path<u32>) -> HttpResponse
                 })
             }
 
-            let result = match data.db.find_cycle(number).await {
-                Some(cycle) => {
-                    let german_title = cycle.german_title.clone();
-                    let template_cycle = TemplateCycle {
-                        cycle,
-                        books,
-                        number,
-                        english_title: "English title".into(),
-                        german_title,
-                    };
-                    let string = serde_json::to_string(&json!(template_cycle)).unwrap();
-                    HttpResponse::Ok()
-                        .content_type("application/json")
-                        .body(string)
-                }
-                None => {
-                    warn!("Couldn't find cycle {number}");
-                    HttpResponse::SeeOther()
-                        .append_header(("Location", "/"))
-                        .finish()
-                }
+            let german_title = cycle.german_title.clone();
+            let template_cycle = TemplateCycle {
+                cycle,
+                books,
+                number,
+                english_title: "English title".into(),
+                german_title,
+                href_back: Urls::root(),
             };
-
-            result
+            let string = serde_json::to_string(&json!(template_cycle)).unwrap();
+            HttpResponse::Ok()
+                .content_type("application/json")
+                .body(string)
         }
         None => {
-            HttpResponse::SeeOther()
-                .append_header(("Location", "/"))
-                .finish()
+            empty_json(format!("Couldn't find cycle {number}"))
         }
     }
 }

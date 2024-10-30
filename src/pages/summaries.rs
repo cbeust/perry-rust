@@ -5,14 +5,14 @@ use crate::banner_info::BannerInfo;
 use crate::PerryState;
 
 #[derive(Template)]
-#[template(path = "cycle.html")]
-struct TemplateCycle {
+#[template(path = "summary.html")]
+struct TemplateSummaries {
     pub banner_info: BannerInfo,
 }
 
-#[get("/cycles/{number}")]
-pub async fn cycle(data: Data<PerryState>, _path: Path<u32>) -> HttpResponse {
-    let template = TemplateCycle{
+#[get("/summaries/{number}")]
+pub async fn summaries(data: Data<PerryState>, _path: Path<u32>) -> HttpResponse {
+    let template = TemplateSummaries {
         banner_info: BannerInfo::new(&data.db).await,
     };
     let result = template.render().unwrap();
