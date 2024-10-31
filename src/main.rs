@@ -8,7 +8,7 @@ mod banner_info;
 use std::process::exit;
 use std::sync::Arc;
 use actix_web::{App, HttpServer};
-use actix_web::web::Data;
+use actix_web::web::{Data, FormConfig};
 use figment::Figment;
 use figment::providers::Env;
 use serde::Deserialize;
@@ -20,7 +20,7 @@ use crate::db::{Db, DbPostgres};
 use crate::pages::api::{api_cycles, api_summaries};
 use crate::pages::cycle::cycle;
 use crate::pages::cycles::index;
-use crate::pages::edit::edit_summary;
+use crate::pages::edit::{edit_summary, post_summary};
 use crate::pages::summaries::summaries;
 
 fn init_logging(sqlx: bool) {
@@ -68,7 +68,7 @@ pub struct PerryState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    init_logging(false);
+    init_logging(true);
 
     // let covers = PerryPedia::find_cover_urls(vec![2000, 2001, 2002]).await;
     // for (i, c) in covers.iter().enumerate() {
@@ -113,11 +113,13 @@ async fn main() -> std::io::Result<()> {
     });
     let result = HttpServer::new(move || {
         App::new()
+            .app_data(FormConfig::default().limit(250 * 1024)) // Sets limit to 250kB
             .app_data(state.clone())
             .service(index)
             .service(cycle)
             .service(summaries)
             .service(edit_summary)
+            .service(post_summary)
             .service(api_cycles)
             .service(api_summaries)
             .service(actix_files::Files::new("static", "static").show_files_listing())

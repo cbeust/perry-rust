@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::warn;
 use crate::entities::{Book, Cycle, Summary};
+use crate::pages::logic::get_data;
 use crate::perrypedia::PerryPedia;
 use crate::PerryState;
 use crate::url::Urls;
@@ -53,16 +54,8 @@ struct TemplateSummary {
 #[get("/api/summaries/{number}")]
 pub async fn api_summaries(data: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let number = path.into_inner();
-    let (summary, cycle, book, cover_url) = tokio::join!(
-        data.db.find_summary(number),
-        data.db.find_cycle_by_book(number),
-        data.db.find_book(number),
-        PerryPedia::find_cover_urls(vec![number as i32]),
-    );
-
-    let cover_url = cover_url[0].clone().unwrap_or("".to_string());
-    match (summary, cycle, book) {
-        (Some(summary), Some(cycle), Some(book)) => {
+    match get_data(&data.db, number).await {
+        Some((cycle, summary, book, cover_url)) => {
             let cycle_number = cycle.number;
             let result = TemplateSummary {
                 found: true,

@@ -1,6 +1,6 @@
 use async_trait::async_trait;
-use sqlx::{Pool, Postgres};
-use sqlx::postgres::{PgPoolOptions};
+use sqlx::{Error, Pool, Postgres};
+use sqlx::postgres::{PgPoolOptions, PgQueryResult};
 use sqlx::query::QueryAs;
 // provides `try_next`
 // provides `try_get`
@@ -41,6 +41,8 @@ pub trait Db: Send + Sync {
     async fn find_books(&self, _cycle_number: u32) -> Vec<Book> { Vec::new() }
     async fn find_summaries(&self, _cycle_number: u32) -> Vec<Summary> { Vec::new() }
     async fn find_book(&self, _book_number: u32) -> Option<Book> { None }
+    async fn insert_summary(&self, summary: Summary) -> Result<bool, String> { Ok(true) }
+    async fn update_summary(&self, summary: Summary) -> Result<bool, String> { Ok(true) }
 }
 
 #[derive(Clone)]
@@ -291,5 +293,39 @@ impl Db for DbPostgres {
         }
 
         result
+    }
+
+    async fn insert_summary(&self, summary: Summary) -> Result<bool, String> {
+        match sqlx::query!("insert into summaries (number, english_title) values ($1, $2)",
+                summary.number, summary.english_title)
+            .execute(&self.pool)
+            .await
+        {
+            Ok(result) => {
+                info!("Inserted new summary {}: \"{}\"", summary.number, summary.english_title);
+                Ok(true)
+            }
+            Err(error) => {
+                error!("Error inserting new summary {}: {error}", summary.number);
+                Err(error.to_string())
+            }
+        }
+    }
+
+    async fn update_summary(&self, summary: Summary) -> Result<bool, String> {
+        match sqlx::query!("update summaries set english_title = $2 where number = $1",
+                summary.number, summary.english_title)
+            .execute(&self.pool)
+            .await
+        {
+            Ok(result) => {
+                info!("Inserted new summary {}: \"{}\"", summary.number, summary.english_title);
+                Ok(true)
+            }
+            Err(error) => {
+                error!("Error inserting new summary {}: {error}", summary.number);
+                Err(error.to_string())
+            }
+        }
     }
 }

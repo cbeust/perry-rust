@@ -1,9 +1,9 @@
 use actix_web::{get, HttpResponse, post};
-use actix_web::web::{Data, Path};
+use actix_web::web::{Data, Form, Path};
 use askama::Template;
+use serde::Deserialize;
 use crate::entities::{Book, Cycle, Summary};
-use crate::pages::cycles::TemplateCycles;
-use crate::perrypedia::PerryPedia;
+use crate::pages::logic::{get_data, save_summary};
 use crate::PerryState;
 
 #[derive(Template)]
@@ -15,19 +15,33 @@ struct TemplateEdit {
     cover_url: String,
 }
 
+#[derive(Deserialize)]
+pub struct FormData {
+    pub english_cycle_name: String,
+    pub number: u16,
+    pub german_title: String,
+    pub english_title: String,
+    pub summary: String,
+    pub book_author: String,
+    pub author_email: String,
+    pub date: String,
+    pub time: Option<String>,
+    pub author_name: String,
+}
+
+#[post("/api/summaries")]
+pub async fn post_summary(data: Data<PerryState>, form: Form<FormData>) -> HttpResponse
+{
+    println!("Post, english_title: {}", form.english_title);
+    save_summary(&data.db, form).await;
+    HttpResponse::Ok().body("Ok")
+}
+
 #[get("/summaries/{number}/edit")]
 pub async fn edit_summary(data: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let number = path.into_inner();
-    let (summary, cycle, book, cover_url) = tokio::join!(
-        data.db.find_summary(number),
-        data.db.find_cycle_by_book(number),
-        data.db.find_book(number),
-        PerryPedia::find_cover_urls(vec![number as i32]),
-    );
-
-    let cover_url = cover_url[0].clone().unwrap_or("".to_string());
-    let result = match (summary, cycle, book) {
-        (Some(summary), Some(cycle), Some(book)) => {
+    let result = match get_data(&data.db, number).await {
+        Some((cycle, summary, book, cover_url)) => {
             let template = TemplateEdit {
                 book,
                 summary,
@@ -40,7 +54,6 @@ pub async fn edit_summary(data: Data<PerryState>, path: Path<u32>) -> HttpRespon
             "error".into()
         }
     };
-
 
     HttpResponse::Ok()
         .content_type("text/html")

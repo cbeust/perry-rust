@@ -33,7 +33,7 @@ impl PerryPedia {
     }
 
     pub async fn find_cover_urls(numbers: Vec<i32>) -> Vec<Option<String>> {
-        let timeout = 1500;
+        let timeout = 2000;
         let tasks = numbers.iter().map(|n| Self::find_cover_url(*n, timeout));
         futures::future::join_all(tasks).await
     }

@@ -33,14 +33,14 @@
                 <div class="col-3">
                     <div class="pl-4">
                         <div class="title-xs c-off-white i">cycle [[cycle.number]]</div>
-                        <input class="min title-h-xs c-off-white mt-05" placeholder="Cycle Title" name="englishCycleName"
+                        <input class="min title-h-xs c-off-white mt-05" placeholder="Cycle Title" name="english_cycle_name"
                                value="[[cycle.english_title]]"/>
                     </div>
                 </div>
 
                 <div class="col-6">
                     <div class="title-xs c-off-white i">heft [[book.number]]</div>
-                    <input class="min title-h-xs c-off-white mt-05" placeholder="Book author" name="bookAuthor"
+                    <input class="min title-h-xs c-off-white mt-05" placeholder="Book author" name="book_author"
                            value="[[book.author]]"/>
                 </div>
 
@@ -52,12 +52,12 @@
                         <div class="col-6">
                             <input class="min title-h-xs c-off-white mt-05"
                                    placeholder="Name"
-                                   value="[[summary.author_name]]" name="authorName"/>
+                                   value="[[summary.author_name]]" name="author_name"/>
                         </div>
                         <div class="col-6">
                             <input class="min title-h-xs c-off-white mt-05"
                                    placeholder="Email address"
-                                   value="[[summary.author_email]]" name="authorEmail"/>
+                                   value="[[summary.author_email]]" name="author_email"/>
                         </div>
                     </div>
                 </div>
@@ -68,9 +68,9 @@
         <section class="grid-center col">
 
             <div class="col-6_lg-8_md-11">
-                <input class="min title-xl c-yellow mt-2" value="[[summary.english_title]]" name="englishTitle"
+                <input class="min title-xl c-yellow mt-2" value="[[summary.english_title]]" name="english_title"
                        placeholder="English title">
-                <input class="min title-sm c-yellow mt-05" value="[[book.title]]" name="germanTitle"
+                <input class="min title-sm c-yellow mt-05" value="[[book.title]]" name="german_title"
                        placeholder="German title">
 
                 <div class="mt-4 mb-10">
@@ -78,7 +78,7 @@
                         <img src="[[cover_url]]" alt="cover image" class="img-cover">
                     </div>
                     <div id="summaryText" class="p p-lg c-off-white lh-15 op-8" autofocus
-                         contenteditable="true" placeholder="Start summarizing here...">
+                         contenteditable="true" placeholder="Start writing your summary here...">
                         [[summary.summary|safe]]
                     </div>
                 </div>
