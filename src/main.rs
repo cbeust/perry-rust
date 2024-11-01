@@ -9,6 +9,7 @@ use std::process::exit;
 use std::sync::Arc;
 use actix_web::{App, HttpServer};
 use actix_web::web::{Data, FormConfig};
+use bon::builder;
 use figment::Figment;
 use figment::providers::Env;
 use serde::Deserialize;
@@ -23,16 +24,14 @@ use crate::pages::cycles::index;
 use crate::pages::edit::{edit_summary, post_summary};
 use crate::pages::summaries::summaries;
 
-fn init_logging(sqlx: bool) {
-    let debug_sqlx = if sqlx {
-        "debug"
-    } else {
-        "info"
-    };
+#[builder]
+fn init_logging(sqlx: bool, actix: bool) {
+    let debug_sqlx = if sqlx { "debug" } else { "info" };
+    let debug_actix = if actix { "debug" } else { "info" };
     tracing_subscriber::registry()
         .with(fmt::layer())
         .with(tracing_subscriber::EnvFilter::new(
-            format!("crate=debug,sqlx={debug_sqlx},info")
+            format!("crate=debug,sqlx={debug_sqlx},actix_web={debug_actix},info")
             // format!("sqlx={debug_sqlx},reqwest=info,hyper_util:info,debug")
         ))
         .init();
@@ -68,7 +67,7 @@ pub struct PerryState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    init_logging(true);
+    init_logging().sqlx(true).actix(true).call();
 
     // let covers = PerryPedia::find_cover_urls(vec![2000, 2001, 2002]).await;
     // for (i, c) in covers.iter().enumerate() {
