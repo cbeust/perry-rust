@@ -313,13 +313,13 @@ impl Db for DbPostgres {
     }
 
     async fn update_summary(&self, summary: Summary) -> Result<bool, String> {
-        match sqlx::query!("update summaries set english_title = $2 where number = $1",
+        match sqlx::query!("update summaries set english_title = $2::text where number = $1",
                 summary.number, summary.english_title)
             .execute(&self.pool)
             .await
         {
             Ok(result) => {
-                info!("Inserted new summary {}: \"{}\"", summary.number, summary.english_title);
+                info!("Updated existing summary {}: \"{}\"", summary.number, summary.english_title);
                 Ok(true)
             }
             Err(error) => {

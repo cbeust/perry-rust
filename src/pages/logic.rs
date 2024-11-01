@@ -43,8 +43,9 @@ pub async fn save_summary(db: &Arc<Box<dyn Db>>, form_data: Form<FormData>)
         time: None,
     };
 
-    match db.find_summary(book_number).await {
-        Some(summary) => {
+    let s = db.find_summary(book_number).await;
+    match s {
+        Some(_) => {
             // Summary already exists, update
             match db.update_summary(summary).await {
                 Ok(_) => {}
