@@ -6,7 +6,7 @@
   </component>
   <component name="DBNavigator.Project.DataEditorManager">
     <record-view-column-sorting-type value="BY_INDEX" />
-    <value-preview-text-wrapping value="true" />
+    <value-preview-text-wrapping value="false" />
     <value-preview-pinned value="false" />
   </component>
   <component name="DBNavigator.Project.DatabaseBrowserManager">
@@ -17,14 +17,18 @@
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="a12b8dd7-0b7f-4b76-9b19-a9d654220206">
-      <console name="Local" type="STANDARD" schema="" session="Main"><![CDATA[select english_title,author_name from summaries where number=2000]]></console>
+      <console name="Local" type="STANDARD" schema="" session="Main"><![CDATA[select * from summaries where number=3108
+
+update summaries set english_title = 'foo' where number = 3108]]></console>
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseEditorStateManager">
     <last-used-providers />
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">
-    <open-files />
+    <open-files>
+      <object connection-id="a12b8dd7-0b7f-4b76-9b19-a9d654220206" object-ref="consoles/Local" />
+    </open-files>
   </component>
   <component name="DBNavigator.Project.DatabaseSessionManager">
     <connection id="a12b8dd7-0b7f-4b76-9b19-a9d654220206" />
