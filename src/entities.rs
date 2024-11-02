@@ -35,7 +35,7 @@ pub struct Cycle {
 
 }
 
-#[derive(Builder, Clone, Debug, Deserialize, Serialize, sqlx::FromRow)]
+#[derive(Builder, Clone, Debug, Default, Deserialize, Serialize, sqlx::FromRow)]
 pub struct Book {
     pub number: i32,
     pub title: String,

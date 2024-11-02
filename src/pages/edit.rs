@@ -5,10 +5,11 @@ use serde::Deserialize;
 use crate::entities::{Book, Cycle, Summary};
 use crate::errors::PrResult;
 use crate::pages::logic::{get_data, save_summary};
+use crate::perrypedia::PerryPedia;
 use crate::PerryState;
 use crate::url::Urls;
 
-#[derive(Template)]
+#[derive(Default, Template)]
 #[template(path = "edit_summary.html")]
 struct TemplateEdit {
     summary: Summary,
@@ -52,19 +53,36 @@ pub async fn post_summary(data: Data<PerryState>, form: Form<FormData>) -> HttpR
 
 #[get("/summaries/{number}/edit")]
 pub async fn edit_summary(data: Data<PerryState>, path: Path<u32>) -> HttpResponse {
-    let number = path.into_inner();
-    let result = match get_data(&data.db, number).await {
-        Some((cycle, summary, book, cover_url)) => {
+    let book_number = path.into_inner();
+    let result = match tokio::join!(
+            data.db.find_summary(book_number),
+            data.db.find_cycle_by_book(book_number),
+            data.db.find_book(book_number),
+            PerryPedia::find_cover_url(book_number))
+    {
+        (Some(summary), Some(cycle), Some(book), cover_url) => {
             let template = TemplateEdit {
                 book,
                 summary,
                 cycle,
-                cover_url,
+                cover_url: cover_url.unwrap_or("".to_string()),
             };
             template.render().unwrap()
         }
+        (a, Some(cycle), book, cover_url) => {
+            let mut template = TemplateEdit::default();
+            template.book = if let Some(b) = book { b } else {
+                let mut result = Book::default();
+                result.number = book_number as i32;
+                result
+            };
+            template.cycle = cycle;
+            template.book.number = book_number as i32;
+            template.cover_url = cover_url.unwrap_or("".to_string());
+            template.render().unwrap()
+        }
         _ => {
-            "error".into()
+            "error".to_string()
         }
     };
 
