@@ -295,8 +295,10 @@ impl Db for DbPostgres {
     }
 
     async fn insert_summary(&self, summary: Summary) -> PrResult<()> {
-        match sqlx::query!("insert into summaries (number, english_title) values ($1, $2)",
-                summary.number, summary.english_title)
+        match sqlx::query!("insert into summaries (number, english_title, author_name, author_email, \
+            date, summary, time) values ($1, $2, $3, $4, $5, $6, $7)",
+                summary.number, summary.english_title, summary.author_name, summary.author_email,
+                summary.date, summary.summary, summary.time)
             .execute(&self.pool)
             .await
         {
@@ -312,8 +314,11 @@ impl Db for DbPostgres {
     }
 
     async fn update_summary(&self, summary: Summary) -> PrResult<()> {
-        match sqlx::query!("update summaries set english_title = $2::text where number = $1",
-                summary.number, summary.english_title)
+        match sqlx::query!("update summaries set english_title = $2::text, author_name = $3::text,\
+         author_email = $4::text, date = $5::text, summary = $6::text, time = $7::text \
+         where number = $1",
+                summary.number, summary.english_title, summary.author_name, summary.author_email,
+                summary.date, summary.summary, summary.time)
             .execute(&self.pool)
             .await
         {
