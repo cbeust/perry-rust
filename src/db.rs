@@ -1,13 +1,15 @@
 use async_trait::async_trait;
-use sqlx::{Error, Pool, Postgres};
+use sqlx::{Pool, Postgres};
 use sqlx::postgres::{PgPoolOptions, PgQueryResult};
 use sqlx::query::QueryAs;
 // provides `try_next`
 // provides `try_get`
 use sqlx::Row;
 use tracing::{error, info};
-use crate::Config;
+use crate::{Config, errors};
 use crate::entities::{Book, Cycle, Summary, User};
+use crate::errors::Error::{FetchingCycles, InsertingSummary, UpdatingSummary};
+use crate::errors::PrResult;
 
 fn query_one<O, U>(query: QueryAs<Postgres, O, U>) {
 
@@ -30,7 +32,7 @@ fn f() {
 #[async_trait]
 pub trait Db: Send + Sync {
     async fn username(&self) -> String;
-    async fn fetch_cycles(&self) -> Vec<Cycle> { Vec::new() }
+    async fn fetch_cycles(&self) -> PrResult<Vec<Cycle>> { Ok(Vec::new()) }
     async fn fetch_users(&self) -> Vec<User> { Vec::new() }
     async fn find_summary(&self, _number: u32) -> Option<Summary> { None }
     async fn fetch_summary_count(&self) -> u16 { 4200 }
@@ -41,8 +43,8 @@ pub trait Db: Send + Sync {
     async fn find_books(&self, _cycle_number: u32) -> Vec<Book> { Vec::new() }
     async fn find_summaries(&self, _cycle_number: u32) -> Vec<Summary> { Vec::new() }
     async fn find_book(&self, _book_number: u32) -> Option<Book> { None }
-    async fn insert_summary(&self, summary: Summary) -> Result<bool, String> { Ok(true) }
-    async fn update_summary(&self, summary: Summary) -> Result<bool, String> { Ok(true) }
+    async fn insert_summary(&self, _summary: Summary) -> PrResult<()> { Ok(()) }
+    async fn update_summary(&self, _summary: Summary) -> PrResult<()> { Ok(()) }
 }
 
 #[derive(Clone)]
@@ -115,8 +117,7 @@ impl Db for DbPostgres {
         "Cedric Beust".into()
     }
 
-    async fn fetch_cycles(&self) -> Vec<Cycle> {
-        let mut result = Vec::new();
+    async fn fetch_cycles(&self) -> PrResult<Vec<Cycle>> {
         match sqlx::query_as::<_, Cycle>(
             "select * from cycles order by number desc")
             .fetch_all(&self.pool)
@@ -124,14 +125,12 @@ impl Db for DbPostgres {
         {
             Ok(cycles) => {
                 info!("Found {} cycles", cycles.len());
-                result = cycles
+                Ok(cycles)
             }
             Err(e) => {
-                error!("Couldn't retrieve cycles: {e}");
+                Err(FetchingCycles(e.to_string()))
             }
         }
-
-        result
     }
 
     async fn find_summary(&self, number: u32) -> Option<Summary> {
@@ -295,7 +294,7 @@ impl Db for DbPostgres {
         result
     }
 
-    async fn insert_summary(&self, summary: Summary) -> Result<bool, String> {
+    async fn insert_summary(&self, summary: Summary) -> PrResult<()> {
         match sqlx::query!("insert into summaries (number, english_title) values ($1, $2)",
                 summary.number, summary.english_title)
             .execute(&self.pool)
@@ -303,16 +302,16 @@ impl Db for DbPostgres {
         {
             Ok(result) => {
                 info!("Inserted new summary {}: \"{}\"", summary.number, summary.english_title);
-                Ok(true)
+                Ok(())
             }
             Err(error) => {
                 error!("Error inserting new summary {}: {error}", summary.number);
-                Err(error.to_string())
+                Err(InsertingSummary(error.to_string(), summary.number))
             }
         }
     }
 
-    async fn update_summary(&self, summary: Summary) -> Result<bool, String> {
+    async fn update_summary(&self, summary: Summary) -> PrResult<()> {
         match sqlx::query!("update summaries set english_title = $2::text where number = $1",
                 summary.number, summary.english_title)
             .execute(&self.pool)
@@ -320,11 +319,11 @@ impl Db for DbPostgres {
         {
             Ok(result) => {
                 info!("Updated existing summary {}: \"{}\"", summary.number, summary.english_title);
-                Ok(true)
+                Ok(())
             }
             Err(error) => {
                 error!("Error inserting new summary {}: {error}", summary.number);
-                Err(error.to_string())
+                Err(UpdatingSummary(error.to_string(), summary.number))
             }
         }
     }

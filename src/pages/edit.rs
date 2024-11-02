@@ -3,6 +3,7 @@ use actix_web::web::{Data, Form, Path};
 use askama::Template;
 use serde::Deserialize;
 use crate::entities::{Book, Cycle, Summary};
+use crate::errors::PrResult;
 use crate::pages::logic::{get_data, save_summary};
 use crate::PerryState;
 use crate::url::Urls;
@@ -35,10 +36,18 @@ pub async fn post_summary(data: Data<PerryState>, form: Form<FormData>) -> HttpR
 {
     println!("Post, english_title: {}", form.english_title);
     let number = form.number as i32;
-    save_summary(&data.db, form).await;
-    HttpResponse::SeeOther()
-        .append_header(("Location", Urls::summary(number)))
-        .finish()
+    match save_summary(&data.db, form).await {
+        Ok(_) => {
+            HttpResponse::SeeOther()
+                .append_header(("Location", Urls::summary(number)))
+                .finish()
+        }
+        Err(_) => {
+            HttpResponse::SeeOther()
+                .append_header(("Location", Urls::summary(number)))
+                .finish()
+        }
+    }
 }
 
 #[get("/summaries/{number}/edit")]

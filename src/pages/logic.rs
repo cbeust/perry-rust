@@ -1,9 +1,9 @@
 use std::sync::Arc;
 use actix_web::web::Form;
-use tracing::error;
 use crate::db::Db;
 use crate::pages::edit::FormData;
 use crate::entities::{Book, Cycle, Summary};
+use crate::errors::PrResult;
 use crate::perrypedia::PerryPedia;
 
 pub async fn get_data(db: &Arc<Box<dyn Db>>, book_number: u32)
@@ -28,10 +28,7 @@ pub async fn get_data(db: &Arc<Box<dyn Db>>, book_number: u32)
     }
 }
 
-
-pub async fn save_summary(db: &Arc<Box<dyn Db>>, form_data: Form<FormData>)
-    -> Result<bool, String>
-{
+pub async fn save_summary(db: &Arc<Box<dyn Db>>, form_data: Form<FormData>) -> PrResult<()> {
     let book_number = form_data.number as u32;
     let summary = Summary {
         number: form_data.number as i32,
@@ -43,27 +40,11 @@ pub async fn save_summary(db: &Arc<Box<dyn Db>>, form_data: Form<FormData>)
         time: None,
     };
 
-    let s = db.find_summary(book_number).await;
-    match s {
-        Some(_) => {
-            // Summary already exists, update
-            match db.update_summary(summary).await {
-                Ok(_) => {}
-                Err(e) => {
-                    error!("Couldn't update summary:{e}");
-                }
-            }
-        }
-        None => {
-            // New summary, insert
-            match db.insert_summary(summary).await {
-                Ok(_) => {}
-                Err(e) => {
-                    error!("Couldn't insert summary:{e}");
-                }
-            }
-        }
+    if let Some(_) = db.find_summary(book_number).await {
+        // Summary already exists, update
+        db.update_summary(summary).await
+    } else {
+        // New summary, insert
+        db.insert_summary(summary).await
     }
-
-    Ok(true)
 }

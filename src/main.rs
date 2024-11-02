@@ -4,6 +4,7 @@ mod perrypedia;
 mod url;
 mod pages;
 mod banner_info;
+mod errors;
 
 use std::process::exit;
 use std::sync::Arc;
