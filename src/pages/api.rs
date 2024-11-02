@@ -3,7 +3,7 @@ use actix_web::{get, HttpResponse};
 use actix_web::web::{Data, Path};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing::warn;
+use tracing::{info, warn};
 use crate::entities::{Book, Cycle, Summary};
 use crate::pages::logic::get_data;
 use crate::perrypedia::PerryPedia;
@@ -35,12 +35,12 @@ fn empty_json(message: String) -> HttpResponse {
         .json(json!({}))
 }
 
-#[derive(Deserialize, Serialize)]
+#[derive(Default, Deserialize, Serialize)]
 struct TemplateSummary {
     found: bool,
     number: u32,
     summary: Summary,
-    cycle: Cycle,
+    pub cycle: Cycle,
     cover_url: String,
     hide_left: bool,
     href_back: String,
@@ -53,33 +53,52 @@ struct TemplateSummary {
 
 #[get("/api/summaries/{number}")]
 pub async fn api_summaries(data: Data<PerryState>, path: Path<u32>) -> HttpResponse {
-    let number = path.into_inner();
-    match get_data(&data.db, number).await {
-        Some((cycle, summary, book, cover_url)) => {
-            let cycle_number = cycle.number;
-            let result = TemplateSummary {
-                found: true,
-                number,
-                summary,
-                cycle,
-                book_author: book.author,
-                german_title: book.title,
-                cover_url,
-                hide_left: false,
-                href_back: Urls::cycles(cycle_number),
-                href_edit: "".into(),
-                perry_pedia: "".into(),
-                email_mailing_list: "".into(),
-            };
-            let string = serde_json::to_string(&json!(result)).unwrap();
-            HttpResponse::Ok()
-                .content_type("application/json")
-                .body(string)
+    let book_number = path.into_inner();
+    let template: TemplateSummary = {
+        match tokio::join!(
+            data.db.find_summary(book_number),
+            data.db.find_cycle_by_book(book_number),
+            data.db.find_book(book_number),
+            PerryPedia::find_cover_url(book_number))
+        {
+            (Some(summary), Some(cycle), Some(book), cover_url) => {
+                let cycle_number = cycle.number;
+                TemplateSummary {
+                    found: true,
+                    number: book_number,
+                    summary,
+                    cycle,
+                    book_author: book.author,
+                    german_title: book.title,
+                    hide_left: false,
+                    href_back: Urls::cycles(cycle_number),
+                    href_edit: "".into(),
+                    perry_pedia: "".into(),
+                    email_mailing_list: "".into(),
+                    cover_url: cover_url.unwrap_or("".to_string()),
+                }
+            }
+            (_, Some(cycle), _, cover_url) => {
+                let mut result = TemplateSummary::default();
+                result.cycle = cycle;
+                result.summary = Summary::default();
+                result.summary.number = book_number as i32;
+                result.number = book_number;
+                result.cover_url = cover_url.unwrap_or("".to_string());
+                result
+
+            }
+            (a, b, c, d) => {
+                TemplateSummary::default()
+            }
         }
-        _ => {
-            empty_json(format!("Couldn't retrieve summary for {number}"))
-        }
-    }
+    };
+
+    let string = serde_json::to_string(&json!(template)).unwrap();
+
+    HttpResponse::Ok()
+        .content_type("application/json")
+        .body(string)
 }
 
 #[get("/api/cycles/{number}")]

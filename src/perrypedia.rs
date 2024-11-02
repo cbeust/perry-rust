@@ -5,14 +5,15 @@ use tokio::time::{timeout};
 
 const HOST: &str = "https://www.perrypedia.de";
 
+const TIMEOUT_MS: u64 = 2000;
 pub struct PerryPedia;
 
 impl PerryPedia {
-    async fn find_cover_url(n: i32, timeout_millis: u64) -> Option<String> {
+    pub async fn find_cover_url(n: u32) -> Option<String> {
         let number = format!("{n:04}");
         let re = Regex::new(&format!(".*(/mediawiki.*/PR{number}.jpg)")).unwrap();
         let url = format!("{HOST}/wiki/Datei:PR{number:04}.jpg");
-        let r = timeout(Duration::from_millis(timeout_millis), Self::read_url(url)).await;
+        let r = timeout(Duration::from_millis(TIMEOUT_MS), Self::read_url(url)).await;
         let result = match r {
             Ok(Some(text)) => {
                 // println!("URL content: {text}");
@@ -24,7 +25,7 @@ impl PerryPedia {
                 }
             }
             _ => {
-                info!("Couldn't retrieve cover for {n} in {timeout_millis} ms");
+                info!("Couldn't retrieve cover for {n} in {TIMEOUT_MS} ms");
                 None
             }
         };
@@ -33,8 +34,7 @@ impl PerryPedia {
     }
 
     pub async fn find_cover_urls(numbers: Vec<i32>) -> Vec<Option<String>> {
-        let timeout = 2000;
-        let tasks = numbers.iter().map(|n| Self::find_cover_url(*n, timeout));
+        let tasks = numbers.iter().map(|n| Self::find_cover_url(*n as u32));
         futures::future::join_all(tasks).await
     }
 

@@ -13,7 +13,7 @@ impl Display for User {
     }
 }
 
-#[derive(Builder, Clone, Debug, Deserialize, Serialize, sqlx::FromRow)]
+#[derive(Builder, Clone, Debug, Default, Deserialize, Serialize, sqlx::FromRow)]
 pub struct Summary {
     pub number: i32,
     pub author_email: String,
@@ -24,7 +24,7 @@ pub struct Summary {
     pub time: Option<String>,
 }
 
-#[derive(Builder, Clone, Debug, Deserialize, Serialize, sqlx::FromRow)]
+#[derive(Builder, Clone, Debug, Default, Deserialize, Serialize, sqlx::FromRow)]
 pub struct Cycle {
     pub number: i32,
     pub german_title: String,

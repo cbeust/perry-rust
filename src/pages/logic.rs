@@ -13,10 +13,10 @@ pub async fn get_data(db: &Arc<Box<dyn Db>>, book_number: u32)
         db.find_summary(book_number),
         db.find_cycle_by_book(book_number),
         db.find_book(book_number),
-        PerryPedia::find_cover_urls(vec![book_number as i32]),
+        PerryPedia::find_cover_url(book_number),
     );
 
-    let cover_url = cover_url[0].clone().unwrap_or("".to_string());
+    let cover_url = cover_url.unwrap_or("".to_string());
 
     match (summary, cycle, book) {
         (Some(summary), Some(cycle), Some(book)) => {
