@@ -1,5 +1,11 @@
 use std::sync::Arc;
 use actix_web::web::Form;
+use chrono::{Duration, NaiveDateTime, Utc};
+use sha2::Digest;
+use sha2::digest::DynDigest;
+use tracing::info;
+use tracing::log::warn;
+use uuid::Uuid;
 use crate::db::Db;
 use crate::pages::edit::FormData;
 use crate::entities::{Book, Cycle, Summary};
@@ -58,4 +64,43 @@ pub async fn save_summary(db: &Arc<Box<dyn Db>>, form_data: Form<FormData>) -> P
         // New summary, insert
         db.insert_summary(summary).await
     }
+}
+
+fn verify_password(supplied_password: &str, salt: &Vec<u8>, password: &Vec<u8>) -> bool {
+    use sha2::*;
+    let r1 = Sha512::new()
+        .chain_update(salt)
+        .chain_update(supplied_password)
+        .finalize();
+
+    let mut success = true;
+    for i in 0..password.len() {
+        if password[i] != r1[i] { success = false; break; }
+    }
+    success
+}
+
+pub async fn login(db: &Arc<Box<dyn Db>>, username: &str, password: &str) -> PrResult<()> {
+    if let Some(user) = db.find_user_by_login(username).await {
+        let ok1 = password.is_empty() && user.salt.is_none() && password.is_empty();
+        let ok2 = ! password.is_empty() && user.salt.is_some() && ! password.is_empty()
+            && verify_password(password, &user.salt.clone().unwrap(), &user.password);
+        if ok1 || ok2 {
+            let auth_token = Uuid::new_v4().to_string();
+            let now = Utc::now().naive_local().format("%Y-%m-%d %H:%M").to_string();
+            db.update_user(username, &auth_token, &now).await?;
+            let days = if username == "cbeust" || username == "jerry_s" {
+                Duration::days(365)
+            } else {
+                Duration::days(7)
+            };
+            info!("Successfully authorized {username} for {days} days");
+        } else {
+            warn!("Incorrect password for user {username}");
+        }
+    } else {
+        println!("Unknown user");
+    }
+
+    Ok(())
 }

@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use chrono::{DateTime, NaiveDateTime};
 use sqlx::{Pool, Postgres};
 use sqlx::postgres::{PgPoolOptions, PgQueryResult};
 use sqlx::query::QueryAs;
@@ -6,9 +7,10 @@ use sqlx::query::QueryAs;
 // provides `try_get`
 use sqlx::Row;
 use tracing::{error, info};
+use tracing::log::warn;
 use crate::{Config, errors};
 use crate::entities::{Book, Cycle, Summary, User};
-use crate::errors::Error::{FetchingCycles, InsertingBook, InsertingSummary, UpdatingBook, UpdatingSummary};
+use crate::errors::Error::{FetchingCycles, InsertingBook, InsertingSummary, UpdatingBook, UpdatingSummary, UpdatingUser};
 use crate::errors::PrResult;
 
 fn query_one<O, U>(query: QueryAs<Postgres, O, U>) {
@@ -47,11 +49,31 @@ pub trait Db: Send + Sync {
     async fn update_summary(&self, _summary: Summary) -> PrResult<()> { Ok(()) }
     async fn update_or_insert_book(&self, _book: Book) -> PrResult<()> { Ok(()) }
     async fn find_user_by_auth_token(&self, _auth_token: &str) -> Option<User> { None }
+    async fn find_user_by_login(&self, _username: &str) -> Option<User> { None }
+    async fn update_user(&self, _username: &str, _auth_token: &str, _last_login: &str)
+        -> PrResult<()> { Ok(()) }
 }
 
 #[derive(Clone)]
 pub struct DbPostgres {
     pool: Pool<Postgres>,
+}
+
+async fn find_user_by(pool: &Pool<Postgres>, key: &str, value: &str) -> Option<User> {
+    match sqlx::query_as::<_, User>(
+        &format!("select * from users where {key} = '{value}'"))
+        .fetch_one(pool)
+        .await
+    {
+        Ok(user) => {
+            info!("Found user: {}", user);
+            Some(user)
+        }
+        Err(e) => {
+            warn!("Couldn't retrieve user by {key}={value}: {e}");
+            None
+        }
+    }
 }
 
 #[derive(Clone, Copy)]
@@ -374,19 +396,27 @@ impl Db for DbPostgres {
     }
 
     async fn find_user_by_auth_token(&self, auth_token: &str) -> Option<User> {
-        match sqlx::query_as::<_, User>(
-                "select * from users where auth_token = $1")
-            .bind(auth_token)
-            .fetch_one(&self.pool)
+        find_user_by(&self.pool, "auth_token", auth_token).await
+    }
+
+    async fn find_user_by_login(&self, login: &str) -> Option<User> {
+        find_user_by(&self.pool, "login", login).await
+    }
+
+    async fn update_user(&self, username: &str, auth_token: &str, last_login: &str)
+        -> PrResult<()>
+    {
+        match sqlx::query!("update users set auth_token = $1, last_login = $2 where login = $3",
+                auth_token, last_login, username)
+            .execute(&self.pool)
             .await
         {
-            Ok(user) => {
-                println!("Found user: {}", user);
-                Some(user)
+            Ok(result) => {
+                info!("Updated user {username} last_login:{last_login} and auth_token");
+                Ok(())
             }
-            Err(e) => {
-                println!("Couldn't retrieve user with auth_token '{auth_token}': {e}");
-                None
+            Err(error) => {
+                Err(UpdatingUser(error.to_string(), username.to_string()))
             }
         }
     }

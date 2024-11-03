@@ -5,7 +5,6 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::{info, warn};
 use crate::entities::{Book, Cycle, Summary};
-use crate::pages::logic::get_data;
 use crate::perrypedia::PerryPedia;
 use crate::PerryState;
 use crate::url::Urls;

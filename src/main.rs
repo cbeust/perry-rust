@@ -6,6 +6,8 @@ mod pages;
 mod banner_info;
 mod errors;
 mod cookies;
+mod login;
+mod logic;
 
 use actix_web_httpauth::middleware::HttpAuthentication;
 use std::process::exit;
@@ -25,6 +27,7 @@ use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use crate::db::{Db, DbPostgres};
+use crate::login::api_login;
 use crate::pages::api::{api_cycles, api_summaries};
 use crate::pages::cycle::cycle;
 use crate::pages::cycles::index;
@@ -152,6 +155,7 @@ async fn main() -> std::io::Result<()> {
             .service(post_summary)
             .service(api_cycles)
             .service(api_summaries)
+            .service(api_login)
             .service(actix_files::Files::new("static", "static").show_files_listing())
     })
         .bind(("0.0.0.0", config.port))?

@@ -8,6 +8,7 @@ pub enum Error {
     FetchingCycles(String),
     InsertingBook(String, i32),
     UpdatingBook(String, i32),
+    UpdatingUser(String, String),
 }
 
 impl Display for Error {
@@ -18,6 +19,7 @@ impl Display for Error {
             Error::FetchingCycles(s) => { format!("Error fetching cycles: {s}") }
             Error::InsertingBook(s, n) => { format!("Error inserting book {n}: {s}") }
             Error::UpdatingBook(s, n) => { format!("Error updating book {n}: {s}") }
+            Error::UpdatingUser(s, username) => { format!("Error user {username}: {s}") }
         };
 
         f.write_str(&string)

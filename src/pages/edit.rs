@@ -4,7 +4,7 @@ use askama::Template;
 use serde::Deserialize;
 use crate::entities::{Book, Cycle, Summary};
 use crate::errors::PrResult;
-use crate::pages::logic::{get_data, save_summary};
+use crate::logic::save_summary;
 use crate::perrypedia::PerryPedia;
 use crate::PerryState;
 use crate::url::Urls;

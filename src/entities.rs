@@ -5,9 +5,11 @@ use serde::{Deserialize, Serialize};
 #[derive(Builder, Clone, Debug, sqlx::FromRow)]
 pub struct User {
     pub login: String,
+    pub password: Vec<u8>,
     pub name: String,
     pub level: i32,
     pub email: String,
+    pub salt: Option<Vec<u8>>,
 }
 
 impl Display for User {
