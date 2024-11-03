@@ -1,13 +1,8 @@
 use std::sync::Arc;
-use actix_web::HttpRequest;
 use actix_web::web::Form;
-use chrono::{Duration, NaiveDateTime, Utc};
-use sha2::Digest;
-use sha2::digest::DynDigest;
+use chrono::{Utc};
 use tracing::info;
-use tracing::log::warn;
 use uuid::Uuid;
-use crate::cookies::Cookies;
 use crate::db::Db;
 use crate::pages::edit::FormData;
 use crate::entities::{Book, Cycle, Summary};
@@ -15,7 +10,7 @@ use crate::errors::Error::{IncorrectPassword, UnknownUser};
 use crate::errors::PrResult;
 use crate::perrypedia::PerryPedia;
 
-pub async fn get_data(db: &Arc<Box<dyn Db>>, book_number: u32)
+pub async fn _get_data(db: &Arc<Box<dyn Db>>, book_number: u32)
     -> Option<(Cycle, Summary, Book, String)>
 {
     let (summary, cycle, book, cover_url) = tokio::join!(

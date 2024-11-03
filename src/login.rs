@@ -1,4 +1,4 @@
-use actix_web::{HttpRequest, HttpResponse, post};
+use actix_web::{HttpResponse, post};
 use actix_web::web::{Data, Form};
 use serde::Deserialize;
 use tracing::info;

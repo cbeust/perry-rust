@@ -1,8 +1,7 @@
 use std::time::Duration;
-use actix_web::cookie::{Cookie, Expiration};
+use actix_web::cookie::{Cookie};
 use actix_web::cookie::time::OffsetDateTime;
 use actix_web::HttpRequest;
-use chrono::{TimeDelta, Utc};
 use tracing::info;
 use crate::db::Db;
 use crate::entities::User;

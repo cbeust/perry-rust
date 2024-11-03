@@ -3,7 +3,6 @@ use actix_web::web::{Data, Form, Path};
 use askama::Template;
 use serde::Deserialize;
 use crate::entities::{Book, Cycle, Summary};
-use crate::errors::PrResult;
 use crate::logic::save_summary;
 use crate::perrypedia::PerryPedia;
 use crate::PerryState;
@@ -69,7 +68,7 @@ pub async fn edit_summary(data: Data<PerryState>, path: Path<u32>) -> HttpRespon
             };
             template.render().unwrap()
         }
-        (a, Some(cycle), book, cover_url) => {
+        (_, Some(cycle), book, cover_url) => {
             let mut template = TemplateEdit::default();
             template.book = if let Some(b) = book { b } else {
                 let mut result = Book::default();

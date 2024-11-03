@@ -1,11 +1,8 @@
 use std::time::Instant;
-use actix_session::{Session, SessionGetError};
 use actix_web::{get, HttpRequest, HttpResponse};
-use actix_web::cookie::Cookie;
 use actix_web::web::Data;
 use askama::Template;
 use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
-use reqwest::Request;
 use tracing::{error, info, warn};
 use crate::banner_info::BannerInfo;
 use crate::cookies::Cookies;
@@ -15,7 +12,7 @@ use crate::PerryState;
 use crate::url::Urls;
 
 #[get("/")]
-async fn index(req: HttpRequest, data: Data<PerryState>, session: Session) -> HttpResponse {
+async fn index(req: HttpRequest, data: Data<PerryState>) -> HttpResponse {
     // Cycles
     let mut cycles: Vec<TemplateCycle> = Vec::new();
     match data.db.fetch_cycles().await {

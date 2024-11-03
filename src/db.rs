@@ -1,34 +1,32 @@
 use async_trait::async_trait;
-use chrono::{DateTime, NaiveDateTime};
 use sqlx::{Pool, Postgres};
-use sqlx::postgres::{PgPoolOptions, PgQueryResult};
-use sqlx::query::QueryAs;
+use sqlx::postgres::{PgPoolOptions};
 // provides `try_next`
 // provides `try_get`
 use sqlx::Row;
 use tracing::{error, info};
 use tracing::log::warn;
-use crate::{Config, errors};
+use crate::{Config};
 use crate::entities::{Book, Cycle, Summary, User};
 use crate::errors::Error::{FetchingCycles, InsertingBook, InsertingSummary, UpdatingBook, UpdatingSummary, UpdatingUser};
 use crate::errors::PrResult;
 
-fn query_one<O, U>(query: QueryAs<Postgres, O, U>) {
-
-}
+// fn query_one<O, U>(query: QueryAs<Postgres, O, U>) {
+//
+// }
 
 // fn query<'a, O, U> (q: String) -> QueryAs<'a, Postgres, O, U> {
 //     sqlx::query_as::<Postgres, Cycle>(
 //         "select * from cycles where cycle.start <= $1 and $1 <= cycle.end")
 // }
 
-fn f() {
-    let a = 42;
-    query_one(sqlx::query_as::<Postgres, Cycle>(
-            "select * from cycles where cycle.start <= $1 and $1 <= cycle.end")
-        .bind(a)
-        .bind(a));
-}
+// fn f() {
+//     let a = 42;
+//     query_one(sqlx::query_as::<Postgres, Cycle>(
+//             "select * from cycles where cycle.start <= $1 and $1 <= cycle.end")
+//         .bind(a)
+//         .bind(a));
+// }
 
 
 #[async_trait]
@@ -326,7 +324,7 @@ impl Db for DbPostgres {
             .execute(&self.pool)
             .await
         {
-            Ok(result) => {
+            Ok(_) => {
                 info!("Inserted new summary {}: \"{}\"", summary.number, summary.english_title);
                 Ok(())
             }
@@ -346,7 +344,7 @@ impl Db for DbPostgres {
             .execute(&self.pool)
             .await
         {
-            Ok(result) => {
+            Ok(_) => {
                 info!("Updated existing summary {}: \"{}\"", summary.number, summary.english_title);
                 Ok(())
             }
@@ -359,7 +357,7 @@ impl Db for DbPostgres {
 
     async fn update_or_insert_book(&self, book: Book) -> PrResult<()> {
         match self.find_book(book.number as u32).await {
-            Some(existing) => {
+            Some(_) => {
                 match sqlx::query!("update hefte set title = $2::text, author = $3::text,\
                      german_File = $4::text \
                      where number = $1",
@@ -367,7 +365,7 @@ impl Db for DbPostgres {
                     .execute(&self.pool)
                     .await
                 {
-                    Ok(result) => {
+                    Ok(_) => {
                         info!("Updated existing book {}: \"{}\"", book.number, book.title);
                         Ok(())
                     }
@@ -383,7 +381,7 @@ impl Db for DbPostgres {
                     .execute(&self.pool)
                     .await
                 {
-                    Ok(result) => {
+                    Ok(_) => {
                         info!("Inserted new book {}: \"{}\"", book.number, book.title);
                         Ok(())
                     }
@@ -411,7 +409,7 @@ impl Db for DbPostgres {
             .execute(&self.pool)
             .await
         {
-            Ok(result) => {
+            Ok(_) => {
                 info!("Updated user {username} last_login:{last_login} and auth_token");
                 Ok(())
             }

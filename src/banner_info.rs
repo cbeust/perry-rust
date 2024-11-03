@@ -1,5 +1,3 @@
-use std::sync::Arc;
-use crate::db::Db;
 use crate::entities::User;
 
 pub struct BannerInfo {

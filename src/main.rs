@@ -9,15 +9,13 @@ mod cookies;
 mod login;
 mod logic;
 
-use actix_web_httpauth::middleware::HttpAuthentication;
 use std::process::exit;
 use std::sync::Arc;
 use actix_session::SessionMiddleware;
 use actix_session::storage::CookieSessionStore;
-use actix_web::{App, HttpResponse, HttpServer};
+use actix_web::{App, HttpServer};
 use actix_web::cookie::Key;
 use actix_web::web::{Data, FormConfig};
-use actix_web_httpauth::extractors::basic::BasicAuth;
 use bon::builder;
 use figment::Figment;
 use figment::providers::Env;

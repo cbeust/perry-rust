@@ -3,7 +3,7 @@ use actix_web::{get, HttpResponse};
 use actix_web::web::{Data, Path};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing::{info, warn};
+use tracing::{warn};
 use crate::entities::{Book, Cycle, Summary};
 use crate::perrypedia::PerryPedia;
 use crate::PerryState;
@@ -93,7 +93,7 @@ pub async fn api_summaries(data: Data<PerryState>, path: Path<u32>) -> HttpRespo
                 result
 
             }
-            (a, b, c, d) => {
+            (_, _, _, _) => {
                 TemplateSummary::default()
             }
         }
