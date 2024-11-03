@@ -17,16 +17,18 @@
   </component>
   <component name="DBNavigator.Project.DatabaseConsoleManager">
     <connection id="a12b8dd7-0b7f-4b76-9b19-a9d654220206">
-      <console name="Local" type="STANDARD" schema="" session="Main"><![CDATA[select * from summaries where number=3108
+      <console name="Local" type="STANDARD" schema="public" session="Main"><![CDATA[select * from users where login='cbeust'
 
-update summaries set english_title = 'foo' where number = 3108]]></console>
+select * from users]]></console>
     </connection>
   </component>
   <component name="DBNavigator.Project.DatabaseEditorStateManager">
     <last-used-providers />
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">
-    <open-files />
+    <open-files>
+      <object connection-id="a12b8dd7-0b7f-4b76-9b19-a9d654220206" object-ref="consoles/Local" />
+    </open-files>
   </component>
   <component name="DBNavigator.Project.DatabaseSessionManager">
     <connection id="a12b8dd7-0b7f-4b76-9b19-a9d654220206" />
