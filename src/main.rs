@@ -25,7 +25,7 @@ use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use crate::db::{Db, DbPostgres};
-use crate::login::api_login;
+use crate::login::{api_login, logout};
 use crate::pages::api::{api_cycles, api_summaries};
 use crate::pages::cycle::cycle;
 use crate::pages::cycles::index;
@@ -154,6 +154,7 @@ async fn main() -> std::io::Result<()> {
             .service(api_cycles)
             .service(api_summaries)
             .service(api_login)
+            .service(logout)
             .service(actix_files::Files::new("static", "static").show_files_listing())
     })
         .bind(("0.0.0.0", config.port))?

@@ -2,7 +2,7 @@ use std::time::Duration;
 use actix_web::cookie::{Cookie};
 use actix_web::cookie::time::OffsetDateTime;
 use actix_web::HttpRequest;
-use tracing::info;
+use tracing::log::{trace};
 use crate::db::Db;
 use crate::entities::User;
 
@@ -16,9 +16,13 @@ impl Cookies {
             let auth_token = cookie.value().replace('+', " ");
             db.find_user_by_auth_token(&auth_token).await
         } else {
-            info!("No authToken cookie found");
+            trace!("No authToken cookie found in session");
             None
         }
+    }
+
+    pub async fn clear_auth_token_cookie() -> Cookie<'static>{
+        Self::create_auth_token_cookie("".into(), 0).await
     }
 
     pub async fn create_auth_token_cookie(auth_token: String, days: u16) -> Cookie<'static>{
