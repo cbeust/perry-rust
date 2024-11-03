@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use actix_web::HttpRequest;
 use actix_web::web::Form;
 use chrono::{Duration, NaiveDateTime, Utc};
 use sha2::Digest;
@@ -6,9 +7,11 @@ use sha2::digest::DynDigest;
 use tracing::info;
 use tracing::log::warn;
 use uuid::Uuid;
+use crate::cookies::Cookies;
 use crate::db::Db;
 use crate::pages::edit::FormData;
 use crate::entities::{Book, Cycle, Summary};
+use crate::errors::Error::{IncorrectPassword, UnknownUser};
 use crate::errors::PrResult;
 use crate::perrypedia::PerryPedia;
 
@@ -80,7 +83,10 @@ fn verify_password(supplied_password: &str, salt: &Vec<u8>, password: &Vec<u8>) 
     success
 }
 
-pub async fn login(db: &Arc<Box<dyn Db>>, username: &str, password: &str) -> PrResult<()> {
+/// Return the (auth token, cookie duration in days)
+pub async fn login(db: &Arc<Box<dyn Db>>, username: &str, password: &str)
+    -> PrResult<(String, u16)>
+{
     if let Some(user) = db.find_user_by_login(username).await {
         let ok1 = password.is_empty() && user.salt.is_none() && password.is_empty();
         let ok2 = ! password.is_empty() && user.salt.is_some() && ! password.is_empty()
@@ -90,17 +96,16 @@ pub async fn login(db: &Arc<Box<dyn Db>>, username: &str, password: &str) -> PrR
             let now = Utc::now().naive_local().format("%Y-%m-%d %H:%M").to_string();
             db.update_user(username, &auth_token, &now).await?;
             let days = if username == "cbeust" || username == "jerry_s" {
-                Duration::days(365)
+                365
             } else {
-                Duration::days(7)
+                7
             };
             info!("Successfully authorized {username} for {days} days");
+            Ok((auth_token, days))
         } else {
-            warn!("Incorrect password for user {username}");
+            Err(IncorrectPassword(username.into()))
         }
     } else {
-        println!("Unknown user");
+        Err(UnknownUser(username.into()))
     }
-
-    Ok(())
 }

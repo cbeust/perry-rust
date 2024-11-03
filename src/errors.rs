@@ -9,6 +9,8 @@ pub enum Error {
     InsertingBook(String, i32),
     UpdatingBook(String, i32),
     UpdatingUser(String, String),
+    IncorrectPassword(String),
+    UnknownUser(String)
 }
 
 impl Display for Error {
@@ -20,6 +22,8 @@ impl Display for Error {
             Error::InsertingBook(s, n) => { format!("Error inserting book {n}: {s}") }
             Error::UpdatingBook(s, n) => { format!("Error updating book {n}: {s}") }
             Error::UpdatingUser(s, username) => { format!("Error user {username}: {s}") }
+            Error::IncorrectPassword(username) => { format!("Incorrect password for {username}") }
+            Error::UnknownUser(username) => { format!("Unknown user {username}") }
         };
 
         f.write_str(&string)

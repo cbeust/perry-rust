@@ -1,5 +1,9 @@
-use actix_web::cookie::Cookie;
+use std::time::Duration;
+use actix_web::cookie::{Cookie, Expiration};
+use actix_web::cookie::time::OffsetDateTime;
 use actix_web::HttpRequest;
+use chrono::{TimeDelta, Utc};
+use tracing::info;
 use crate::db::Db;
 use crate::entities::User;
 
@@ -13,8 +17,17 @@ impl Cookies {
             let auth_token = cookie.value().replace('+', " ");
             db.find_user_by_auth_token(&auth_token).await
         } else {
-            println!("No authToken cookie found");
+            info!("No authToken cookie found");
             None
         }
+    }
+
+    pub async fn create_auth_token_cookie(auth_token: String, days: u16) -> Cookie<'static>{
+        Cookie::build(NAME, auth_token)
+            // .http_only(true)
+            // .domain("perryrhodan.us")
+            .path("/")
+            .expires(OffsetDateTime::now_utc() + Duration::from_secs(60 * 60 * 24 * days as u64))
+            .finish()
     }
 }

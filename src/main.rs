@@ -88,7 +88,7 @@ pub struct PerryState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    init_logging().sqlx(true).actix(true).call();
+    init_logging().sqlx(false).actix(true).call();
 
     // Generate a key to sign/encrypt the session cookie
     let secret_key = Key::generate();
