@@ -46,6 +46,7 @@ pub trait Db: Send + Sync {
     async fn insert_summary(&self, _summary: Summary) -> PrResult<()> { Ok(()) }
     async fn update_summary(&self, _summary: Summary) -> PrResult<()> { Ok(()) }
     async fn update_or_insert_book(&self, _book: Book) -> PrResult<()> { Ok(()) }
+    async fn find_user_by_auth_token(&self, _auth_token: &str) -> Option<User> { None }
 }
 
 #[derive(Clone)]
@@ -368,6 +369,24 @@ impl Db for DbPostgres {
                         Err(InsertingBook(error.to_string(), book.number))
                     }
                 }
+            }
+        }
+    }
+
+    async fn find_user_by_auth_token(&self, auth_token: &str) -> Option<User> {
+        match sqlx::query_as::<_, User>(
+                "select * from users where auth_token = $1")
+            .bind(auth_token)
+            .fetch_one(&self.pool)
+            .await
+        {
+            Ok(user) => {
+                println!("Found user: {}", user);
+                Some(user)
+            }
+            Err(e) => {
+                println!("Couldn't retrieve user with auth_token '{auth_token}': {e}");
+                None
             }
         }
     }

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use crate::db::Db;
+use crate::entities::User;
 
 pub struct BannerInfo {
     pub username: String,
@@ -14,11 +15,13 @@ pub struct BannerInfo {
 }
 
 impl BannerInfo {
-    pub async fn new(db: &Arc<Box<dyn Db>>) -> Self {
+    pub async fn new(user: Option<User>) -> Self {
+        let username = user.clone().map_or("".to_string(), |u| u.name);
+        let is_admin = user.map_or(false, |u| u.level == 0);
         Self {
-            username: db.username().await,
-            is_admin: false,
-            admin_text: "Admin".to_string(),
+            username,
+            is_admin,
+            admin_text: if is_admin { "Admin".to_string() } else { "".to_string() }
         }
     }
 }

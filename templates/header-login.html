@@ -13,6 +13,24 @@
         | <a class="c-off-white td-n a-bb-offwhite" href="/admin">[[banner_info.admin_text]]</a>
         {% endif %}
 
+        {% if banner_info.username.is_empty() %}
+        <div id="login" style="float:right">
+            <a class="c-off-white td-n a-bb-offwhite" href="#" onclick="openForm()">Login</a>
+        </div>
+        <div class="modal fade" id="login-modal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel"
+             aria-hidden="true" style="display:none; float:right;">
+            <div class="modal-dialog">
+                <div class="loginmodal-container">
+                    <form action="/api/login" method="post">
+                        <input type="text" name="username" placeholder="Username">
+                        <input type="password" name="password" placeholder="Password">
+                        <input type="submit" name="login" class="login loginmodal-submit" value="Login" onclick="closeForm()">
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
     </div>
 </div>
 

@@ -2,9 +2,12 @@ use std::fmt::{Display, Formatter};
 use bon::Builder;
 use serde::{Deserialize, Serialize};
 
-#[derive(Builder, Debug, sqlx::FromRow)]
+#[derive(Builder, Clone, Debug, sqlx::FromRow)]
 pub struct User {
     pub login: String,
+    pub name: String,
+    pub level: i32,
+    pub email: String,
 }
 
 impl Display for User {

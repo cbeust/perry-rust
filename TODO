@@ -1,4 +1,6 @@
 Hosting options:
+- Render
+    - https://docs.render.com/deploy-actix-todo
 - Porter (https://www.porter.run/migrate-from-heroku)
 - Fly
 - Railway

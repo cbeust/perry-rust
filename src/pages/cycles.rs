@@ -1,17 +1,21 @@
 use std::time::Instant;
-use actix_web::{get, HttpResponse};
+use actix_session::{Session, SessionGetError};
+use actix_web::{get, HttpRequest, HttpResponse};
+use actix_web::cookie::Cookie;
 use actix_web::web::Data;
 use askama::Template;
 use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
+use reqwest::Request;
 use tracing::{error, info, warn};
 use crate::banner_info::BannerInfo;
+use crate::cookies::Cookies;
 use crate::entities::{Cycle, Summary};
 use crate::perrypedia::PerryPedia;
 use crate::PerryState;
 use crate::url::Urls;
 
 #[get("/")]
-async fn index(data: Data<PerryState>) -> HttpResponse {
+async fn index(req: HttpRequest, data: Data<PerryState>, session: Session) -> HttpResponse {
     // Cycles
     let mut cycles: Vec<TemplateCycle> = Vec::new();
     match data.db.fetch_cycles().await {
@@ -44,13 +48,14 @@ async fn index(data: Data<PerryState>) -> HttpResponse {
                 percentage: (summary_count as u32 * 100 / book_count as u32) as u8,
                 recent_summaries,
                 cycles,
-                banner_info: BannerInfo::new(&data.db).await,
+                banner_info: BannerInfo::new(Cookies::find_user(&req, &data.db).await).await,
             };
             let result = template.render().unwrap();
             // println!("Template: {result}");
 
             HttpResponse::Ok()
                 .content_type("text/html")
+                // .cookie(cookie)
                 .body(result)
 
         }

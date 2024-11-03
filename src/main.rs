@@ -5,11 +5,17 @@ mod url;
 mod pages;
 mod banner_info;
 mod errors;
+mod cookies;
 
+use actix_web_httpauth::middleware::HttpAuthentication;
 use std::process::exit;
 use std::sync::Arc;
-use actix_web::{App, HttpServer};
+use actix_session::SessionMiddleware;
+use actix_session::storage::CookieSessionStore;
+use actix_web::{App, HttpResponse, HttpServer};
+use actix_web::cookie::Key;
 use actix_web::web::{Data, FormConfig};
+use actix_web_httpauth::extractors::basic::BasicAuth;
 use bon::builder;
 use figment::Figment;
 use figment::providers::Env;
@@ -66,9 +72,23 @@ pub struct PerryState {
     pub db: Arc<Box<dyn Db>>
 }
 
+// async fn validator(credentials: BasicAuth) -> Result<(), actix_web::Error> {
+//     let username = credentials.user_id();
+//     let password = credentials.password();
+//
+//     if username == "admin" && password == Some("password") {
+//         Ok(())
+//     } else {
+//         Err(HttpResponse::Unauthorized())
+//     }
+// }
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     init_logging().sqlx(true).actix(true).call();
+
+    // Generate a key to sign/encrypt the session cookie
+    let secret_key = Key::generate();
 
     // let covers = PerryPedia::find_cover_urls(vec![2000, 2001, 2002]).await;
     // for (i, c) in covers.iter().enumerate() {
@@ -113,6 +133,16 @@ async fn main() -> std::io::Result<()> {
     });
     let result = HttpServer::new(move || {
         App::new()
+            .wrap(SessionMiddleware::new(
+                CookieSessionStore::default(),
+                secret_key.clone(),
+            ))
+            // .wrap(HttpAuthentication::basic(|username, password| {
+            //     Ok(())
+            //     // Implement your authentication logic here
+            //     // Check username and password against a database or other source
+            //     // Return an Ok(()) or Err(()) result
+            // }))
             .app_data(FormConfig::default().limit(250 * 1024)) // Sets limit to 250kB
             .app_data(state.clone())
             .service(index)
