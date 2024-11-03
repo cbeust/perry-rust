@@ -8,7 +8,7 @@ use sqlx::Row;
 use tracing::{error, info};
 use crate::{Config, errors};
 use crate::entities::{Book, Cycle, Summary, User};
-use crate::errors::Error::{FetchingCycles, InsertingSummary, UpdatingSummary};
+use crate::errors::Error::{FetchingCycles, InsertingBook, InsertingSummary, UpdatingBook, UpdatingSummary};
 use crate::errors::PrResult;
 
 fn query_one<O, U>(query: QueryAs<Postgres, O, U>) {
@@ -45,6 +45,7 @@ pub trait Db: Send + Sync {
     async fn find_book(&self, _book_number: u32) -> Option<Book> { None }
     async fn insert_summary(&self, _summary: Summary) -> PrResult<()> { Ok(()) }
     async fn update_summary(&self, _summary: Summary) -> PrResult<()> { Ok(()) }
+    async fn update_or_insert_book(&self, _book: Book) -> PrResult<()> { Ok(()) }
 }
 
 #[derive(Clone)]
@@ -329,6 +330,44 @@ impl Db for DbPostgres {
             Err(error) => {
                 error!("Error inserting new summary {}: {error}", summary.number);
                 Err(UpdatingSummary(error.to_string(), summary.number))
+            }
+        }
+    }
+
+    async fn update_or_insert_book(&self, book: Book) -> PrResult<()> {
+        match self.find_book(book.number as u32).await {
+            Some(existing) => {
+                match sqlx::query!("update hefte set title = $2::text, author = $3::text,\
+                     german_File = $4::text \
+                     where number = $1",
+                book.number, book.title, book.author, book.german_file)
+                    .execute(&self.pool)
+                    .await
+                {
+                    Ok(result) => {
+                        info!("Updated existing book {}: \"{}\"", book.number, book.title);
+                        Ok(())
+                    }
+                    Err(error) => {
+                        Err(UpdatingBook(error.to_string(), book.number))
+                    }
+                }
+            }
+            None => {
+                match sqlx::query!("insert into hefte (number, title, author, german_file)\
+                        values ($1, $2::text, $3::text, $4::text)",
+                        book.number, book.title, book.author, book.german_file)
+                    .execute(&self.pool)
+                    .await
+                {
+                    Ok(result) => {
+                        info!("Inserted new book {}: \"{}\"", book.number, book.title);
+                        Ok(())
+                    }
+                    Err(error) => {
+                        Err(InsertingBook(error.to_string(), book.number))
+                    }
+                }
             }
         }
     }

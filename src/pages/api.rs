@@ -78,9 +78,15 @@ pub async fn api_summaries(data: Data<PerryState>, path: Path<u32>) -> HttpRespo
                     cover_url: cover_url.unwrap_or("".to_string()),
                 }
             }
-            (_, Some(cycle), _, cover_url) => {
+            (_, Some(cycle), book, cover_url) => {
+                let (book_title, book_author) = match book {
+                    Some(book) => { (book.title, book.author) }
+                    None => { ("".into(), "".into()) }
+                };
                 let mut result = TemplateSummary::default();
                 result.cycle = cycle;
+                result.german_title = book_title;
+                result.book_author = book_author;
                 result.summary = Summary::default();
                 result.summary.number = book_number as i32;
                 result.number = book_number;
