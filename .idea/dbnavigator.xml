@@ -26,9 +26,7 @@ select * from users]]></console>
     <last-used-providers />
   </component>
   <component name="DBNavigator.Project.DatabaseFileManager">
-    <open-files>
-      <object connection-id="a12b8dd7-0b7f-4b76-9b19-a9d654220206" object-ref="consoles/Local" />
-    </open-files>
+    <open-files />
   </component>
   <component name="DBNavigator.Project.DatabaseSessionManager">
     <connection id="a12b8dd7-0b7f-4b76-9b19-a9d654220206" />

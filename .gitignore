@@ -2,6 +2,18 @@
 files
 .env
 local.toml
+# Exclude workspace and local settings files
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dictionaries/
+.idea/libraries/
 
+# Include useful project configuration and code styles
+!.idea/modules.xml
+!.idea/*.iml
+!.idea/misc.xml
+!.idea/codeStyles/
+!.idea/inspectionProfiles/
+!.idea/runConfigurations/
 
 
