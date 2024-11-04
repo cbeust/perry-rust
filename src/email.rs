@@ -1,9 +1,26 @@
-use bon::builder;
 use lettre::{Message, SmtpTransport, Transport};
-use lettre::error::Error::EmailMissingLocalPart;
 use lettre::message::header::ContentType;
 use lettre::transport::smtp::authentication::Credentials;
-use tracing::info;
+use tracing::{error, info};
+use crate::config::Config;
+
+pub async fn create_email_service(config: &Config) -> Box<dyn EmailService> {
+    if config.send_emails {
+        match (config.email_username.clone(), config.email_password.clone()) {
+            (Some(u), Some(p)) => {
+                info!("Sending real emails");
+                Box::new(EmailProduction::builder().username(u).password(p).build())
+            }
+            _ => {
+                error!("Email service was requested but couldn't find username/password, using mock");
+                Box::new(EmailMock)
+            }
+        }
+    } else {
+        info!("Using mock EmailService");
+        Box::new(EmailMock)
+    }
+}
 
 pub trait EmailService: Send + Sync {
     fn send_email(&self, subject: String);
@@ -17,7 +34,7 @@ impl EmailService for EmailMock {
     }
 }
 
-#[builder]
+#[derive(bon::Builder)]
 pub struct EmailProduction {
     username: String,
     password: String,

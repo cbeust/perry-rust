@@ -6,7 +6,7 @@ use sqlx::postgres::{PgPoolOptions};
 use sqlx::Row;
 use tracing::{error, info};
 use tracing::log::warn;
-use crate::{Config};
+use crate::config::Config;
 use crate::entities::{Book, Cycle, Summary, User};
 use crate::errors::Error::{FetchingCycles, InsertingBook, InsertingSummary, UpdatingBook, UpdatingSummary, UpdatingUser};
 use crate::errors::PrResult;
@@ -28,6 +28,19 @@ use crate::errors::PrResult;
 //         .bind(a));
 // }
 
+
+pub async fn create_db(config: &Config) -> Box<dyn Db> {
+    match DbPostgres::maybe_new(&config).await {
+        Some(db) => {
+            // info!("Connected to database {}", url.unwrap());
+            Box::new(db)
+        }
+        _ => {
+            info!("Using in-memory database");
+            Box::new(DbInMemory)
+        }
+    }
+}
 
 #[async_trait]
 pub trait Db: Send + Sync {
