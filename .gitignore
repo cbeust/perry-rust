@@ -1,6 +1,7 @@
 /target
 files
 .env
+local.toml
 
 
 

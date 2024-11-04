@@ -8,6 +8,7 @@ mod errors;
 mod cookies;
 mod login;
 mod logic;
+mod email;
 
 use std::process::exit;
 use std::sync::Arc;
@@ -18,13 +19,16 @@ use actix_web::cookie::Key;
 use actix_web::web::{Data, FormConfig};
 use bon::builder;
 use figment::Figment;
-use figment::providers::Env;
+use figment::providers::{Env, Toml};
+use figment::providers::Format;
 use serde::Deserialize;
+use sha2::digest::typenum::private::IsEqualPrivate;
 use tracing::{error, info};
 use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use crate::db::{Db, DbPostgres};
+use crate::email::{EmailProduction, EmailService, EmailMock};
 use crate::login::{api_login, logout};
 use crate::pages::api::{api_cycles, api_summaries};
 use crate::pages::cycle::cycle;
@@ -52,10 +56,15 @@ pub struct Config {
     pub port: u16,
     #[serde(default = "default_is_heroku")]
     pub is_heroku: bool,
+    #[serde(default = "default_send_emails")]
+    pub send_emails: bool,
+    pub email_username: Option<String>,
+    pub email_password: Option<String>,
 }
 
 fn default_port() -> u16 { 8080 }
 fn default_is_heroku() -> bool { false }
+fn default_send_emails() -> bool { false }
 
 impl Default for Config {
     fn default() -> Self {
@@ -63,6 +72,7 @@ impl Default for Config {
             database_url: None,
             port: default_port(),
             is_heroku: default_is_heroku(),
+            ..Default::default()
         }
     }
 }
@@ -70,7 +80,8 @@ impl Default for Config {
 // #[derive(Builder, Clone)]
 pub struct PerryState {
     pub app_name: String,
-    pub db: Arc<Box<dyn Db>>
+    pub db: Arc<Box<dyn Db>>,
+    pub email_service: Arc<Box<dyn EmailService>>,
 }
 
 // async fn validator(credentials: BasicAuth) -> Result<(), actix_web::Error> {
@@ -88,21 +99,9 @@ pub struct PerryState {
 async fn main() -> std::io::Result<()> {
     init_logging().sqlx(false).actix(true).call();
 
-    // Generate a key to sign/encrypt the session cookie
-    let secret_key = Key::generate();
-
-    // let covers = PerryPedia::find_cover_urls(vec![2000, 2001, 2002]).await;
-    // for (i, c) in covers.iter().enumerate() {
-    //     println!("Cover {i}: {c:#?}");
-    // }
-    // exit(0);
-
     info!("Starting perry-rust");
-    // let text = PerryPedia::find_cover_url(2000).await;
-    // println!("url: {text}");
-    // exit(0);
-
     let config: Config = match Figment::new()
+        .merge(Toml::file("local.toml"))
         .merge(Env::raw())
         .extract()
     {
@@ -128,16 +127,33 @@ async fn main() -> std::io::Result<()> {
         }
     };
 
+    let email_service: Box<dyn EmailService> = if config.send_emails {
+        match (config.email_username, config.email_password) {
+            (Some(u), Some(p)) => {
+                info!("Sending real emails");
+                Box::new(EmailProduction::builder().username(u).password(p).build())
+            }
+            _ => {
+                error!("Email service was requested but couldn't find username/password, using mock");
+                Box::new(EmailMock)
+            }
+        }
+    } else {
+        info!("Using mock EmailService");
+        Box::new(EmailMock)
+    };
+
     let state = Data::new(PerryState {
         app_name: "Perry Rust".into(),
         db: Arc::new(db),
+        email_service: Arc::new(email_service),
     });
     let result = HttpServer::new(move || {
         App::new()
-            .wrap(SessionMiddleware::new(
-                CookieSessionStore::default(),
-                secret_key.clone(),
-            ))
+            // .wrap(SessionMiddleware::new(
+            //     CookieSessionStore::default(),
+            //     secret_key.clone(),
+            // ))
             // .wrap(HttpAuthentication::basic(|username, password| {
             //     Ok(())
             //     // Implement your authentication logic here

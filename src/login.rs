@@ -25,7 +25,6 @@ pub async fn logout() -> HttpResponse {
 
 #[post("/api/login")]
 pub async fn api_login(data: Data<PerryState>, form: Form<LoginFormData>) -> HttpResponse {
-    println!("Received username: {} / {}", form.username, form.password);
     match login(&data.db, &form.username, &form.password).await {
         Ok((auth_token, days)) => {
             let cookie = Cookies::create_auth_token_cookie(auth_token.clone(), days).await;
