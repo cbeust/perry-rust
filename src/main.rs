@@ -97,6 +97,6 @@ async fn main() -> std::io::Result<()> {
         .bind(("0.0.0.0", config.port))?
         .run()
         .await;
-    println!("Server exiting");
+    info!("Server exiting");
     result
 }
