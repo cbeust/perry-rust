@@ -10,6 +10,7 @@ mod login;
 mod logic;
 mod email;
 mod config;
+mod constants;
 
 use std::sync::Arc;
 use actix_web::{App, HttpServer};
@@ -19,9 +20,11 @@ use tracing::{ info};
 use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-use crate::config::create_config;
+use crate::config::{Config, create_config};
+use crate::constants::PRODUCTION_HOST;
 use crate::db::{create_db, Db};
-use crate::email::{EmailService, create_email_service};
+use crate::email::{Email, EmailService};
+use crate::errors::PrResult;
 use crate::login::{api_login, logout};
 use crate::pages::api::{api_cycles, api_summaries};
 use crate::pages::cycle::cycle;
@@ -45,6 +48,7 @@ fn init_logging(sqlx: bool, actix: bool) {
 // #[derive(Builder, Clone)]
 pub struct PerryState {
     pub app_name: String,
+    pub config: Config,
     pub db: Arc<Box<dyn Db>>,
     pub email_service: Arc<Box<dyn EmailService>>,
 }
@@ -54,13 +58,26 @@ async fn main() -> std::io::Result<()> {
     init_logging().sqlx(false).actix(true).call();
     info!("Starting perry-rust");
     let config = create_config();
+
     info!("Starting server on port {}, config.database_url: {}", config.port,
         config.database_url.clone().unwrap_or("<none found>".into()));
     let state = Data::new(PerryState {
         app_name: "Perry Rust".into(),
+        config: config.clone(),
         db: Arc::new(create_db(&config).await),
-        email_service: Arc::new(create_email_service(&config).await),
+        email_service: Arc::new(Email::create_email_service(&config).await),
     });
+
+    // match Email::create_email_content_for_summary(&state.db, 2000,
+    //         format!("https://{}", PRODUCTION_HOST)).await
+    // {
+    //     Ok(content) => {
+    //         state.email_service.send_email("New summary".into(), content);
+    //     }
+    //     Err(_) => {}
+    // }
+    //
+    // std::process::exit(0);
 
     let result = HttpServer::new(move || {
         App::new()

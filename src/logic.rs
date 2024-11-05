@@ -3,12 +3,14 @@ use actix_web::web::Form;
 use chrono::{Utc};
 use tracing::info;
 use uuid::Uuid;
+use crate::constants::{ADMIN, GROUP_EMAIL_ADDRESS};
 use crate::db::Db;
 use crate::pages::edit::FormData;
 use crate::entities::{Book, Cycle, Summary};
 use crate::errors::Error::{IncorrectPassword, UnknownUser};
 use crate::errors::PrResult;
 use crate::perrypedia::PerryPedia;
+use crate::PerryState;
 
 pub async fn _get_data(db: &Arc<Box<dyn Db>>, book_number: u32)
     -> Option<(Cycle, Summary, Book, String)>
@@ -32,14 +34,15 @@ pub async fn _get_data(db: &Arc<Box<dyn Db>>, book_number: u32)
     }
 }
 
-pub async fn save_summary(db: &Arc<Box<dyn Db>>, form_data: Form<FormData>) -> PrResult<()> {
+pub async fn save_summary(state: &PerryState, form_data: Form<FormData>) -> PrResult<()> {
     let book_number = form_data.number as u32;
+    let english_title = form_data.english_title.clone();
     let summary = Summary {
         number: form_data.number as i32,
         author_email: form_data.author_email.clone(),
         author_name: form_data.author_name.clone(),
         date: form_data.date.clone(),
-        english_title: form_data.english_title.clone(),
+        english_title: english_title.clone(),
         summary: form_data.summary.clone(),
         time: None,
     };
@@ -52,14 +55,49 @@ pub async fn save_summary(db: &Arc<Box<dyn Db>>, form_data: Form<FormData>) -> P
         title, author,
         german_file: None,
     };
+    let db = &state.db;
     db.update_or_insert_book(book).await?;
 
+    let old_summary = db.find_summary(book_number).await;
+    let already_exists = old_summary.is_some();
+
+    // Notify the admin that a summary has been edited or added
+    let s = if already_exists { "updated" } else { "added" };
+    let mut admin_content = format!("New summary {book_number}<br>==========<br>\
+        English title: {english_title}<br>\
+        Author: {} {}<br>\
+        Text: {}<br>\
+        ", form_data.author_name.clone(), form_data.author_email.clone(),
+            form_data.summary.clone());
+    if let Some(s) = old_summary {
+        let old_content = format!("Old summary {book_number}<br>==========<br>\
+            English title: {}<br>\
+            Author: {} {}<br>\
+            Text: {}<br>\
+            ", s.english_title, s.author_name, s.author_email, summary.summary);
+        admin_content.push_str(&old_content);
+    }
+
+    state.email_service.send_email(ADMIN,
+        &format!("Summary {book_number} {s}: {}", english_title.clone()),
+        &admin_content);
+
     // Update or insert the summary
-    if let Some(_) = db.find_summary(book_number).await {
+    if already_exists {
         // Summary already exists, update
         db.update_summary(summary).await
     } else {
-        // New summary, insert
+        // New summary
+        // Notify the group
+        let to = if state.config.is_heroku {
+            GROUP_EMAIL_ADDRESS
+        } else {
+            ADMIN
+        };
+        state.email_service.send_email(to,
+            &format!("{book_number}: {}", form_data.english_title.clone()),
+            &summary.summary);
+        // Insert
         db.insert_summary(summary).await
     }
 }

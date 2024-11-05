@@ -2,6 +2,7 @@ use actix_web::{get, HttpResponse, post};
 use actix_web::web::{Data, Form, Path};
 use askama::Template;
 use serde::Deserialize;
+use tracing::error;
 use crate::entities::{Book, Cycle, Summary};
 use crate::logic::save_summary;
 use crate::perrypedia::PerryPedia;
@@ -32,22 +33,15 @@ pub struct FormData {
 }
 
 #[post("/api/summaries")]
-pub async fn post_summary(data: Data<PerryState>, form: Form<FormData>) -> HttpResponse
-{
-    println!("Post, english_title: {}", form.english_title);
+pub async fn post_summary(data: Data<PerryState>, form: Form<FormData>) -> HttpResponse {
     let number = form.number as i32;
-    match save_summary(&data.db, form).await {
-        Ok(_) => {
-            HttpResponse::SeeOther()
-                .append_header(("Location", Urls::summary(number)))
-                .finish()
-        }
-        Err(_) => {
-            HttpResponse::SeeOther()
-                .append_header(("Location", Urls::summary(number)))
-                .finish()
-        }
-    }
+    if let Err(e) =  save_summary(&data, form).await {
+        error!("{e}");
+    };
+
+    HttpResponse::SeeOther()
+        .append_header(("Location", Urls::summary(number)))
+        .finish()
 }
 
 #[get("/summaries/{number}/edit")]
