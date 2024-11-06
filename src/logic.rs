@@ -3,8 +3,9 @@ use actix_web::web::Form;
 use chrono::{Utc};
 use tracing::info;
 use uuid::Uuid;
-use crate::constants::{ADMIN, GROUP_EMAIL_ADDRESS};
+use crate::constants::{ADMIN, GROUP_EMAIL_ADDRESS, PRODUCTION_HOST};
 use crate::db::Db;
+use crate::email::Email;
 use crate::pages::edit::FormData;
 use crate::entities::{Book, Cycle, Summary, User};
 use crate::errors::Error::{IncorrectPassword, UnknownUser};
@@ -37,7 +38,6 @@ pub async fn _get_data(db: &Arc<Box<dyn Db>>, book_number: u32)
 pub async fn save_summary(state: &PerryState, user: Option<User>, form_data: Form<FormData>)
     -> PrResult<()>
 {
-    let book_number = form_data.number as u32;
     let english_title = form_data.english_title.clone();
     let summary = Summary {
         number: form_data.number as i32,
@@ -57,6 +57,7 @@ pub async fn save_summary(state: &PerryState, user: Option<User>, form_data: For
         title, author,
         german_file: None,
     };
+    let book_number = book.number as u32;
     let db = &state.db;
 
     if user.map_or(false, |u| u.can_post()) {
@@ -114,7 +115,13 @@ pub async fn save_summary(state: &PerryState, user: Option<User>, form_data: For
     } else {
         // No user logged in, save that summary in the PENDING table
         info!("No user logged in, saving summary {} in pending", summary.number);
-        db.insert_summary_in_pending(book, summary).await
+        let result = db.insert_summary_in_pending(book, summary.clone()).await;
+
+        let body = format!("Summary: {:#?}", summary.clone());
+        state.email_service.send_email(ADMIN,
+            &format!("New pending summary {}: {}", book_number, summary.english_title),
+            &body)?;
+        result
     }
 }
 

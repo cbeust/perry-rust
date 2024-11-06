@@ -96,7 +96,7 @@ pub trait EmailService: Send + Sync {
 pub struct EmailMock;
 
 impl EmailService for EmailMock {
-    fn send_email(&self, to: &str, subject: &str, body: &str) -> PrResult<()> {
+    fn send_email(&self, to: &str, subject: &str, _body: &str) -> PrResult<()> {
         info!("Would have sent email to {to} with subject '{subject}'");
         Ok(())
     }
