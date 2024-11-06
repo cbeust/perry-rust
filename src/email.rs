@@ -1,14 +1,12 @@
 use askama::Template;
 use lettre::{Message, SmtpTransport, Transport};
 use lettre::message::header::ContentType;
-use lettre::message::{MultiPart, SinglePart};
 use lettre::transport::smtp::authentication::Credentials;
 use tracing::{error, info};
 use tracing::log::warn;
 use crate::config::Config;
 use crate::db::Db;
-use crate::entities::Cycle;
-use crate::errors::Error::{FetchingCycles, Unknown};
+use crate::errors::Error::{EmailError, FetchingCycles, Unknown};
 use crate::errors::PrResult;
 use crate::perrypedia::PerryPedia;
 use crate::url::Urls;
@@ -92,14 +90,15 @@ impl Email {
 }
 
 pub trait EmailService: Send + Sync {
-    fn send_email(&self, to: &str, subject: &str, body: &str);
+    fn send_email(&self, to: &str, subject: &str, body: &str) -> PrResult<()>;
 }
 
 pub struct EmailMock;
 
 impl EmailService for EmailMock {
-    fn send_email(&self, to: &str, subject: &str, body: &str) {
+    fn send_email(&self, to: &str, subject: &str, body: &str) -> PrResult<()> {
         info!("Would have sent email to {to} with subject '{subject}'");
+        Ok(())
     }
 }
 
@@ -110,7 +109,7 @@ pub struct EmailProduction {
 }
 
 impl EmailService for EmailProduction {
-    fn send_email(&self, to: &str, subject: &str, body: &str) {
+    fn send_email(&self, to: &str, subject: &str, body: &str) -> PrResult<()> {
         let email = Message::builder()
             .from("Perry Rhodan Summaries <perry.summary@gmail.com>".parse().unwrap())
             .reply_to("Nobody <nobody@nobody.com>".parse().unwrap())
@@ -131,8 +130,14 @@ impl EmailService for EmailProduction {
 
         // Send the email
         match mailer.send(&email) {
-            Ok(_) => info!("Email sent successfully to {to}!"),
-            Err(e) => error!("Could not send email to {to}: {e:?}"),
+            Ok(_) => {
+                info!("Email sent successfully to {to}!");
+                Ok(())
+            }
+            Err(e) => {
+                error!("Could not send email: {e}");
+                Err(EmailError(e.to_string()))
+            },
         }
 
     }

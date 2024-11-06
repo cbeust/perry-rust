@@ -8,7 +8,7 @@ use tracing::{error, info};
 use tracing::log::warn;
 use crate::config::Config;
 use crate::entities::{Book, Cycle, Summary, User};
-use crate::errors::Error::{FetchingCycles, InsertingBook, InsertingSummary, UpdatingBook, UpdatingSummary, UpdatingUser};
+use crate::errors::Error::{FetchingCycles, InsertingBook, InsertingInPending, InsertingSummary, UpdatingBook, UpdatingSummary, UpdatingUser};
 use crate::errors::PrResult;
 
 // fn query_one<O, U>(query: QueryAs<Postgres, O, U>) {
@@ -62,6 +62,8 @@ pub trait Db: Send + Sync {
     async fn find_user_by_auth_token(&self, _auth_token: &str) -> Option<User> { None }
     async fn find_user_by_login(&self, _username: &str) -> Option<User> { None }
     async fn update_user(&self, _username: &str, _auth_token: &str, _last_login: &str)
+        -> PrResult<()> { Ok(()) }
+    async fn insert_summary_in_pending(&self, _book: Book, _summary: Summary)
         -> PrResult<()> { Ok(()) }
 }
 
@@ -428,6 +430,28 @@ impl Db for DbPostgres {
             }
             Err(error) => {
                 Err(UpdatingUser(error.to_string(), username.to_string()))
+            }
+        }
+    }
+
+    async fn insert_summary_in_pending(&self, book: Book, summary: Summary) -> PrResult<()> {
+        // Note: not inserting `published`
+        match sqlx::query!("insert into pending (number, german_title, author,\
+            english_title, author_name, author_email, date_summary, summary) \
+            values($1, $2::text, $3::text, $4::text, $5::text, $6::text, $7::text, $8::text)",
+                summary.number, book.title, book.author,
+                summary.english_title, summary.author_name, summary.author_email,
+                summary.date, summary.summary)
+            .execute(&self.pool)
+            .await
+        {
+            Ok(_) => {
+                info!("Inserted new summary in pending: {}: {}",
+                    summary.number, summary.english_title);
+                Ok(())
+            }
+            Err(error) => {
+                Err(InsertingInPending(error.to_string(), summary))
             }
         }
     }

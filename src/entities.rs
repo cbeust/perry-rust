@@ -12,6 +12,12 @@ pub struct User {
     pub salt: Option<Vec<u8>>,
 }
 
+impl User {
+    pub fn can_post(&self) -> bool {
+        self.login == "cbeust" || self.login == "jerry_s"
+    }
+}
+
 impl Display for User {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         f.write_str(&format!("[User login:{}]", self.login))

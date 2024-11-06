@@ -1,4 +1,5 @@
 use std::fmt::{Display, Formatter};
+use crate::entities::Summary;
 
 pub type PrResult<T> = Result<T, Error>;
 
@@ -11,6 +12,8 @@ pub enum Error {
     UpdatingUser(String, String),
     IncorrectPassword(String),
     UnknownUser(String),
+    InsertingInPending(String, Summary),
+    EmailError(String),
     Unknown,
 }
 
@@ -19,15 +22,18 @@ impl Display for Error {
         use Error::*;
 
         let string = match self {
-            InsertingSummary(s, n) => { format!("Error inserting summary {n}: {s}") }
-            UpdatingSummary(s, n) => { format!("Error updating summary {n}: {s}") }
-            FetchingCycles(s) => { format!("Error fetching cycles: {s}") }
-            InsertingBook(s, n) => { format!("Error inserting book {n}: {s}") }
-            UpdatingBook(s, n) => { format!("Error updating book {n}: {s}") }
-            UpdatingUser(s, username) => { format!("Error user {username}: {s}") }
+            InsertingSummary(e, n) => { format!("Error inserting summary {n}: {e}") }
+            UpdatingSummary(e, n) => { format!("Error updating summary {n}: {e}") }
+            FetchingCycles(e) => { format!("Error fetching cycles: {e}") }
+            InsertingBook(e, n) => { format!("Error inserting book {n}: {e}") }
+            UpdatingBook(e, n) => { format!("Error updating book {n}: {e}") }
+            UpdatingUser(e, username) => { format!("Error updating user {username}: {e}") }
             IncorrectPassword(username) => { format!("Incorrect password for {username}") }
             UnknownUser(username) => { format!("Unknown user {username}") }
-            Unknown => { format!("Unknown error") }
+            InsertingInPending(e, summary) => { format!("Couldn't insert #{} into PENDING: {e}",
+                summary.number) }
+            EmailError(e) => { format!("Couldn't send email: {e}") }
+            Unknown => { "Unknown error".into() }
         };
 
         f.write_str(&string)

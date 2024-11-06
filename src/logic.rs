@@ -6,7 +6,7 @@ use uuid::Uuid;
 use crate::constants::{ADMIN, GROUP_EMAIL_ADDRESS};
 use crate::db::Db;
 use crate::pages::edit::FormData;
-use crate::entities::{Book, Cycle, Summary};
+use crate::entities::{Book, Cycle, Summary, User};
 use crate::errors::Error::{IncorrectPassword, UnknownUser};
 use crate::errors::PrResult;
 use crate::perrypedia::PerryPedia;
@@ -34,7 +34,9 @@ pub async fn _get_data(db: &Arc<Box<dyn Db>>, book_number: u32)
     }
 }
 
-pub async fn save_summary(state: &PerryState, form_data: Form<FormData>) -> PrResult<()> {
+pub async fn save_summary(state: &PerryState, user: Option<User>, form_data: Form<FormData>)
+    -> PrResult<()>
+{
     let book_number = form_data.number as u32;
     let english_title = form_data.english_title.clone();
     let summary = Summary {
@@ -56,49 +58,63 @@ pub async fn save_summary(state: &PerryState, form_data: Form<FormData>) -> PrRe
         german_file: None,
     };
     let db = &state.db;
-    db.update_or_insert_book(book).await?;
 
-    let old_summary = db.find_summary(book_number).await;
-    let already_exists = old_summary.is_some();
+    if user.map_or(false, |u| u.can_post()) {
+        // User is logged in, save the summary
 
-    // Notify the admin that a summary has been edited or added
-    let s = if already_exists { "updated" } else { "added" };
-    let mut admin_content = format!("New summary {book_number}<br>==========<br>\
-        English title: {english_title}<br>\
-        Author: {} {}<br>\
-        Text: {}<br>\
-        ", form_data.author_name.clone(), form_data.author_email.clone(),
+        // Create the book if it doesn't already exist
+        db.update_or_insert_book(book).await?;
+
+        let old_summary = db.find_summary(book_number).await;
+        let already_exists = old_summary.is_some();
+
+        //
+        // Notify the admin that a summary has been edited or added
+        //
+        let s = if already_exists { "updated" } else { "added" };
+        let mut admin_content = format!("New summary {book_number}<br>==========<br>\
+                English title: {english_title}<br>\
+                Author: {} {}<br>\
+                Text: {}<br>\
+                ", form_data.author_name.clone(), form_data.author_email.clone(),
             form_data.summary.clone());
-    if let Some(s) = old_summary {
-        let old_content = format!("Old summary {book_number}<br>==========<br>\
-            English title: {}<br>\
-            Author: {} {}<br>\
-            Text: {}<br>\
-            ", s.english_title, s.author_name, s.author_email, summary.summary);
-        admin_content.push_str(&old_content);
-    }
+        if let Some(s) = old_summary {
+            let old_content = format!("Old summary {book_number}<br>==========<br>\
+                    English title: {}<br>\
+                    Author: {} {}<br>\
+                    Text: {}<br>\
+                    ", s.english_title, s.author_name, s.author_email, summary.summary);
+            admin_content.push_str(&old_content);
+        }
 
-    state.email_service.send_email(ADMIN,
-        &format!("Summary {book_number} {s}: {}", english_title.clone()),
-        &admin_content);
+        state.email_service.send_email(ADMIN,
+            &format!("Summary {book_number} {s}: {}", english_title.clone()),
+            &admin_content)?;
 
-    // Update or insert the summary
-    if already_exists {
-        // Summary already exists, update
-        db.update_summary(summary).await
-    } else {
-        // New summary
-        // Notify the group
-        let to = if state.config.is_heroku {
-            GROUP_EMAIL_ADDRESS
+        //
+        // Update or insert the summary
+        //
+        if already_exists {
+            // Summary already exists, update
+            db.update_summary(summary).await
         } else {
-            ADMIN
-        };
-        state.email_service.send_email(to,
-            &format!("{book_number}: {}", form_data.english_title.clone()),
-            &summary.summary);
-        // Insert
-        db.insert_summary(summary).await
+            // New summary
+            // Notify the group
+            let to = if state.config.is_heroku {
+                GROUP_EMAIL_ADDRESS
+            } else {
+                ADMIN
+            };
+            state.email_service.send_email(to,
+                &format!("{book_number}: {}", form_data.english_title.clone()),
+                &summary.summary)?;
+            // Insert
+            db.insert_summary(summary).await
+        }
+    } else {
+        // No user logged in, save that summary in the PENDING table
+        info!("No user logged in, saving summary {} in pending", summary.number);
+        db.insert_summary_in_pending(book, summary).await
     }
 }
 
@@ -128,7 +144,7 @@ pub async fn login(db: &Arc<Box<dyn Db>>, username: &str, password: &str)
             let auth_token = Uuid::new_v4().to_string();
             let now = Utc::now().naive_local().format("%Y-%m-%d %H:%M").to_string();
             db.update_user(username, &auth_token, &now).await?;
-            let days = if username == "cbeust" || username == "jerry_s" {
+            let days = if user.can_post() {
                 365
             } else {
                 7

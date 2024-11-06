@@ -1,8 +1,9 @@
-use actix_web::{get, HttpResponse, post};
+use actix_web::{get, HttpRequest, HttpResponse, post};
 use actix_web::web::{Data, Form, Path};
 use askama::Template;
 use serde::Deserialize;
 use tracing::error;
+use crate::cookies::Cookies;
 use crate::entities::{Book, Cycle, Summary};
 use crate::logic::save_summary;
 use crate::perrypedia::PerryPedia;
@@ -33,9 +34,11 @@ pub struct FormData {
 }
 
 #[post("/api/summaries")]
-pub async fn post_summary(data: Data<PerryState>, form: Form<FormData>) -> HttpResponse {
+pub async fn post_summary(req: HttpRequest, state: Data<PerryState>, form: Form<FormData>)
+    -> HttpResponse
+{
     let number = form.number as i32;
-    if let Err(e) =  save_summary(&data, form).await {
+    if let Err(e) =  save_summary(&state, Cookies::find_user(&req, &state.db).await, form).await {
         error!("{e}");
     };
 
