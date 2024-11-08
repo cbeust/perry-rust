@@ -34,6 +34,6 @@ impl Response {
     pub fn json(json: String) -> HttpResponse {
         HttpResponse::Ok()
             .content_type("application/json")
-            .json(json)
+            .body(json)
     }
 }
