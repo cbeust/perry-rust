@@ -71,7 +71,7 @@ pub async fn api_summaries(data: Data<PerryState>, path: Path<u32>) -> HttpRespo
                     hide_left: false,
                     href_back: Urls::cycles(cycle_number),
                     href_edit: "".into(),
-                    perry_pedia: "".into(),
+                    perry_pedia: PerryPedia::summary_url(book_number),
                     email_mailing_list: "".into(),
                     cover_url: cover_url.unwrap_or("".to_string()),
                 }

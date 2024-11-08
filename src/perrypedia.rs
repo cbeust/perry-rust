@@ -55,4 +55,9 @@ impl PerryPedia {
             }
         }
     }
+
+    pub fn summary_url(number: u32) -> String {
+        format!("https://www-perrypedia-de.translate.goog/wiki/Quelle:PR{number}\
+        ?_x_tr_sl=auto&_x_tr_tl=en&_x_tr_hl=en&_x_tr_pto=nui")
+    }
 }
