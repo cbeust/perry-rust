@@ -54,3 +54,11 @@ pub struct Book {
     // pub published: NaiveDate,
     pub german_file: Option<String>,
 }
+
+#[derive(Builder, Clone, Debug, Default, Deserialize, Serialize, sqlx::FromRow)]
+pub struct PendingSummary {
+    pub id: i32,
+    pub number: i32,
+    pub english_title: String,
+    pub date_summary: String,
+}

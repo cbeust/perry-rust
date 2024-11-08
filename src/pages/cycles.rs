@@ -9,6 +9,7 @@ use crate::cookies::Cookies;
 use crate::entities::{Cycle, Summary};
 use crate::perrypedia::PerryPedia;
 use crate::PerryState;
+use crate::response::Response;
 use crate::url::Urls;
 
 #[get("/")]
@@ -47,20 +48,13 @@ async fn index(req: HttpRequest, data: Data<PerryState>) -> HttpResponse {
                 cycles,
                 banner_info: BannerInfo::new(Cookies::find_user(&req, &data.db).await).await,
             };
-            let result = template.render().unwrap();
             // println!("Template: {result}");
 
-            HttpResponse::Ok()
-                .content_type("text/html")
-                // .cookie(cookie)
-                .body(result)
-
+            Response::html(template.render().unwrap())
         }
         Err(e) => {
             error!("Error displaying the main page: {e}");
-            HttpResponse::Ok()
-                .content_type("text/html")
-                .body("Something went wrong")
+            Response::html("Something went wrong: {e}".into())
         }
     }
 }

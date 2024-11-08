@@ -3,16 +3,17 @@ use actix_web::{get, HttpResponse};
 use actix_web::web::{Data, Path};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use tokio::fs::File;
 use tracing::{warn};
 use crate::entities::{Book, Cycle, Summary};
 use crate::perrypedia::PerryPedia;
 use crate::PerryState;
+use crate::response::Response;
 use crate::url::Urls;
 
 #[derive(Deserialize, Serialize)]
 struct TemplateBook {
     book: Book,
-    english_title: String,
     number_string: String,
     href: String,
 }
@@ -22,16 +23,14 @@ struct TemplateCycle {
     pub cycle: Cycle,
     pub books: Vec<TemplateBook>,
     pub number: u32,
-    pub english_title: String,
     pub german_title: String,
     pub href_back: String,
 }
 
 fn empty_json(message: String) -> HttpResponse {
     warn!(message);
-    HttpResponse::Ok()
-        .content_type("application/json")
-        .json(json!({}))
+
+    Response::json("{}".into())
 }
 
 #[derive(Default, Deserialize, Serialize)]
@@ -101,9 +100,7 @@ pub async fn api_summaries(data: Data<PerryState>, path: Path<u32>) -> HttpRespo
 
     let string = serde_json::to_string(&json!(template)).unwrap();
 
-    HttpResponse::Ok()
-        .content_type("application/json")
-        .body(string)
+    Response::json(string)
 }
 
 #[get("/api/cycles/{number}")]
@@ -124,29 +121,30 @@ pub async fn api_cycles(data: Data<PerryState>, path: Path<u32>) -> HttpResponse
                 } else {
                     book.number.to_string()
                 };
-                let english_title = map.get(&book.number).unwrap_or(&"".to_string()).clone();
+//                let english_title = map.get(&book.number).unwrap_or(&"".to_string()).clone();
                 let book_number = book.number;
                 books.push(TemplateBook {
                     book,
-                    english_title,
+                    // english_title,
                     number_string,
                     href: format!("/summaries/{book_number}"),
                 })
             }
 
             let german_title = cycle.german_title.clone();
+            println!("Returning cycle: {:#?}", cycle.clone());
             let template_cycle = TemplateCycle {
                 cycle,
                 books,
                 number,
-                english_title: "English title".into(),
                 german_title,
                 href_back: Urls::root(),
             };
             let string = serde_json::to_string(&json!(template_cycle)).unwrap();
-            HttpResponse::Ok()
-                .content_type("application/json")
-                .body(string)
+            use tokio::io::AsyncWriteExt;
+            File::create("c:\\t\\a.json").await.unwrap().write_all(string.as_bytes()).await;
+            println!("Returning JSON: {}", string);
+            Response::json(string)
         }
         None => {
             empty_json(format!("Couldn't find cycle {number}"))

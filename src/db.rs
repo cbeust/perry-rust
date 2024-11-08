@@ -7,7 +7,7 @@ use sqlx::Row;
 use tracing::{error, info};
 use tracing::log::warn;
 use crate::config::Config;
-use crate::entities::{Book, Cycle, Summary, User};
+use crate::entities::{Book, Cycle, PendingSummary, Summary, User};
 use crate::errors::Error::{FetchingCycles, InsertingBook, InsertingInPending, InsertingSummary, UpdatingBook, UpdatingSummary, UpdatingUser};
 use crate::errors::PrResult;
 
@@ -65,6 +65,7 @@ pub trait Db: Send + Sync {
         -> PrResult<()> { Ok(()) }
     async fn insert_summary_in_pending(&self, _book: Book, _summary: Summary)
         -> PrResult<()> { Ok(()) }
+    async fn find_pending_summaries(&self) -> Vec<PendingSummary> { Vec::new() }
 }
 
 #[derive(Clone)]
@@ -452,6 +453,22 @@ impl Db for DbPostgres {
             }
             Err(error) => {
                 Err(InsertingInPending(error.to_string(), summary))
+            }
+        }
+    }
+
+    async fn find_pending_summaries(&self) -> Vec<PendingSummary> {
+        match sqlx::query_as::<_, PendingSummary>(
+            "select * from pending order by date_summary desc")
+            .fetch_all(&self.pool)
+            .await
+        {
+            Ok(summaries) => {
+                summaries
+            }
+            Err(e) => {
+                error!("Couldn't retrieve pending: {e}");
+                Vec::new()
             }
         }
     }

@@ -6,6 +6,7 @@ use tracing::log::warn;
 use crate::cookies::Cookies;
 use crate::logic::login;
 use crate::PerryState;
+use crate::response::Response;
 use crate::url::Urls;
 
 #[derive(Deserialize)]
@@ -17,10 +18,7 @@ struct LoginFormData {
 #[get("/logout")]
 pub async fn logout() -> HttpResponse {
     let cookie = Cookies::clear_auth_token_cookie().await;
-    HttpResponse::SeeOther()
-        .append_header(("Location", Urls::root()))
-        .cookie(cookie)
-        .finish()
+    Response::cookie(Urls::root(), cookie)
 }
 
 #[post("/api/login")]
@@ -29,16 +27,11 @@ pub async fn api_login(data: Data<PerryState>, form: Form<LoginFormData>) -> Htt
         Ok((auth_token, days)) => {
             let cookie = Cookies::create_auth_token_cookie(auth_token.clone(), days).await;
             info!("Setting cookie for user {}: {}", form.username, cookie);
-            HttpResponse::SeeOther()
-                .append_header(("Location", Urls::root()))
-                .cookie(cookie)
-                .finish()
+            Response::cookie(Urls::root(), cookie)
         }
         Err(e) => {
             warn!("Not setting cookie for user {}: {e}", form.username);
-            HttpResponse::SeeOther()
-                .append_header(("Location", Urls::root()))
-                .finish()
+            Response::root()
         }
     }
 }

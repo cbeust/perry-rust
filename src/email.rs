@@ -50,7 +50,7 @@ impl Email {
         }
     }
 
-    pub async fn create_email_content_for_summary(db: &Box<dyn Db>, book_number: u32,
+    pub async fn _create_email_content_for_summary(db: &Box<dyn Db>, book_number: u32,
             host: String)
         -> PrResult<String>
     {

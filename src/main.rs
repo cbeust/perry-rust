@@ -11,6 +11,7 @@ mod logic;
 mod email;
 mod config;
 mod constants;
+mod response;
 
 use std::sync::Arc;
 use actix_web::{App, HttpServer};
@@ -28,6 +29,7 @@ use crate::pages::api::{api_cycles, api_summaries};
 use crate::pages::cycle::cycle;
 use crate::pages::cycles::index;
 use crate::pages::edit::{edit_summary, post_summary};
+use crate::pages::pending::{approve_pending, delete_pending, pending, pending_delete_all};
 use crate::pages::summaries::summaries;
 
 #[builder]
@@ -53,7 +55,7 @@ pub struct PerryState {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    init_logging().sqlx(false).actix(true).call();
+    init_logging().sqlx(true).actix(true).call();
     info!("Starting perry-rust");
     let config = create_config();
 
@@ -79,8 +81,11 @@ async fn main() -> std::io::Result<()> {
 
     let result = HttpServer::new(move || {
         App::new()
+            .service(actix_files::Files::new("static", "static").show_files_listing())
             .app_data(FormConfig::default().limit(250 * 1024)) // Sets limit to 250kB
             .app_data(state.clone())
+
+            // URL's
             .service(index)
             .service(cycle)
             .service(summaries)
@@ -90,8 +95,11 @@ async fn main() -> std::io::Result<()> {
             .service(api_summaries)
             .service(api_login)
             .service(logout)
-            .service(actix_files::Files::new("static", "static").show_files_listing())
-    })
+            .service(pending)
+            .service(pending_delete_all)
+            .service(approve_pending)
+            .service(delete_pending)
+        })
         .bind(("0.0.0.0", config.port))?
         .run()
         .await;

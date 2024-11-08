@@ -8,6 +8,7 @@ use crate::entities::{Book, Cycle, Summary};
 use crate::logic::save_summary;
 use crate::perrypedia::PerryPedia;
 use crate::PerryState;
+use crate::response::Response;
 use crate::url::Urls;
 
 #[derive(Default, Template)]
@@ -42,9 +43,7 @@ pub async fn post_summary(req: HttpRequest, state: Data<PerryState>, form: Form<
         error!("{e}");
     };
 
-    HttpResponse::SeeOther()
-        .append_header(("Location", Urls::summary(number)))
-        .finish()
+    Response::redirect(Urls::summary(number))
 }
 
 #[get("/summaries/{number}/edit")]
@@ -82,7 +81,5 @@ pub async fn edit_summary(data: Data<PerryState>, path: Path<u32>) -> HttpRespon
         }
     };
 
-    HttpResponse::Ok()
-        .content_type("text/html")
-        .body(result)
+    Response::html(result)
 }
