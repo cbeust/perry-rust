@@ -7,6 +7,7 @@ local.toml
 .idea/tasks.xml
 .idea/dictionaries/
 .idea/libraries/
+.idea/dbnavigator.xml
 
 # Include useful project configuration and code styles
 !.idea/modules.xml
