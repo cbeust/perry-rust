@@ -98,9 +98,7 @@ pub async fn api_summaries(data: Data<PerryState>, path: Path<u32>) -> HttpRespo
         }
     };
 
-    let string = serde_json::to_string(&json!(template)).unwrap();
-
-    Response::json(string)
+    Response::json(serde_json::to_string(&json!(template)).unwrap())
 }
 
 #[get("/api/cycles/{number}")]
