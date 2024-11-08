@@ -139,9 +139,9 @@ pub async fn api_cycles(data: Data<PerryState>, path: Path<u32>) -> HttpResponse
                 href_back: Urls::root(),
             };
             let string = serde_json::to_string(&json!(template_cycle)).unwrap();
-            use tokio::io::AsyncWriteExt;
-            File::create("c:\\t\\a.json").await.unwrap().write_all(string.as_bytes()).await;
-            println!("Returning JSON: {}", string);
+            // use tokio::io::AsyncWriteExt;
+            // File::create("c:\\t\\a.json").await.unwrap().write_all(string.as_bytes()).await;
+            // println!("Returning JSON: {}", string);
             Response::json(string)
         }
         None => {
