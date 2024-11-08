@@ -65,7 +65,7 @@ async fn index(req: HttpRequest, data: Data<PerryState>) -> HttpResponse {
 #[get("/api/cycles/{number}")]
 pub async fn api_cycles(data: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let number = path.into_inner();
-    match data.db.find_cycle(number).await {
+    let json = match data.db.find_cycle(number).await {
         Some(cycle) => {
             let mut books: Vec<TemplateBook> = Vec::new();
             let db_books = data.db.find_books(number).await;
@@ -91,7 +91,6 @@ pub async fn api_cycles(data: Data<PerryState>, path: Path<u32>) -> HttpResponse
             }
 
             let german_title = cycle.german_title.clone();
-            println!("Returning cycle: {:#?}", cycle.clone());
             let template_cycle = TemplateCycle {
                 cycle,
                 books,
@@ -99,17 +98,15 @@ pub async fn api_cycles(data: Data<PerryState>, path: Path<u32>) -> HttpResponse
                 german_title,
                 href_back: Urls::root(),
             };
-            let string = serde_json::to_string(&json!(template_cycle)).unwrap();
-            // use tokio::io::AsyncWriteExt;
-            // File::create("c:\\t\\a.json").await.unwrap().write_all(string.as_bytes()).await;
-            // println!("Returning JSON: {}", string);
-            Response::json(string)
+            serde_json::to_string(&json!(template_cycle)).unwrap()
         }
         None => {
             error!("Couldn't find cycle {number}");
-            Response::json("{}".into())
+            "{}".into()
         }
-    }
+    };
+
+    Response::json(json)
 }
 
 pub struct TemplateRecentSummary {
