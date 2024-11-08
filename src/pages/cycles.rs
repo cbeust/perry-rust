@@ -1,26 +1,51 @@
+use std::collections::HashMap;
 use std::time::Instant;
 use actix_web::{get, HttpRequest, HttpResponse};
-use actix_web::web::Data;
+use actix_web::web::{Data, Path};
 use askama::Template;
 use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
 use tracing::{error, info, warn};
 use crate::banner_info::BannerInfo;
 use crate::cookies::Cookies;
-use crate::entities::{Cycle, Summary};
+use crate::entities::{Book, Cycle, Summary};
 use crate::perrypedia::PerryPedia;
 use crate::PerryState;
 use crate::response::Response;
 use crate::url::Urls;
 
+pub struct HtmlTemplate {
+    pub cycle: Cycle,
+    pub number_string: String,
+    pub href: String,
+}
+
+impl HtmlTemplate {
+    pub(crate) async fn new(cycle: Cycle, cycle_count: i32) -> Self {
+        let number = cycle.number;
+        let number_string = if cycle.number == cycle_count {
+            format!("cycle {}", cycle.number)
+        } else {
+            cycle.number.to_string()
+        };
+        Self {
+            cycle,
+            number_string,
+            href: Urls::cycles(number)
+        }
+    }
+}
+
 #[get("/")]
 async fn index(req: HttpRequest, data: Data<PerryState>) -> HttpResponse {
     // Cycles
-    let mut cycles: Vec<TemplateCycle> = Vec::new();
+    let mut cycles: Vec<HtmlTemplate> = Vec::new();
     match data.db.fetch_cycles().await {
         Ok(all_cycles) => {
             let cycles_count = all_cycles.len() as i32;
             for cycle in all_cycles {
-                cycles.push(TemplateCycle::new(cycle, cycles_count).await);
+                cycles.push(HtmlTemplate::new(cycle, cycles_count).await);
             }
 
             // Summaries
@@ -65,27 +90,6 @@ pub struct TemplateSummary {
     pub pretty_date: String,
 }
 
-pub struct TemplateCycle {
-    pub cycle: Cycle,
-    pub number_string: String,
-    pub href: String,
-}
-
-impl TemplateCycle {
-    pub(crate) async fn new(cycle: Cycle, cycle_count: i32) -> Self {
-        let number = cycle.number;
-        let number_string = if cycle.number == cycle_count {
-            format!("cycle {}", cycle.number)
-        } else {
-            cycle.number.to_string()
-        };
-        Self {
-            cycle,
-            number_string,
-            href: Urls::cycles(number)
-        }
-    }
-}
 
 impl TemplateSummary {
     pub(crate) async fn new(summary: Summary, cover_url: String) -> Self {
@@ -123,5 +127,72 @@ pub struct TemplateCycles {
     pub percentage: u8,
     pub banner_info: BannerInfo,
     pub recent_summaries: Vec<TemplateSummary>,
-    pub cycles: Vec<TemplateCycle>,
+    pub cycles: Vec<HtmlTemplate>,
+}
+
+#[derive(Deserialize, Serialize)]
+struct TemplateBook {
+    book: Book,
+    english_title: String,
+    number_string: String,
+    href: String,
+}
+
+#[derive(Deserialize, Serialize)]
+struct TemplateCycle {
+    pub cycle: Cycle,
+    pub books: Vec<TemplateBook>,
+    pub number: u32,
+    pub german_title: String,
+    pub href_back: String,
+}
+
+#[get("/api/cycles/{number}")]
+pub async fn api_cycles(data: Data<PerryState>, path: Path<u32>) -> HttpResponse {
+    let number = path.into_inner();
+    match data.db.find_cycle(number).await {
+        Some(cycle) => {
+            let mut books: Vec<TemplateBook> = Vec::new();
+            let db_books = data.db.find_books(number).await;
+            let db_summaries = data.db.find_summaries(number).await;
+            let mut map: HashMap<i32, String> = HashMap::new();
+            for summary in db_summaries {
+                map.insert(summary.number, summary.english_title);
+            }
+            for book in db_books {
+                let number_string = if book.number == cycle.start {
+                    format!("heft {}", book.number)
+                } else {
+                    book.number.to_string()
+                };
+                let english_title = map.get(&book.number).unwrap_or(&"".to_string()).clone();
+                let book_number = book.number;
+                books.push(TemplateBook {
+                    book,
+                    english_title,
+                    number_string,
+                    href: format!("/summaries/{book_number}"),
+                })
+            }
+
+            let german_title = cycle.german_title.clone();
+            println!("Returning cycle: {:#?}", cycle.clone());
+            let template_cycle = TemplateCycle {
+                cycle,
+                books,
+                number,
+                german_title,
+                href_back: Urls::root(),
+            };
+            let string = serde_json::to_string(&json!(template_cycle)).unwrap();
+            // use tokio::io::AsyncWriteExt;
+            // File::create("c:\\t\\a.json").await.unwrap().write_all(string.as_bytes()).await;
+            // println!("Returning JSON: {}", string);
+            Response::json(string)
+        }
+        None => {
+            error!("Couldn't find cycle {number}");
+            Response::json("{}".into())
+        }
+    }
 }

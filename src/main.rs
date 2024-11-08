@@ -25,12 +25,11 @@ use crate::config::{Config, create_config};
 use crate::db::{create_db, Db};
 use crate::email::{Email, EmailService};
 use crate::login::{api_login, logout};
-use crate::pages::api::{api_cycles, api_summaries};
 use crate::pages::cycle::cycle;
-use crate::pages::cycles::index;
+use crate::pages::cycles::{api_cycles, index};
 use crate::pages::edit::{edit_summary, post_summary};
 use crate::pages::pending::{approve_pending, delete_pending, pending, pending_delete_all};
-use crate::pages::summaries::summaries;
+use crate::pages::summaries::{api_summaries, summaries};
 
 #[builder]
 fn init_logging(sqlx: bool, actix: bool) {
