@@ -15,28 +15,6 @@ use crate::PerryState;
 use crate::response::Response;
 use crate::url::Urls;
 
-pub struct HtmlTemplate {
-    pub cycle: Cycle,
-    pub number_string: String,
-    pub href: String,
-}
-
-impl HtmlTemplate {
-    pub(crate) async fn new(cycle: Cycle, cycle_count: i32) -> Self {
-        let number = cycle.number;
-        let number_string = if cycle.number == cycle_count {
-            format!("cycle {}", cycle.number)
-        } else {
-            cycle.number.to_string()
-        };
-        Self {
-            cycle,
-            number_string,
-            href: Urls::cycles(number)
-        }
-    }
-}
-
 #[get("/")]
 async fn index(req: HttpRequest, data: Data<PerryState>) -> HttpResponse {
     // Cycles
@@ -60,9 +38,9 @@ async fn index(req: HttpRequest, data: Data<PerryState>) -> HttpResponse {
                 }
             }).collect();
             info!("Time to fetch recent summaries: {} ms", start.elapsed().as_millis());
-            let mut recent_summaries: Vec<TemplateSummary> = Vec::new();
+            let mut recent_summaries: Vec<TemplateRecentSummary> = Vec::new();
             for (i, s) in rs.iter().enumerate() {
-                recent_summaries.push(TemplateSummary::new(s.clone(), cover_urls[i].clone()).await);
+                recent_summaries.push(TemplateRecentSummary::new(s.clone(), cover_urls[i].clone()).await);
             }
             let summary_count = data.db.fetch_summary_count().await;
             let book_count = data.db.fetch_book_count().await;
@@ -82,69 +60,6 @@ async fn index(req: HttpRequest, data: Data<PerryState>) -> HttpResponse {
             Response::html("Something went wrong: {e}".into())
         }
     }
-}
-
-pub struct TemplateSummary {
-    pub summary: Summary,
-    pub cover_url: String,
-    pub pretty_date: String,
-}
-
-
-impl TemplateSummary {
-    pub(crate) async fn new(summary: Summary, cover_url: String) -> Self {
-        let pretty_date = if ! summary.date.is_empty() {
-            match NaiveDate::parse_from_str(&summary.date, "%Y-%m-%d %H:%M") {
-                Ok(date) => {
-                    let time = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
-                    let date_time = NaiveDateTime::new(date, time);
-                    let local_timezone = Local::now().timezone();
-                    // let local = Local::from_local_datetime(&date);
-                    let pretty_date = local_timezone.from_local_datetime(&date_time).unwrap()
-                        .format("%B %d, %Y").to_string();
-                    pretty_date
-                }
-                Err(e) => {
-                    warn!("Couldn't parse date {}: {e}", summary.date);
-                    "".into()
-                }
-            }
-        } else {
-            "".into()
-        };
-        Self {
-            summary,
-            cover_url,
-            pretty_date,
-        }
-    }
-}
-
-#[derive(Template)]
-#[template(path = "cycles.html")]
-pub struct TemplateCycles {
-    pub summary_count: u16,
-    pub percentage: u8,
-    pub banner_info: BannerInfo,
-    pub recent_summaries: Vec<TemplateSummary>,
-    pub cycles: Vec<HtmlTemplate>,
-}
-
-#[derive(Deserialize, Serialize)]
-struct TemplateBook {
-    book: Book,
-    english_title: String,
-    number_string: String,
-    href: String,
-}
-
-#[derive(Deserialize, Serialize)]
-struct TemplateCycle {
-    pub cycle: Cycle,
-    pub books: Vec<TemplateBook>,
-    pub number: u32,
-    pub german_title: String,
-    pub href_back: String,
 }
 
 #[get("/api/cycles/{number}")]
@@ -193,6 +108,90 @@ pub async fn api_cycles(data: Data<PerryState>, path: Path<u32>) -> HttpResponse
         None => {
             error!("Couldn't find cycle {number}");
             Response::json("{}".into())
+        }
+    }
+}
+
+pub struct TemplateRecentSummary {
+    pub summary: Summary,
+    pub cover_url: String,
+    pub pretty_date: String,
+}
+
+impl TemplateRecentSummary {
+    pub(crate) async fn new(summary: Summary, cover_url: String) -> Self {
+        let pretty_date = if ! summary.date.is_empty() {
+            match NaiveDate::parse_from_str(&summary.date, "%Y-%m-%d %H:%M") {
+                Ok(date) => {
+                    let time = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
+                    let date_time = NaiveDateTime::new(date, time);
+                    let local_timezone = Local::now().timezone();
+                    // let local = Local::from_local_datetime(&date);
+                    let pretty_date = local_timezone.from_local_datetime(&date_time).unwrap()
+                        .format("%B %d, %Y").to_string();
+                    pretty_date
+                }
+                Err(e) => {
+                    warn!("Couldn't parse date {}: {e}", summary.date);
+                    "".into()
+                }
+            }
+        } else {
+            "".into()
+        };
+        Self {
+            summary,
+            cover_url,
+            pretty_date,
+        }
+    }
+}
+
+#[derive(Template)]
+#[template(path = "cycles.html")]
+pub struct TemplateCycles {
+    pub summary_count: u16,
+    pub percentage: u8,
+    pub banner_info: BannerInfo,
+    pub recent_summaries: Vec<TemplateRecentSummary>,
+    pub cycles: Vec<HtmlTemplate>,
+}
+
+#[derive(Deserialize, Serialize)]
+struct TemplateBook {
+    book: Book,
+    english_title: String,
+    number_string: String,
+    href: String,
+}
+
+#[derive(Deserialize, Serialize)]
+struct TemplateCycle {
+    pub cycle: Cycle,
+    pub books: Vec<TemplateBook>,
+    pub number: u32,
+    pub german_title: String,
+    pub href_back: String,
+}
+
+pub struct HtmlTemplate {
+    pub cycle: Cycle,
+    pub number_string: String,
+    pub href: String,
+}
+
+impl HtmlTemplate {
+    pub(crate) async fn new(cycle: Cycle, cycle_count: i32) -> Self {
+        let number = cycle.number;
+        let number_string = if cycle.number == cycle_count {
+            format!("cycle {}", cycle.number)
+        } else {
+            cycle.number.to_string()
+        };
+        Self {
+            cycle,
+            number_string,
+            href: Urls::cycles(number)
         }
     }
 }
