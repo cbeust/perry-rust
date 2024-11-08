@@ -6,19 +6,6 @@ use crate::cookies::Cookies;
 use crate::PerryState;
 use crate::response::Response;
 
-#[derive(Template)]
-#[template(path = "pending.html")]
-struct PendingSummaryTemplates {
-    pending_summaries: Vec<PendingSummaryTemplate>
-}
-
-struct PendingSummaryTemplate {
-    id: i32,
-    number: i32,
-    english_title: String,
-    date_summary: String,
-}
-
 #[get("/approve/{id}")]
 pub async fn approve_pending(_req: HttpRequest, _data: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let id = path.into_inner();
@@ -61,3 +48,17 @@ pub async fn pending(req: HttpRequest, data: Data<PerryState>) -> HttpResponse {
         Response::root()
     }
 }
+
+#[derive(Template)]
+#[template(path = "pending.html")]
+struct PendingSummaryTemplates {
+    pending_summaries: Vec<PendingSummaryTemplate>
+}
+
+struct PendingSummaryTemplate {
+    id: i32,
+    number: i32,
+    english_title: String,
+    date_summary: String,
+}
+

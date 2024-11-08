@@ -11,29 +11,6 @@ use crate::PerryState;
 use crate::response::Response;
 use crate::url::Urls;
 
-#[derive(Default, Template)]
-#[template(path = "edit_summary.html")]
-struct TemplateEdit {
-    summary: Summary,
-    book: Book,
-    cycle: Cycle,
-    cover_url: String,
-}
-
-#[derive(Deserialize)]
-pub struct FormData {
-    pub english_cycle_name: String,
-    pub number: u16,
-    pub german_title: String,
-    pub english_title: String,
-    pub summary: String,
-    pub book_author: String,
-    pub author_email: String,
-    pub date: String,
-    pub time: Option<String>,
-    pub author_name: String,
-}
-
 #[post("/api/summaries")]
 pub async fn post_summary(req: HttpRequest, state: Data<PerryState>, form: Form<FormData>)
     -> HttpResponse
@@ -83,3 +60,27 @@ pub async fn edit_summary(data: Data<PerryState>, path: Path<u32>) -> HttpRespon
 
     Response::html(result)
 }
+
+#[derive(Default, Template)]
+#[template(path = "edit_summary.html")]
+struct TemplateEdit {
+    summary: Summary,
+    book: Book,
+    cycle: Cycle,
+    cover_url: String,
+}
+
+#[derive(Deserialize)]
+pub struct FormData {
+    pub english_cycle_name: String,
+    pub number: u16,
+    pub german_title: String,
+    pub english_title: String,
+    pub summary: String,
+    pub book_author: String,
+    pub author_email: String,
+    pub date: String,
+    pub time: Option<String>,
+    pub author_name: String,
+}
+

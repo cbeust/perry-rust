@@ -11,34 +11,12 @@ use crate::PerryState;
 use crate::response::Response;
 use crate::url::Urls;
 
-#[derive(Template)]
-#[template(path = "summary.html")]
-struct TemplateSummaries {
-    pub banner_info: BannerInfo,
-}
-
 #[get("/summaries/{number}")]
 pub async fn summaries(req: HttpRequest, data: Data<PerryState>, _path: Path<u32>) -> HttpResponse {
     let template = TemplateSummaries {
         banner_info: BannerInfo::new(Cookies::find_user(&req, &data.db).await).await,
     };
     Response::html(template.render().unwrap())
-}
-
-#[derive(Default, Deserialize, Serialize)]
-struct TemplateSummary {
-    found: bool,
-    number: u32,
-    summary: Summary,
-    pub cycle: Cycle,
-    cover_url: String,
-    hide_left: bool,
-    href_back: String,
-    href_edit: String,
-    perry_pedia: String,
-    email_mailing_list: String,
-    book_author: String,
-    german_title: String,
 }
 
 #[get("/api/summaries/{number}")]
@@ -92,4 +70,28 @@ pub async fn api_summaries(data: Data<PerryState>, path: Path<u32>) -> HttpRespo
 
     Response::json(serde_json::to_string(&json!(template)).unwrap())
 }
+
+#[derive(Template)]
+#[template(path = "summary.html")]
+struct TemplateSummaries {
+    pub banner_info: BannerInfo,
+}
+
+#[derive(Default, Deserialize, Serialize)]
+struct TemplateSummary {
+    found: bool,
+    number: u32,
+    summary: Summary,
+    pub cycle: Cycle,
+    cover_url: String,
+    hide_left: bool,
+    href_back: String,
+    href_edit: String,
+    perry_pedia: String,
+    email_mailing_list: String,
+    book_author: String,
+    german_title: String,
+}
+
+
 
