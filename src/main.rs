@@ -12,7 +12,9 @@ mod email;
 mod config;
 mod constants;
 mod response;
+mod import_database;
 
+use std::process::exit;
 use std::sync::Arc;
 use actix_web::{App, HttpServer};
 use actix_web::web::{Data, FormConfig};
@@ -24,6 +26,7 @@ use tracing_subscriber::util::SubscriberInitExt;
 use crate::config::{Config, create_config};
 use crate::db::{create_db, Db};
 use crate::email::{Email, EmailService};
+use crate::import_database::import_db;
 use crate::login::{api_login, logout};
 use crate::pages::cycle::cycle;
 use crate::pages::cycles::{api_cycles, index};

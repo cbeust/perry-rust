@@ -2,6 +2,16 @@
 name = "perry"
 version = "0.1.0"
 edition = "2021"
+default-run = "perry"
+
+[[bin]]
+name = "import_database"
+path = "src/import_database.rs"
+
+[[bin]]
+name = "perry"
+path = "src/main.rs"
+
 
 [dependencies]
 actix-web = { version = "4" }
