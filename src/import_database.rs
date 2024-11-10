@@ -1,4 +1,3 @@
-use std::env;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::process::Command;
@@ -122,7 +121,7 @@ fn restore(db: Db, filename: String) {
 fn parse_jdbc_url(url: &str) -> Db {
     let mut result = Db::default();
 
-    let mut current = url.find("//").unwrap();
+    let current = url.find("//").unwrap();
     let mut rest = &url[current + 2..];
     if rest.contains("@") {
         let at = rest.find('@').unwrap();
@@ -162,6 +161,7 @@ fn parse_jdbc_url(url: &str) -> Db {
     result
 }
 
+#[allow(unused)]
 #[derive(Debug, Default, Deserialize)]
 struct Db {
     host: String,
@@ -172,6 +172,7 @@ struct Db {
 }
 
 /// Format of the file import.toml
+#[allow(unused)]
 #[derive(Default, Deserialize)]
 struct Config {
     prod_url: String,
@@ -183,6 +184,7 @@ fn default_local_url() -> String {
     "postgresql://localhost:5432/perry".into()
 }
 
+#[test]
 fn test() {
     let db = parse_jdbc_url("jdbc:postgres://user:pass@host.com:5432/the_db");
     assert_eq!(db.username, "user");
