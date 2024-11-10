@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::{Read, Write};
-use std::process::Command;
+use std::process::{Command, exit};
 use std::str::FromStr;
 use figment::Figment;
 use figment::providers::{Format, Toml};
@@ -15,10 +15,15 @@ pub fn main() {
         .merge(Toml::file("import.toml"))
         .extract()
         .unwrap();
+    if let Err(e) = File::open(psql(&config.postgres_dir)) {
+        println!("Couldn't find psql {}: {e}", config.postgres_dir);
+        exit(1);
+    }
+
     let db = parse_jdbc_url(&config.prod_url);
 
     // Import production database
-    let import_result = import(db);
+    let import_result = import(&config.postgres_dir, db);
     // let import_result = Some(FILE);
 
     // Restore local database
@@ -31,19 +36,18 @@ pub fn main() {
             // let default_url: String = "postgresql://localhost:5432/perry".into();
             let local_url = config.local_url;
             info!("Restoring local database {local_url} from file {file}");
-            restore(parse_jdbc_url(&local_url), file.to_string());
+            restore(&config.postgres_dir, parse_jdbc_url(&local_url), file.to_string());
         }
     }
 }
 
-const PG: &str = "C:\\Program Files\\PostgreSQL\\16";
-fn pg_dump() -> String { format!("{PG}\\bin\\pg_dump.exe") }
-fn psql() -> String { format!("{PG}\\bin\\psql.exe") }
+fn pg_dump(pg: &str) -> String { format!("{pg}\\bin\\pg_dump.exe") }
+fn psql(pg: &str) -> String { format!("{pg}\\bin\\psql.exe") }
 
-fn import(db: Db) -> Option<String> {
+fn import(pg: &str, db: Db) -> Option<String> {
     let file = "db.dump";
     println!("Importing database \"{}\" from {} into file {file}", db.database_name, db.host);
-    match Command::new(pg_dump())
+    match Command::new(pg_dump(pg))
         .env("PGPASSWORD", db.password)
         .arg(format!("--username={}", db.username))
         .arg("-f")
@@ -68,11 +72,11 @@ fn import(db: Db) -> Option<String> {
     }
 }
 
-fn restore(db: Db, filename: String) {
-    println!("Running {} -U {} -h {} -d {} {}", psql(), db.username, db.host, db.database_name,
+fn restore(pg: &str, db: Db, filename: String) {
+    println!("Running {} -U {} -h {} -d {} {}", psql(pg), db.username, db.host, db.database_name,
         filename);
 
-    let mut command = Command::new(psql())
+    let mut command = Command::new(psql(pg))
         .stdin(std::process::Stdio::piped())
         .env("PGPASSWORD", db.password)
         .arg("-U")
@@ -175,6 +179,7 @@ struct Db {
 #[allow(unused)]
 #[derive(Default, Deserialize)]
 struct Config {
+    postgres_dir: String,
     prod_url: String,
     #[serde(default = "default_local_url")]
     local_url: String,
