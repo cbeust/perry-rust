@@ -100,12 +100,12 @@ fn restore(pg: &str, db: Db, filename: String) {
 
     for c in commands {
         println!("Issuing command '{c}'");
-        stdin.write_all(c.as_bytes()).expect("failed to write to stdin");
+        stdin.write_all(c.as_bytes()).expect("Write to stdin");
     }
     let mut buffer: Vec<u8> = Vec::new();
-    File::open(filename).unwrap().read_to_end(&mut buffer).expect("File should have been created");
+    File::open(filename).unwrap().read_to_end(&mut buffer).expect("Create file");
 
-    stdin.write_all(&buffer).expect("failed to write to stdin");
+    stdin.write_all(&buffer).expect("Write to stdin");
     drop(stdin); // Close the stdin pipe
 
     match command.wait_with_output() {
@@ -190,25 +190,19 @@ fn default_local_url() -> String {
 }
 
 #[test]
-fn test() {
-    let db = parse_jdbc_url("jdbc:postgres://user:pass@host.com:5432/the_db");
-    assert_eq!(db.username, "user");
-    assert_eq!(db.password, "pass");
-    assert_eq!(db.host, "host.com");
-    assert_eq!(db.port, 5432);
-    assert_eq!(db.database_name, "the_db");
+fn test_jdbc_url() {
+    let data = vec![
+        ("jdbc:postgres://user:pass@host.com:5432/the_db", "user", "pass"),
+        ("jdbc:postgres://host.com:5432/the_db?username=user&password=pass", "user", "pass"),
+        ("jdbc:postgres://host.com:5432/the_db", "", ""),
+    ];
+    for (url, user, pass) in data {
+        let db = parse_jdbc_url(url);
+        assert_eq!(db.username, user);
+        assert_eq!(db.password, pass);
+        assert_eq!(db.host, "host.com");
+        assert_eq!(db.port, 5432);
+        assert_eq!(db.database_name, "the_db");
+    }
 
-    let db = parse_jdbc_url("jdbc:postgres://host.com:5432/the_db");
-    assert_eq!(db.username, "");
-    assert_eq!(db.password, "");
-    assert_eq!(db.host, "host.com");
-    assert_eq!(db.port, 5432);
-    assert_eq!(db.database_name, "the_db");
-
-    let db = parse_jdbc_url("jdbc:postgres://host.com:5432/the_db?username=user&password=pass");
-    assert_eq!(db.username, "user");
-    assert_eq!(db.password, "pass");
-    assert_eq!(db.host, "host.com");
-    assert_eq!(db.port, 5432);
-    assert_eq!(db.database_name, "the_db");
 }
