@@ -12,7 +12,6 @@ mod email;
 mod config;
 mod constants;
 mod response;
-mod import_database;
 
 use std::process::exit;
 use std::sync::Arc;
@@ -82,7 +81,7 @@ async fn main() -> std::io::Result<()> {
 
     let result = HttpServer::new(move || {
         App::new()
-            .service(actix_files::Files::new("static", "static").show_files_listing())
+            .service(actix_files::Files::new("static", "web/static").show_files_listing())
             .app_data(FormConfig::default().limit(250 * 1024)) // Sets limit to 250kB
             .app_data(state.clone())
 
