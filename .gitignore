@@ -4,6 +4,7 @@ files
 local.toml
 import.toml
 *dump
+.sqlx
 
 # Exclude workspace and local settings files
 .idea/workspace.xml
