@@ -30,7 +30,7 @@ pub async fn edit_summary(state: Data<PerryState>, path: Path<u32>) -> HttpRespo
             state.db.find_summary(book_number),
             state.db.find_cycle_by_book(book_number),
             state.db.find_book(book_number),
-            PerryPedia::find_cover_url(book_number))
+            state.perry_pedia.find_cover_url(book_number))
     {
         (Some(summary), Some(cycle), Some(book), cover_url) => {
             let template = TemplateEdit {

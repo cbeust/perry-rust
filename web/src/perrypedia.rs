@@ -1,15 +1,32 @@
+use std::collections::HashMap;
+use std::future::Future;
+use std::sync::{Arc, RwLock};
 use std::time::Duration;
 use tracing::{info, warn};
 use regex::Regex;
 use tokio::time::{timeout};
 
 const HOST: &str = "https://www.perrypedia.de";
+const TIMEOUT_MS: u64 = 2_000;
 
-const TIMEOUT_MS: u64 = 2000;
-pub struct PerryPedia;
+pub struct PerryPedia {
+    map: Arc<RwLock<HashMap<u32, String>>>,
+}
 
 impl PerryPedia {
-    pub async fn find_cover_url(n: u32) -> Option<String> {
+    pub fn new() -> Self {
+        Self {
+            map: Arc::new(RwLock::new(HashMap::new())),
+        }
+    }
+
+    pub async fn find_cover_url(&self, n: u32) -> Option<String> {
+        if let Some(url) = self.map.read().unwrap().get(&n) {
+            info!("Returning cover URL from cache (size {}): {url}",
+                self.map.read().unwrap().len());
+            return Some(url.clone())
+        }
+
         let number = format!("{n:04}");
         let re = Regex::new(&format!(".*(/mediawiki.*/PR{number}.jpg)")).unwrap();
         let url = format!("{HOST}/wiki/Datei:PR{number:04}.jpg");
@@ -19,7 +36,11 @@ impl PerryPedia {
                 // println!("URL content: {text}");
                 if let Some(cap) = re.captures(&text) {
                     let link = cap.get(1).unwrap().as_str();
-                    Some(format!("{HOST}{link}"))
+                    let result = format!("{HOST}{link}");
+                    info!("Inserting cover URL into cache (size {}): {result}",
+                        self.map.read().unwrap().len());
+                    self.map.write().unwrap().insert(n, result.to_string());
+                    Some(result)
                 } else {
                     None
                 }
@@ -33,8 +54,11 @@ impl PerryPedia {
         result
     }
 
-    pub async fn find_cover_urls(numbers: Vec<i32>) -> Vec<Option<String>> {
-        let tasks = numbers.iter().map(|n| Self::find_cover_url(*n as u32));
+    pub async fn find_cover_urls(&self, numbers: Vec<i32>) -> Vec<Option<String>> {
+        let mut tasks = Vec::new();
+        for n in numbers {
+            tasks.push(self.find_cover_url(n as u32));
+        }
         futures::future::join_all(tasks).await
     }
 

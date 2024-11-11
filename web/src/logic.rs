@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use actix_web::web::Form;
+use actix_web::web::{Data, Form};
 use chrono::{Utc};
 use tracing::info;
 use uuid::Uuid;
@@ -12,14 +12,14 @@ use crate::errors::PrResult;
 use crate::perrypedia::PerryPedia;
 use crate::PerryState;
 
-pub async fn _get_data(db: &Arc<Box<dyn Db>>, book_number: u32)
+pub async fn _get_data(state: &Data<PerryState>, book_number: u32)
     -> Option<(Cycle, Summary, Book, String)>
 {
     let (summary, cycle, book, cover_url) = tokio::join!(
-        db.find_summary(book_number),
-        db.find_cycle_by_book(book_number),
-        db.find_book(book_number),
-        PerryPedia::find_cover_url(book_number),
+        state.db.find_summary(book_number),
+        state.db.find_cycle_by_book(book_number),
+        state.db.find_book(book_number),
+        state.perry_pedia.find_cover_url(book_number),
     );
 
     let cover_url = cover_url.unwrap_or("".to_string());

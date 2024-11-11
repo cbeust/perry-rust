@@ -30,7 +30,7 @@ async fn index(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {
             let rs: Vec<Summary> = state.db.fetch_most_recent_summaries().await;
             let numbers: Vec<i32> = rs.iter().map(|s| s.number).collect();
             let start = Instant::now();
-            let cover_urls: Vec<String> = PerryPedia::find_cover_urls(numbers).await
+            let cover_urls: Vec<String> = state.perry_pedia.find_cover_urls(numbers).await
                 .iter().map(|url| {
                 match url {
                     None => { "".to_string() }

@@ -1,3 +1,4 @@
+use actix_web::web::Data;
 use askama::Template;
 use lettre::{Message, SmtpTransport, Transport};
 use lettre::message::header::ContentType;
@@ -9,6 +10,7 @@ use crate::db::Db;
 use crate::errors::Error::{EmailError, FetchingCycles, Unknown};
 use crate::errors::PrResult;
 use crate::perrypedia::PerryPedia;
+use crate::PerryState;
 use crate::url::Urls;
 
 
@@ -50,15 +52,15 @@ impl Email {
         }
     }
 
-    pub async fn _create_email_content_for_summary(db: &Box<dyn Db>, book_number: u32,
+    pub async fn _create_email_content_for_summary(state: Data<PerryState>, book_number: u32,
             host: String)
         -> PrResult<String>
     {
         let (book, summary, cycle_number, cover_url) = tokio::join!(
-            db.find_book(book_number),
-            db.find_summary(book_number),
-            db.find_cycle_by_book(book_number),
-            PerryPedia::find_cover_url(book_number),
+            state.db.find_book(book_number),
+            state.db.find_summary(book_number),
+            state.db.find_cycle_by_book(book_number),
+            state.perry_pedia.find_cover_url(book_number),
         );
 
         match cycle_number {
