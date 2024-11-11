@@ -10,7 +10,6 @@ use tracing::{error, info, warn};
 use crate::banner_info::BannerInfo;
 use crate::cookies::Cookies;
 use crate::entities::{Book, Cycle, Summary};
-use crate::perrypedia::PerryPedia;
 use crate::PerryState;
 use crate::response::Response;
 use crate::url::Urls;

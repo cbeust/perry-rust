@@ -9,7 +9,6 @@ use crate::pages::edit::FormData;
 use crate::entities::{Book, Cycle, Summary, User};
 use crate::errors::Error::{IncorrectPassword, UnknownUser};
 use crate::errors::PrResult;
-use crate::perrypedia::PerryPedia;
 use crate::PerryState;
 
 pub async fn _get_data(state: &Data<PerryState>, book_number: u32)

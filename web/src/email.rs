@@ -6,10 +6,8 @@ use lettre::transport::smtp::authentication::Credentials;
 use tracing::{error, info};
 use tracing::log::warn;
 use crate::config::Config;
-use crate::db::Db;
 use crate::errors::Error::{EmailError, FetchingCycles, Unknown};
 use crate::errors::PrResult;
-use crate::perrypedia::PerryPedia;
 use crate::PerryState;
 use crate::url::Urls;
 

@@ -6,7 +6,6 @@ use tracing::error;
 use crate::cookies::Cookies;
 use crate::entities::{Book, Cycle, Summary};
 use crate::logic::save_summary;
-use crate::perrypedia::PerryPedia;
 use crate::PerryState;
 use crate::response::Response;
 use crate::url::Urls;
@@ -72,7 +71,6 @@ struct TemplateEdit {
 
 #[derive(Deserialize)]
 pub struct FormData {
-    pub english_cycle_name: String,
     pub number: u16,
     pub german_title: String,
     pub english_title: String,
@@ -80,7 +78,7 @@ pub struct FormData {
     pub book_author: String,
     pub author_email: String,
     pub date: String,
-    pub time: Option<String>,
+    pub _time: Option<String>,
     pub author_name: String,
 }
 
