@@ -1,8 +1,6 @@
 use async_trait::async_trait;
 use sqlx::{Pool, Postgres};
 use sqlx::postgres::{PgPoolOptions};
-// provides `try_next`
-// provides `try_get`
 use sqlx::Row;
 use tracing::{error, info};
 use tracing::log::warn;
@@ -10,24 +8,6 @@ use crate::config::Config;
 use crate::entities::{Book, Cycle, PendingSummary, Summary, User};
 use crate::errors::Error::{FetchingCycles, InsertingBook, InsertingInPending, InsertingSummary, UpdatingBook, UpdatingSummary, UpdatingUser};
 use crate::errors::PrResult;
-
-// fn query_one<O, U>(query: QueryAs<Postgres, O, U>) {
-//
-// }
-
-// fn query<'a, O, U> (q: String) -> QueryAs<'a, Postgres, O, U> {
-//     sqlx::query_as::<Postgres, Cycle>(
-//         "select * from cycles where cycle.start <= $1 and $1 <= cycle.end")
-// }
-
-// fn f() {
-//     let a = 42;
-//     query_one(sqlx::query_as::<Postgres, Cycle>(
-//             "select * from cycles where cycle.start <= $1 and $1 <= cycle.end")
-//         .bind(a)
-//         .bind(a));
-// }
-
 
 pub async fn create_db(config: &Config) -> Box<dyn Db> {
     match DbPostgres::maybe_new(&config).await {
@@ -147,6 +127,22 @@ impl DbPostgres {
         };
         result
     }
+
+    // async fn query_one<O, U>(&self, query: QueryAs<'_, Postgres, O, U>) {
+    //     query.fetch_one(&self.pool).finish().await
+    // }
+    //
+    // fn query<'a, O, U> (q: String) -> QueryAs<'a, Postgres, O, U> {
+    //     sqlx::query_as::<Postgres, Cycle>(
+    //         "select * from cycles where cycle.start <= $1 and $1 <= cycle.end")
+    // }
+    //
+    // fn f(&self) {
+    //     let a = 42;
+    //     self.query_one(sqlx::query_as::<Postgres, Cycle>(
+    //         "select * from cycles where cycle.start <= 1 and 1 <= cycle.end")
+    //     )
+    // }
 }
 
 #[async_trait]
