@@ -16,10 +16,10 @@ use crate::response::Response;
 use crate::url::Urls;
 
 #[get("/")]
-async fn index(req: HttpRequest, data: Data<PerryState>) -> HttpResponse {
+async fn index(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {
     // Cycles
     let mut cycles: Vec<HtmlTemplate> = Vec::new();
-    match data.db.fetch_cycles().await {
+    match state.db.fetch_cycles().await {
         Ok(all_cycles) => {
             let cycles_count = all_cycles.len() as i32;
             for cycle in all_cycles {
@@ -27,7 +27,7 @@ async fn index(req: HttpRequest, data: Data<PerryState>) -> HttpResponse {
             }
 
             // Summaries
-            let rs: Vec<Summary> = data.db.fetch_most_recent_summaries().await;
+            let rs: Vec<Summary> = state.db.fetch_most_recent_summaries().await;
             let numbers: Vec<i32> = rs.iter().map(|s| s.number).collect();
             let start = Instant::now();
             let cover_urls: Vec<String> = PerryPedia::find_cover_urls(numbers).await
@@ -42,14 +42,14 @@ async fn index(req: HttpRequest, data: Data<PerryState>) -> HttpResponse {
             for (i, s) in rs.iter().enumerate() {
                 recent_summaries.push(TemplateRecentSummary::new(s.clone(), cover_urls[i].clone()).await);
             }
-            let summary_count = data.db.fetch_summary_count().await;
-            let book_count = data.db.fetch_book_count().await;
+            let summary_count = state.db.fetch_summary_count().await;
+            let book_count = state.db.fetch_book_count().await;
             let template = TemplateCycles {
                 summary_count,
                 percentage: (summary_count as u32 * 100 / book_count as u32) as u8,
                 recent_summaries,
                 cycles,
-                banner_info: BannerInfo::new(Cookies::find_user(&req, &data.db).await).await,
+                banner_info: BannerInfo::new(Cookies::find_user(&req, &state.db).await).await,
             };
             // println!("Template: {result}");
 
@@ -63,13 +63,13 @@ async fn index(req: HttpRequest, data: Data<PerryState>) -> HttpResponse {
 }
 
 #[get("/api/cycles/{number}")]
-pub async fn api_cycles(data: Data<PerryState>, path: Path<u32>) -> HttpResponse {
+pub async fn api_cycles(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let number = path.into_inner();
-    let json = match data.db.find_cycle(number).await {
+    let json = match state.db.find_cycle(number).await {
         Some(cycle) => {
             let mut books: Vec<TemplateBook> = Vec::new();
-            let db_books = data.db.find_books(number).await;
-            let db_summaries = data.db.find_summaries(number).await;
+            let db_books = state.db.find_books(number).await;
+            let db_summaries = state.db.find_summaries(number).await;
             let mut map: HashMap<i32, String> = HashMap::new();
             for summary in db_summaries {
                 map.insert(summary.number, summary.english_title);

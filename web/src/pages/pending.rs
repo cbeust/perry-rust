@@ -7,29 +7,29 @@ use crate::PerryState;
 use crate::response::Response;
 
 #[get("/approve/{id}")]
-pub async fn approve_pending(_req: HttpRequest, _data: Data<PerryState>, path: Path<u32>) -> HttpResponse {
+pub async fn approve_pending(_req: HttpRequest, _state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let id = path.into_inner();
     info!("Approving id {id}");
     Response::redirect("/pending".into())
 }
 
 #[get("/delete/{id}")]
-pub async fn delete_pending(_req: HttpRequest, _data: Data<PerryState>, path: Path<u32>) -> HttpResponse {
+pub async fn delete_pending(_req: HttpRequest, _state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let id = path.into_inner();
     info!("Deleting id {id}");
     Response::redirect("/pending".into())
 }
 
 #[post("/pending/delete_all")]
-pub async fn pending_delete_all(_req: HttpRequest, _data: Data<PerryState>) -> HttpResponse {
+pub async fn pending_delete_all(_req: HttpRequest, _state: Data<PerryState>) -> HttpResponse {
     info!("Deleting all pendings");
     Response::redirect("/pending".into())
 }
 
 #[get("/pending")]
-pub async fn pending(req: HttpRequest, data: Data<PerryState>) -> HttpResponse {
-    if let Some(_) = Cookies::find_user(&req, &data.db).await {
-        let summaries = data.db.find_pending_summaries().await;
+pub async fn pending(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {
+    if let Some(_) = Cookies::find_user(&req, &state.db).await {
+        let summaries = state.db.find_pending_summaries().await;
         let pending_summaries: Vec<PendingSummaryTemplate> = summaries.iter().map(|s| {
             PendingSummaryTemplate {
                 id: s.id,

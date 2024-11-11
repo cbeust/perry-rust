@@ -13,9 +13,9 @@ struct TemplateCycle {
 }
 
 #[get("/cycles/{number}")]
-pub async fn cycle(req: HttpRequest, data: Data<PerryState>, _path: Path<u32>) -> HttpResponse {
+pub async fn cycle(req: HttpRequest, state: Data<PerryState>, _path: Path<u32>) -> HttpResponse {
     let template = TemplateCycle{
-        banner_info: BannerInfo::new(Cookies::find_user(&req, &data.db).await).await,
+        banner_info: BannerInfo::new(Cookies::find_user(&req, &state.db).await).await,
     };
     Response::html(template.render().unwrap())
 }

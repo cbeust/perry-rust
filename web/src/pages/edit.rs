@@ -24,12 +24,12 @@ pub async fn post_summary(req: HttpRequest, state: Data<PerryState>, form: Form<
 }
 
 #[get("/summaries/{number}/edit")]
-pub async fn edit_summary(data: Data<PerryState>, path: Path<u32>) -> HttpResponse {
+pub async fn edit_summary(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let book_number = path.into_inner();
     let result = match tokio::join!(
-            data.db.find_summary(book_number),
-            data.db.find_cycle_by_book(book_number),
-            data.db.find_book(book_number),
+            state.db.find_summary(book_number),
+            state.db.find_cycle_by_book(book_number),
+            state.db.find_book(book_number),
             PerryPedia::find_cover_url(book_number))
     {
         (Some(summary), Some(cycle), Some(book), cover_url) => {

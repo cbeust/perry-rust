@@ -12,21 +12,21 @@ use crate::response::Response;
 use crate::url::Urls;
 
 #[get("/summaries/{number}")]
-pub async fn summaries(req: HttpRequest, data: Data<PerryState>, _path: Path<u32>) -> HttpResponse {
+pub async fn summaries(req: HttpRequest, state: Data<PerryState>, _path: Path<u32>) -> HttpResponse {
     let template = TemplateSummaries {
-        banner_info: BannerInfo::new(Cookies::find_user(&req, &data.db).await).await,
+        banner_info: BannerInfo::new(Cookies::find_user(&req, &state.db).await).await,
     };
     Response::html(template.render().unwrap())
 }
 
 #[get("/api/summaries/{number}")]
-pub async fn api_summaries(data: Data<PerryState>, path: Path<u32>) -> HttpResponse {
+pub async fn api_summaries(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let book_number = path.into_inner();
     let template: TemplateSummary = {
         match tokio::join!(
-            data.db.find_summary(book_number),
-            data.db.find_cycle_by_book(book_number),
-            data.db.find_book(book_number),
+            state.db.find_summary(book_number),
+            state.db.find_cycle_by_book(book_number),
+            state.db.find_book(book_number),
             PerryPedia::find_cover_url(book_number))
         {
             (Some(summary), Some(cycle), Some(book), cover_url) => {
