@@ -5,3 +5,6 @@ edition = "2021"
 
 [dependencies]
 figment = "0.10.19"
+serde = "1.0.214"
+tracing = "0.1.40"
+tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
