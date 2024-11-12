@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-figment = "0.10.19"
-serde = "1.0.214"
+figment = { version = "0.10.19", features = [ "env", "toml" ] }
+serde = { version = "1.0.211", features = [ "derive" ] }
 tracing = "0.1.40"
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
