@@ -32,31 +32,9 @@ use crate::pages::pending::{approve_pending, delete_pending, pending, pending_de
 use crate::pages::summaries::{api_summaries, summaries};
 use crate::perrypedia::PerryPedia;
 
-#[builder]
-fn init_logging(sqlx: bool, actix: bool) {
-    let debug_sqlx = if sqlx { "debug" } else { "info" };
-    let debug_actix = if actix { "debug" } else { "info" };
-    tracing_subscriber::registry()
-        .with(fmt::layer())
-        .with(tracing_subscriber::EnvFilter::new(
-            format!("crate=debug,sqlx={debug_sqlx},actix_web={debug_actix},info")
-            // format!("sqlx={debug_sqlx},reqwest=info,hyper_util:info,debug")
-        ))
-        .init();
-}
-
-// #[derive(Builder, Clone)]
-pub struct PerryState {
-    pub app_name: String,
-    pub config: Config,
-    pub db: Arc<Box<dyn Db>>,
-    pub email_service: Arc<Box<dyn EmailService>>,
-    pub perry_pedia: PerryPedia,
-}
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    init_logging().sqlx(true).actix(true).call();
+    init_logging().sqlx(false).actix(true).call();
     info!("Starting perry-rust");
     let config = create_config();
 
@@ -101,10 +79,33 @@ async fn main() -> std::io::Result<()> {
             .service(pending_delete_all)
             .service(approve_pending)
             .service(delete_pending)
-        })
+    })
         .bind(("0.0.0.0", config.port))?
         .run()
         .await;
     info!("Server exiting");
     result
+}
+
+
+#[builder]
+fn init_logging(sqlx: bool, actix: bool) {
+    let debug_sqlx = if sqlx { "debug" } else { "info" };
+    let debug_actix = if actix { "debug" } else { "info" };
+    tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(tracing_subscriber::EnvFilter::new(
+            format!("crate=debug,sqlx={debug_sqlx},actix_web={debug_actix},info")
+            // format!("sqlx={debug_sqlx},reqwest=info,hyper_util:info,debug")
+        ))
+        .init();
+}
+
+// #[derive(Builder, Clone)]
+pub struct PerryState {
+    pub app_name: String,
+    pub config: Config,
+    pub db: Arc<Box<dyn Db>>,
+    pub email_service: Arc<Box<dyn EmailService>>,
+    pub perry_pedia: PerryPedia,
 }
