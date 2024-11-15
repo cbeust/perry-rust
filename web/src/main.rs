@@ -90,7 +90,7 @@ async fn main() -> std::io::Result<()> {
 
 
 #[builder]
-fn init_logging(sqlx: bool, actix: bool) {
+pub fn init_logging(sqlx: bool, actix: bool) {
     let debug_sqlx = if sqlx { "debug" } else { "info" };
     let debug_actix = if actix { "debug" } else { "info" };
     tracing_subscriber::registry()

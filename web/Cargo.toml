@@ -9,6 +9,7 @@ actix-web = { version = "4" }
 actix-files = "0.6.6"
 actix-session = { version = "0.10.1", features = [ "cookie-session"] }
 actix-web-httpauth = "0.8.2"
+actix-http = "3.8.9"
 sqlx = { version = "0.8", features = [ "runtime-tokio", "postgres", "runtime-tokio-rustls" ] }
 tokio = { version = "1.41.0", features = [ "macros" ] }
 #diesel = { version = "2.2.4", features = ["postgres"] }
@@ -25,7 +26,7 @@ handlebars = "6.1.0"
 serde = { version = "1.0.211", features = [ "derive" ] }
 serde_json = "1.0.132"
 askama = "0.12.1"
-figment = { version = "0.10.19", features = [ "env", "toml" ] }
+figment = { version = "0.10.19", features = [ "env", "toml", "json" ] }
 async-trait = "0.1.83"
 reqwest = "0.12.8"
 regex = "1.11.0"

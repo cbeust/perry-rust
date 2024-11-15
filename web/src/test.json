@@ -1,0 +1,51 @@
+{
+  "books": [
+    {
+      "number": 1,
+      "title": "Unternehmen Stardust",
+      "author": "Kurt Mahr"
+    },
+    {
+      "number": 2,
+      "title": "Book 2",
+      "author": "Ernst Ellert"
+    }
+  ],
+  "cycles": [
+    {
+      "number": 1,
+      "german_title": "Die Dritte Macht",
+      "english_title": "The Third Power",
+      "short_title": "dritte",
+      "start": 1,
+      "end": 49
+    },
+    {
+      "number": 44,
+      "german_title": "Fragments",
+      "english_title": "Fragments",
+      "short_title": "fragments",
+      "start": 3000,
+      "end": 3049
+    }
+  ],
+  "summaries": [
+    {
+      "number": 1,
+      "author_email": "x@y.com",
+      "author_name": "Ced",
+      "date": "January 2 1989",
+      "english_title": "Mission Stardust",
+      "summary": "This is the summary"
+    },
+    {
+      "number": 2,
+      "author_email": "x@y.com",
+      "author_name": "Ced",
+      "date": "January 10 1989",
+      "english_title": "Book 2",
+      "summary": "This is the summary #2"
+    }
+
+  ]
+}

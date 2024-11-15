@@ -26,7 +26,6 @@ pub async fn create_db(config: &Config) -> Box<dyn Db> {
 #[automock]
 #[async_trait]
 pub trait Db: Send + Sync {
-    async fn username(&self) -> String;
     async fn fetch_cycles(&self) -> PrResult<Vec<Cycle>> { Ok(Vec::new()) }
     async fn fetch_users(&self) -> Vec<User> { Vec::new() }
     async fn find_summary(&self, _number: u32) -> Option<Summary> { None }
@@ -75,12 +74,7 @@ async fn find_user_by(pool: &Pool<Postgres>, key: &str, value: &str) -> Option<U
 #[derive(Clone, Copy, Default)]
 pub struct DbInMemory;
 
-#[async_trait]
-impl Db for DbInMemory {
-    async fn username(&self) -> String {
-        "InMemory".into()
-    }
-}
+impl Db for DbInMemory {}
 
 impl DbPostgres {
     pub async fn maybe_new(config: &Config) -> Option<Self> {
@@ -149,10 +143,6 @@ impl DbPostgres {
 
 #[async_trait]
 impl Db for DbPostgres {
-    async fn username(&self) -> String {
-        "Cedric Beust".into()
-    }
-
     async fn fetch_cycles(&self) -> PrResult<Vec<Cycle>> {
         match sqlx::query_as::<_, Cycle>(
             "select * from cycles order by number desc")
