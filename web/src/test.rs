@@ -1,15 +1,14 @@
 #[cfg(test)]
 mod tests {
-    use std::sync::Arc;
-    use actix_web::{http::header::ContentType, test, App};
-    use actix_web::web::Data;
     use crate::config::Config;
-    use crate::db::{Db, DbInMemory, MockDb};
-    use crate::db::__mock_MockDb_Db::__fetch_cycles::Expectation;
+    use crate::db::{Db, MockDb};
     use crate::email::Email;
     use crate::pages::cycles::index;
     use crate::perrypedia::PerryPedia;
     use crate::PerryState;
+    use actix_web::web::Data;
+    use actix_web::{test, App};
+    use std::sync::Arc;
 
     async fn create_state(db: Box<dyn Db>) -> PerryState {
         let config = Config::default();
@@ -30,16 +29,17 @@ mod tests {
         db.expect_fetch_most_recent_summaries()
             .returning(|| Vec::new());
         db.expect_fetch_summary_count()
-            .returning(|| 0);
+            .returning(|| 100);
         db.expect_fetch_book_count()
-            .returning(|| 0);
+            .returning(|| 1000);
         let state = create_state(Box::new(db)).await;
         let app = test::init_service(App::new()
             .service(index)
             .app_data(Data::new(state.clone()))
         ).await;
         let req = test::TestRequest::get().uri("/").to_request();
-        let resp = test::call_service(&app, req).await;
-        assert!(resp.status().is_success());
+        let resp = test::call_and_read_body(&app, req).await;
+        let string = std::str::from_utf8(&resp).unwrap();
+        assert!(string.contains("Total written summaries: 100 (10 %)"));
     }
 }
