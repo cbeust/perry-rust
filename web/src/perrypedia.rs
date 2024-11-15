@@ -1,12 +1,23 @@
 use std::collections::HashMap;
 use std::sync::{Arc, RwLock};
 use std::time::Duration;
+use async_trait::async_trait;
 use tracing::{info, warn};
 use regex::Regex;
 use tokio::time::{timeout};
 
 const HOST: &str = "https://www.perrypedia.de";
 const TIMEOUT_MS: u64 = 2_000;
+
+#[async_trait]
+pub trait CoverFinder: Send + Sync {
+    async fn find_cover_url(&self, _n: u32) -> Option<String> {
+        None
+    }
+    async fn find_cover_urls(&self, numbers: Vec<i32>) -> Vec<Option<String>> {
+        numbers.iter().map(|_| None).collect()
+    }
+}
 
 #[derive(Clone)]
 pub struct PerryPedia {
@@ -20,7 +31,33 @@ impl PerryPedia {
         }
     }
 
-    pub async fn find_cover_url(&self, n: u32) -> Option<String> {
+    async fn read_url(url: String) -> Option<String> {
+        match reqwest::get(url.clone()).await {
+            Ok(response) => {
+                match response.text().await {
+                    Ok(text) => { Some(text) }
+                    Err(e) => {
+                        warn!("Couldn't extract text from {url}: {e}");
+                        None
+                    }
+                }
+            }
+            Err(e) => {
+                warn!("Couldn't load {url}: {e}");
+                None
+            }
+        }
+    }
+
+    pub fn summary_url(number: u32) -> String {
+        format!("https://www-perrypedia-de.translate.goog/wiki/Quelle:PR{number}\
+        ?_x_tr_sl=auto&_x_tr_tl=en&_x_tr_hl=en&_x_tr_pto=nui")
+    }
+}
+
+#[async_trait]
+impl CoverFinder for PerryPedia {
+    async fn find_cover_url(&self, n: u32) -> Option<String> {
         if let Some(url) = self.map.read().unwrap().get(&n) {
             info!("Returning cover URL from cache (size {}): {url}",
                 self.map.read().unwrap().len());
@@ -54,34 +91,11 @@ impl PerryPedia {
         result
     }
 
-    pub async fn find_cover_urls(&self, numbers: Vec<i32>) -> Vec<Option<String>> {
+    async fn find_cover_urls(&self, numbers: Vec<i32>) -> Vec<Option<String>> {
         let mut tasks = Vec::new();
         for n in numbers {
             tasks.push(self.find_cover_url(n as u32));
         }
         futures::future::join_all(tasks).await
-    }
-
-    async fn read_url(url: String) -> Option<String> {
-        match reqwest::get(url.clone()).await {
-            Ok(response) => {
-                match response.text().await {
-                    Ok(text) => { Some(text) }
-                    Err(e) => {
-                        warn!("Couldn't extract text from {url}: {e}");
-                        None
-                    }
-                }
-            }
-            Err(e) => {
-                warn!("Couldn't load {url}: {e}");
-                None
-            }
-        }
-    }
-
-    pub fn summary_url(number: u32) -> String {
-        format!("https://www-perrypedia-de.translate.goog/wiki/Quelle:PR{number}\
-        ?_x_tr_sl=auto&_x_tr_tl=en&_x_tr_hl=en&_x_tr_pto=nui")
     }
 }

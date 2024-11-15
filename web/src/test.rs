@@ -7,7 +7,7 @@ mod tests {
     use crate::db::{Db, DbInMemory, MockDb};
     use crate::email::Email;
     use crate::pages::cycles::index;
-    use crate::perrypedia::PerryPedia;
+    use crate::perrypedia::{CoverFinder, PerryPedia};
     use crate::{init_logging, PerryState};
     use actix_web::web::Data;
     use actix_web::{test, App, Error};
@@ -72,8 +72,10 @@ mod tests {
         async fn fetch_most_recent_summaries(&self) -> Vec<Summary> {
             self.content.summaries.clone()
         }
-
     }
+
+    struct CoverFinderTest;
+    impl CoverFinder for CoverFinderTest {}
 
     async fn create_state(db: Box<dyn Db>) -> PerryState {
         let config = Config::default();
@@ -82,7 +84,7 @@ mod tests {
             config: config.clone(),
             db: Arc::new(db),
             email_service: Arc::new(Email::create_email_service(&config).await),
-            perry_pedia: PerryPedia::new(),
+            cover_finder: Arc::new(Box::new(CoverFinderTest{})),
         }
     }
 

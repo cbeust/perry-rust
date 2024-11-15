@@ -58,7 +58,7 @@ impl Email {
             state.db.find_book(book_number),
             state.db.find_summary(book_number),
             state.db.find_cycle_by_book(book_number),
-            state.perry_pedia.find_cover_url(book_number),
+            state.cover_finder.find_cover_url(book_number),
         );
 
         match cycle_number {

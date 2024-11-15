@@ -31,7 +31,7 @@ use crate::pages::cycles::{api_cycles, index};
 use crate::pages::edit::{edit_summary, post_summary};
 use crate::pages::pending::{approve_pending, delete_pending, pending, pending_delete_all};
 use crate::pages::summaries::{api_summaries, summaries};
-use crate::perrypedia::PerryPedia;
+use crate::perrypedia::{CoverFinder, PerryPedia};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -46,7 +46,7 @@ async fn main() -> std::io::Result<()> {
         config: config.clone(),
         db: Arc::new(create_db(&config).await),
         email_service: Arc::new(Email::create_email_service(&config).await),
-        perry_pedia: PerryPedia::new(),
+        cover_finder: Arc::new(Box::new(PerryPedia::new())),
     });
 
     // match Email::create_email_content_for_summary(&state.db, 2000,
@@ -108,5 +108,5 @@ pub struct PerryState {
     pub config: Config,
     pub db: Arc<Box<dyn Db>>,
     pub email_service: Arc<Box<dyn EmailService>>,
-    pub perry_pedia: PerryPedia,
+    pub cover_finder: Arc<Box<dyn CoverFinder>>,
 }
