@@ -8,6 +8,7 @@ use tokio::time::{timeout};
 const HOST: &str = "https://www.perrypedia.de";
 const TIMEOUT_MS: u64 = 2_000;
 
+#[derive(Clone)]
 pub struct PerryPedia {
     map: Arc<RwLock<HashMap<u32, String>>>,
 }

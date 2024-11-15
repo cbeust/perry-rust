@@ -1,4 +1,5 @@
 use async_trait::async_trait;
+use mockall::automock;
 use sqlx::{Pool, Postgres};
 use sqlx::postgres::{PgPoolOptions};
 use sqlx::Row;
@@ -22,6 +23,7 @@ pub async fn create_db(config: &Config) -> Box<dyn Db> {
     }
 }
 
+#[automock]
 #[async_trait]
 pub trait Db: Send + Sync {
     async fn username(&self) -> String;
@@ -70,7 +72,7 @@ async fn find_user_by(pool: &Pool<Postgres>, key: &str, value: &str) -> Option<U
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Default)]
 pub struct DbInMemory;
 
 #[async_trait]

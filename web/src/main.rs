@@ -12,6 +12,7 @@ mod email;
 mod config;
 mod constants;
 mod response;
+mod test;
 
 use std::sync::Arc;
 use actix_web::{App, HttpServer};
@@ -101,7 +102,7 @@ fn init_logging(sqlx: bool, actix: bool) {
         .init();
 }
 
-// #[derive(Builder, Clone)]
+#[derive(Clone)]
 pub struct PerryState {
     pub app_name: String,
     pub config: Config,

@@ -19,7 +19,7 @@ pub fn create_config() -> Config {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 pub struct Config {
     pub database_url: Option<String>,
     #[serde(default = "default_port")]
