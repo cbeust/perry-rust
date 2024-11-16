@@ -1,27 +1,24 @@
-use async_trait::async_trait;
+
 
 #[cfg(test)]
 mod tests {
-    use std::process::exit;
     use crate::config::Config;
-    use crate::db::{Db, DbInMemory, MockDb};
+    use crate::db::{Db, MockDb};
     use crate::email::Email;
-    use crate::pages::cycles::index;
-    use crate::perrypedia::{CoverFinder, PerryPedia};
-    use crate::{init_logging, PerryState};
-    use actix_web::web::Data;
-    use actix_web::{test, App, Error};
-    use std::sync::{Arc, RwLock};
-    use actix_web::dev::{Service, ServiceResponse};
-    use async_trait::async_trait;
-    use figment::Figment;
-    use figment::providers::{Format, Json};
-    use reqwest::Request;
-    use serde::Deserialize;
-    use tracing::warn;
     use crate::entities::{Book, Cycle, Summary};
     use crate::errors::PrResult;
-    use crate::response::Response;
+    use crate::pages::cycles::index;
+    use crate::perrypedia::CoverFinder;
+    use crate::{init_logging, PerryState};
+    use actix_web::dev::{Service, ServiceResponse};
+    use actix_web::web::Data;
+    use actix_web::{test, App, Error};
+    use async_trait::async_trait;
+    use figment::providers::{Format, Json};
+    use figment::Figment;
+    use serde::Deserialize;
+    use std::process::exit;
+    use std::sync::Arc;
 
     #[derive(Default, Deserialize)]
     pub struct Content {
