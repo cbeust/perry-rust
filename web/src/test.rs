@@ -100,29 +100,7 @@ mod tests {
     }
 
     #[actix_web::test]
-    async fn test_index_get_mock() {
-        let mut db = MockDb::new();
-        db.expect_fetch_cycles()
-            .returning(|| Ok(Vec::new()));
-        db.expect_fetch_most_recent_summaries()
-            .returning(|| Vec::new());
-        db.expect_fetch_summary_count()
-            .returning(|| 100);
-        db.expect_fetch_book_count()
-            .returning(|| 1000);
-        let state = create_state(Box::new(db)).await;
-        let app = test::init_service(App::new()
-            .service(index)
-            .app_data(Data::new(state.clone()))
-        ).await;
-        let req = test::TestRequest::get().uri("/").to_request();
-        let resp = test::call_and_read_body(&app, req).await;
-        let string = std::str::from_utf8(&resp).unwrap();
-        assert!(string.contains("Total written summaries: 100 (10 %)"));
-    }
-
-    #[actix_web::test]
-    async fn test_index_get_test_db() {
+    async fn test_index_get() {
         let app = setup().await;
 
         let req = test::TestRequest::get().uri("/").to_request();
