@@ -1,1 +1,1 @@
-web: ./web/target/release/perry
+web: ./target/release/perry
