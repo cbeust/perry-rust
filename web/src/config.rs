@@ -1,4 +1,5 @@
 use std::process::exit;
+use dotenv::dotenv;
 use figment::Figment;
 use figment::providers::{Env, Toml};
 use figment::providers::Format;
@@ -6,8 +7,11 @@ use serde::Deserialize;
 use tracing::error;
 
 pub fn create_config() -> Config {
+    dotenv().ok();
+
     match Figment::new()
         .merge(Toml::file("local.toml"))
+        .merge(Env::raw())
         .merge(Env::raw())
         .extract()
     {
