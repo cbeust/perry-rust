@@ -37,6 +37,7 @@ pub async fn edit_summary(state: Data<PerryState>, path: Path<u32>) -> HttpRespo
                 summary,
                 cycle,
                 cover_url: cover_url.unwrap_or("".to_string()),
+                cancel_url: format!("/summaries/{}", book_number),
             };
             template.render().unwrap()
         }
@@ -50,6 +51,7 @@ pub async fn edit_summary(state: Data<PerryState>, path: Path<u32>) -> HttpRespo
             template.cycle = cycle;
             template.book.number = book_number as i32;
             template.cover_url = cover_url.unwrap_or("".to_string());
+            template.cancel_url = format!("/summaries/{}", book_number);
             template.render().unwrap()
         }
         _ => {
@@ -67,6 +69,7 @@ struct TemplateEdit {
     book: Book,
     cycle: Cycle,
     cover_url: String,
+    cancel_url: String,
 }
 
 #[derive(Deserialize)]
