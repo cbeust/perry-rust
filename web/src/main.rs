@@ -30,7 +30,7 @@ use crate::pages::cycle::cycle;
 use crate::pages::cycles::{api_cycles, index};
 use crate::pages::edit::{edit_summary, post_summary};
 use crate::pages::pending::{approve_pending, delete_pending, pending, pending_delete_all};
-use crate::pages::summaries::{api_summaries, summaries};
+use crate::pages::summaries::{api_summaries, summaries, summaries_post};
 use crate::perrypedia::{CoverFinder, PerryPedia};
 
 #[actix_web::main]
@@ -70,6 +70,7 @@ async fn main() -> std::io::Result<()> {
             .service(index)
             .service(cycle)
             .service(summaries)
+            .service(summaries_post)
             .service(edit_summary)
             .service(post_summary)
             .service(api_cycles)

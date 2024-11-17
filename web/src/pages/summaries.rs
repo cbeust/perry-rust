@@ -1,18 +1,25 @@
-use actix_web::{get, HttpRequest, HttpResponse};
-use actix_web::web::{Data, Path};
+use actix_web::{get, HttpRequest, HttpResponse, post};
+use actix_web::web::{Data, Form, Path};
 use askama::Template;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use tracing::info;
 use crate::banner_info::BannerInfo;
 use crate::cookies::Cookies;
 use crate::entities::{Cycle, Summary};
+use crate::pages::edit::FormData;
 use crate::perrypedia::PerryPedia;
 use crate::PerryState;
 use crate::response::Response;
 use crate::url::Urls;
 
+#[post("/summaries")]
+pub async fn summaries_post(form_data: Form<SingleSummaryData>) -> HttpResponse {
+    Response::redirect(format!("/summaries/{}", form_data.number))
+}
+
 #[get("/summaries/{number}")]
-pub async fn summaries(req: HttpRequest, state: Data<PerryState>, _path: Path<u32>) -> HttpResponse {
+pub async fn summaries(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {
     let template = TemplateSummaries {
         banner_info: BannerInfo::new(Cookies::find_user(&req, &state.db).await).await,
     };
@@ -93,5 +100,8 @@ struct TemplateSummary {
     german_title: String,
 }
 
-
+#[derive(Deserialize)]
+struct SingleSummaryData {
+    number: u32,
+}
 

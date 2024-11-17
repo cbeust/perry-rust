@@ -13,6 +13,7 @@ impl Response {
 
     pub fn redirect(location: String) -> HttpResponse {
         HttpResponse::SeeOther()
+            .content_type("text/html")
             .append_header(("Location", location))
             .finish()
     }
