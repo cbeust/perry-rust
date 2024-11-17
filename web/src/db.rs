@@ -1,5 +1,4 @@
 use async_trait::async_trait;
-use mockall::automock;
 use sqlx::{Pool, Postgres};
 use sqlx::postgres::{PgPoolOptions};
 use sqlx::Row;
@@ -23,7 +22,6 @@ pub async fn create_db(config: &Config) -> Box<dyn Db> {
     }
 }
 
-#[automock]
 #[async_trait]
 pub trait Db: Send + Sync {
     async fn fetch_cycles(&self) -> PrResult<Vec<Cycle>> { Ok(Vec::new()) }
