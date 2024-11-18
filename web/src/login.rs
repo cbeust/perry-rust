@@ -1,4 +1,4 @@
-use actix_web::{get, HttpResponse, post};
+use actix_web::{HttpResponse};
 use actix_web::web::{Data, Form};
 use serde::Deserialize;
 use tracing::info;
@@ -10,18 +10,16 @@ use crate::response::Response;
 use crate::url::Urls;
 
 #[derive(Deserialize)]
-struct LoginFormData {
+pub struct LoginFormData {
     pub username: String,
     pub password: String,
 }
 
-#[get("/logout")]
 pub async fn logout() -> HttpResponse {
     let cookie = Cookies::clear_auth_token_cookie().await;
     Response::cookie(Urls::root(), cookie)
 }
 
-#[post("/api/login")]
 pub async fn api_login(state: Data<PerryState>, form: Form<LoginFormData>) -> HttpResponse {
     match login(&state.db, &form.username, &form.password).await {
         Ok((auth_token, days)) => {

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use std::time::Instant;
-use actix_web::{get, HttpRequest, HttpResponse};
+use actix_web::{HttpRequest, HttpResponse};
 use actix_web::web::{Data, Path};
 use askama::Template;
 use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
@@ -14,8 +14,7 @@ use crate::PerryState;
 use crate::response::Response;
 use crate::url::Urls;
 
-#[get("/")]
-async fn index(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {
+pub async fn index(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {
     // Cycles
     let mut cycles: Vec<HtmlTemplate> = Vec::new();
     match state.db.fetch_cycles().await {
@@ -61,7 +60,6 @@ async fn index(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {
     }
 }
 
-#[get("/api/cycles/{number}")]
 pub async fn api_cycles(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let number = path.into_inner();
     let json = match state.db.find_cycle(number).await {

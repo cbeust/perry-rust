@@ -1,28 +1,12 @@
-use actix_web::{get, HttpRequest, HttpResponse, post};
-use actix_web::web::{Data, Form, Path};
+use actix_web::HttpResponse;
+use actix_web::web::{Data, Path};
 use askama::Template;
 use serde::Deserialize;
-use tracing::error;
-use crate::cookies::Cookies;
+
 use crate::entities::{Book, Cycle, Summary};
-use crate::logic::save_summary;
 use crate::PerryState;
 use crate::response::Response;
-use crate::url::Urls;
 
-#[post("/api/summaries")]
-pub async fn post_summary(req: HttpRequest, state: Data<PerryState>, form: Form<FormData>)
-    -> HttpResponse
-{
-    let number = form.number as i32;
-    if let Err(e) =  save_summary(&state, Cookies::find_user(&req, &state.db).await, form).await {
-        error!("{e}");
-    };
-
-    Response::redirect(Urls::summary(number))
-}
-
-#[get("/summaries/{number}/edit")]
 pub async fn edit_summary(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let book_number = path.into_inner();
     let result = match tokio::join!(

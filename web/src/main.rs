@@ -16,7 +16,7 @@ mod test;
 
 use std::sync::Arc;
 use actix_web::{App, HttpServer};
-use actix_web::web::{Data, FormConfig};
+use actix_web::web::{Data, FormConfig, get, post, resource};
 use bon::builder;
 use tracing::{ info};
 use tracing_subscriber::fmt;
@@ -28,9 +28,9 @@ use crate::email::{Email, EmailService};
 use crate::login::{api_login, logout};
 use crate::pages::cycle::cycle;
 use crate::pages::cycles::{api_cycles, index};
-use crate::pages::edit::{edit_summary, post_summary};
+use crate::pages::edit::{edit_summary};
 use crate::pages::pending::{approve_pending, delete_pending, pending, pending_delete_all};
-use crate::pages::summaries::{api_summaries, summaries, summaries_post};
+use crate::pages::summaries::{api_summaries, post_summary, summaries, summaries_post};
 use crate::perrypedia::{CoverFinder, PerryPedia};
 
 #[actix_web::main]
@@ -62,25 +62,36 @@ async fn main() -> std::io::Result<()> {
 
     let result = HttpServer::new(move || {
         App::new()
+            // Serve static files under /static
             .service(actix_files::Files::new("static", "web/static").show_files_listing())
             .app_data(FormConfig::default().limit(250 * 1024)) // Sets limit to 250kB
             .app_data(state.clone())
 
+            //
             // URL's
-            .service(index)
-            .service(cycle)
-            .service(summaries)
-            .service(summaries_post)
-            .service(edit_summary)
-            .service(post_summary)
-            .service(api_cycles)
-            .service(api_summaries)
-            .service(api_login)
-            .service(logout)
-            .service(pending)
-            .service(pending_delete_all)
-            .service(approve_pending)
-            .service(delete_pending)
+            //
+
+            // Cycles
+            .service(resource("/").route(get().to(index)))
+            .service(resource("/cycles/{number}").route(get().to(cycle)))
+            .service(resource("/api/cycles/{number}").route(get().to(api_cycles)))
+
+            // Summaries
+            .service(resource("/summaries").route(post().to(summaries_post)))
+            .service(resource("/summaries/{number}").route(get().to(summaries)))
+            .service(resource("/summaries/{number}/edit").route(get().to(edit_summary)))
+            .service(resource("/api/summaries").route(post().to(post_summary)))
+            .service(resource("/api/summaries/{number}").route(get().to(api_summaries)))
+
+            // Pending
+            .service(resource("/pending").route(get().to(pending)))
+            .service(resource("/pending/delete_all").route(post().to(pending_delete_all)))
+            .service(resource("/approve/{id}").route(get().to(approve_pending)))
+            .service(resource("/delete/{id}").route(get().to(delete_pending)))
+
+            // Login / log out
+            .service(resource("/api/login").route(post().to(api_login)))
+            .service(resource("/logout").route(get().to(logout)))
     })
         .bind(("0.0.0.0", config.port))?
         .run()

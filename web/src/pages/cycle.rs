@@ -1,4 +1,4 @@
-use actix_web::{get, HttpRequest, HttpResponse};
+use actix_web::{HttpRequest, HttpResponse};
 use actix_web::web::{Data, Path};
 use askama::Template;
 use crate::banner_info::BannerInfo;
@@ -12,7 +12,6 @@ struct TemplateCycle {
     pub banner_info: BannerInfo,
 }
 
-#[get("/cycles/{number}")]
 pub async fn cycle(req: HttpRequest, state: Data<PerryState>, _path: Path<u32>) -> HttpResponse {
     let template = TemplateCycle{
         banner_info: BannerInfo::new(Cookies::find_user(&req, &state.db).await).await,
