@@ -89,7 +89,7 @@ async fn main() -> std::io::Result<()> {
             .service(resource("/delete/{id}").route(get().to(delete_pending)))
 
             // Login / log out
-            .service(resource("/api/login").route(post().to(api_login)))
+            .service(resource("/login").route(post().to(api_login)))
             .service(resource("/logout").route(get().to(logout)))
     })
         .bind(("0.0.0.0", config.port))?
