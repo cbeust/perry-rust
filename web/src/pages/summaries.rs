@@ -14,6 +14,8 @@ use crate::PerryState;
 use crate::response::Response;
 use crate::url::Urls;
 
+/// This is used by the text field on the main page: if the user types a number
+/// and Submit, take them directly to that summary
 pub async fn summaries_post(form_data: Form<SingleSummaryData>) -> HttpResponse {
     Response::redirect(format!("/summaries/{}", form_data.number))
 }
