@@ -15,6 +15,9 @@ pub enum Error {
     InsertingInPending(String, Summary),
     InsertingCoverImage(String, i32),
     EmailError(String),
+    PerryPediaCouldNotFind(i32),
+    CouldNotFindCoverImage(String, i32),
+    UnknownCoverImageError(i32),
     Unknown,
 }
 
@@ -35,6 +38,9 @@ impl Display for Error {
             InsertingInPending(e, summary) => { format!("Couldn't insert #{} into PENDING: {e}",
                 summary.number) }
             EmailError(e) => { format!("Couldn't send email: {e}") }
+            PerryPediaCouldNotFind(n) => { format!("PerryPedia: could not find {n}") }
+            CouldNotFindCoverImage(e, n) => { format!("Couldn't load cover image for {n}: {e}") }
+            UnknownCoverImageError(n) => { format!("Couldn't load cover image for {n}") }
             Unknown => { "Unknown error".into() }
         };
 

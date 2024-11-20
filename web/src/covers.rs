@@ -1,4 +1,5 @@
 use std::io::{Cursor, Read};
+use std::sync::Arc;
 use std::time::Duration;
 use actix_web::{HttpRequest, HttpResponse};
 use actix_web::web::{Data, Path};
@@ -6,22 +7,36 @@ use image::imageops::FilterType;
 use image::{ImageFormat, load_from_memory};
 use tokio::time::timeout;
 use tracing::{error, info};
+use crate::db::Db;
+use crate::errors::Error::{CouldNotFindCoverImage, PerryPediaCouldNotFind, UnknownCoverImageError};
+use crate::errors::PrResult;
 use crate::perrypedia::{CoverFinder, PerryPedia, TIMEOUT_MS};
 use crate::PerryState;
 use crate::response::Response;
 
-pub async fn cover(req: HttpRequest, state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
+pub async fn cover(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let book_number = path.into_inner();
-    let mut result = Response::png(Vec::new());
+    match find_cover_image(book_number, &state.db).await {
+        Ok(bytes) => {
+            Response::png(bytes)
+        }
+        Err(e) => {
+            error!("Couldn't fetch cover: {e}");
+            Response::png(Vec::new())
+        }
+    }
+}
+
+async fn find_cover_image(book_number: u32, db: &Arc<Box<dyn Db>>) -> PrResult<Vec<u8>> {
 
     // Try to get the image from the database
-    match state.db.find_cover(book_number).await {
+    match db.find_cover(book_number).await {
         None => {
             info!("Couldn't find cover for {book_number} in database, fetching it");
             let perry_pedia: Box<dyn CoverFinder> = Box::new(PerryPedia::new());
             match perry_pedia.find_cover_url(book_number).await {
                 None => {
-                    error!("PerryPedia could not find {book_number}");
+                    Err(PerryPediaCouldNotFind(book_number as i32))
                 }
                 Some(url) => {
                     let url2 = url.clone();
@@ -32,31 +47,29 @@ pub async fn cover(req: HttpRequest, state: Data<PerryState>, path: Path<u32>) -
                                     info!("Found cover for {book_number} at {url2} ({} bytes),\
                                         inserting it into the database", bytes.len());
                                     let new_bytes = resize_image(&bytes, 800, 600);
-                                    state.db.insert_cover(book_number, new_bytes.clone()).await;
-                                    result = Response::png(new_bytes.into())
+                                    db.insert_cover(book_number, new_bytes.clone()).await?;
+                                    Ok(new_bytes.into())
                                 }
                                 Err(e) => {
-                                    error!("Couldn't load bytes from response: {e}");
+                                    Err(CouldNotFindCoverImage(e.to_string(), book_number as i32))
                                 }
                             }
                         }
                         Err(e) => {
-                            error!("Couldn't load cover URL {url2}: {e}");
+                            Err(CouldNotFindCoverImage(e.to_string(), book_number as i32))
                         }
                         _ => {
-                            error!("Couldn't load cover URL {url2}");
+                            Err(UnknownCoverImageError(book_number as i32))
                         }
                     }
                 }
-            };
+            }
         }
         Some(image) => {
             info!("Image size: {} bytes", image.size);
-            result = Response::png(image.image)
+            Ok(image.image)
         }
-    };
-
-    result
+    }
 }
 
 fn resize_image(bytes: &[u8], target_width: u32, target_height: u32) -> Vec<u8> {
