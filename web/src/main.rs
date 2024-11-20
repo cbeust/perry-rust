@@ -48,7 +48,7 @@ async fn main() -> std::io::Result<()> {
         config: config.clone(),
         db: Arc::new(create_db(&config).await),
         email_service: Arc::new(Email::create_email_service(&config).await),
-        cover_finder: Arc::new(Box::new(PerryPedia::new())),
+        cover_finder: Arc::new(Box::new(LocalImageProvider)),
     });
 
     // match Email::create_email_content_for_summary(&state.db, 2000,
