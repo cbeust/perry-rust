@@ -13,6 +13,7 @@ mod config;
 mod constants;
 mod response;
 mod test;
+mod covers;
 
 use std::sync::Arc;
 use actix_web::{App, HttpServer};
@@ -23,6 +24,7 @@ use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use crate::config::{Config, create_config};
+use crate::covers::cover;
 use crate::db::{create_db, Db};
 use crate::email::{Email, EmailService};
 use crate::login::{api_login, logout};
@@ -31,7 +33,7 @@ use crate::pages::cycles::{api_cycles, index};
 use crate::pages::edit::{edit_summary};
 use crate::pages::pending::{approve_pending, delete_pending, pending, pending_delete_all};
 use crate::pages::summaries::{api_summaries, post_summary, summaries, summaries_post};
-use crate::perrypedia::{CoverFinder, PerryPedia};
+use crate::perrypedia::{CoverFinder, LocalImageProvider, PerryPedia};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -91,6 +93,9 @@ async fn main() -> std::io::Result<()> {
             // Login / log out
             .service(resource("/login").route(post().to(api_login)))
             .service(resource("/logout").route(get().to(logout)))
+
+            // Covers
+            .service(resource("/covers/{number}").route(get().to(cover)))
     })
         .bind(("0.0.0.0", config.port))?
         .run()

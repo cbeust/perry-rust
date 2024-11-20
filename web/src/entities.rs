@@ -12,6 +12,13 @@ pub struct User {
     pub salt: Option<Vec<u8>>,
 }
 
+#[derive(Clone, Debug, sqlx::FromRow)]
+pub struct Image {
+    pub number: i32,
+    pub image: Vec<u8>,
+    pub size: i32,
+}
+
 impl User {
     pub fn can_post(&self) -> bool {
         self.login == "cbeust" || self.login == "jerry_s"

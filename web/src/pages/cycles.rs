@@ -26,7 +26,7 @@ pub async fn index(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {
 
             // Summaries
             let rs: Vec<Summary> = state.db.fetch_most_recent_summaries().await;
-            let numbers: Vec<i32> = rs.iter().map(|s| s.number).collect();
+            let numbers: Vec<u32> = rs.iter().map(|s| s.number as u32).collect();
             let start = Instant::now();
             let cover_urls: Vec<String> = state.cover_finder.find_cover_urls(numbers).await
                 .iter().map(|url| {

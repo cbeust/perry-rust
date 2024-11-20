@@ -7,15 +7,28 @@ use regex::Regex;
 use tokio::time::{timeout};
 
 const HOST: &str = "https://www.perrypedia.de";
-const TIMEOUT_MS: u64 = 2_000;
+pub const TIMEOUT_MS: u64 = 2_000;
 
 #[async_trait]
 pub trait CoverFinder: Send + Sync {
-    async fn find_cover_url(&self, _n: u32) -> Option<String> {
-        None
+    async fn find_cover_url(&self, _n: u32) -> Option<String> { None }
+    async fn find_cover_urls(&self, numbers: Vec<u32>) -> Vec<Option<String>> {
+        let mut result: Vec<Option<String>> = Vec::new();
+        for n in numbers {
+            // TODO: use join!()
+            result.push(self.find_cover_url(n).await);
+        }
+        result
     }
-    async fn find_cover_urls(&self, numbers: Vec<i32>) -> Vec<Option<String>> {
-        numbers.iter().map(|_| None).collect()
+}
+
+#[derive(Clone)]
+pub struct LocalImageProvider;
+
+#[async_trait]
+impl CoverFinder for LocalImageProvider {
+    async fn find_cover_url(&self, n: u32) -> Option<String> {
+        Some(format!("/covers/{n:04}"))
     }
 }
 
@@ -23,6 +36,7 @@ pub trait CoverFinder: Send + Sync {
 pub struct PerryPedia {
     map: Arc<RwLock<HashMap<u32, String>>>,
 }
+
 
 impl PerryPedia {
     pub fn new() -> Self {
@@ -91,7 +105,7 @@ impl CoverFinder for PerryPedia {
         result
     }
 
-    async fn find_cover_urls(&self, numbers: Vec<i32>) -> Vec<Option<String>> {
+    async fn find_cover_urls(&self, numbers: Vec<u32>) -> Vec<Option<String>> {
         let mut tasks = Vec::new();
         for n in numbers {
             tasks.push(self.find_cover_url(n as u32));

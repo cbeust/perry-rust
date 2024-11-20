@@ -13,6 +13,7 @@ pub enum Error {
     IncorrectPassword(String),
     UnknownUser(String),
     InsertingInPending(String, Summary),
+    InsertingCoverImage(String, i32),
     EmailError(String),
     Unknown,
 }
@@ -30,6 +31,7 @@ impl Display for Error {
             UpdatingUser(e, username) => { format!("Error updating user {username}: {e}") }
             IncorrectPassword(username) => { format!("Incorrect password for {username}") }
             UnknownUser(username) => { format!("Unknown user {username}") }
+            InsertingCoverImage(e, n) => { format!("Error inserting cover image for book {n}: {e}") }
             InsertingInPending(e, summary) => { format!("Couldn't insert #{} into PENDING: {e}",
                 summary.number) }
             EmailError(e) => { format!("Couldn't send email: {e}") }

@@ -5,8 +5,8 @@ use sqlx::Row;
 use tracing::{error, info};
 use tracing::log::warn;
 use crate::config::Config;
-use crate::entities::{Book, Cycle, PendingSummary, Summary, User};
-use crate::errors::Error::{FetchingCycles, InsertingBook, InsertingInPending, InsertingSummary, UpdatingBook, UpdatingSummary, UpdatingUser};
+use crate::entities::{Book, Cycle, Image, PendingSummary, Summary, User};
+use crate::errors::Error::{FetchingCycles, InsertingBook, InsertingCoverImage, InsertingInPending, InsertingSummary, UpdatingBook, UpdatingSummary, UpdatingUser};
 use crate::errors::PrResult;
 
 pub async fn create_db(config: &Config) -> Box<dyn Db> {
@@ -35,6 +35,8 @@ pub trait Db: Send + Sync {
     async fn find_books(&self, _cycle_number: u32) -> Vec<Book> { Vec::new() }
     async fn find_summaries(&self, _cycle_number: u32) -> Vec<Summary> { Vec::new() }
     async fn find_book(&self, _book_number: u32) -> Option<Book> { None }
+    async fn find_cover(&self, _book_number: u32) -> Option<Image> { None }
+    async fn insert_cover(&self, _book_number: u32, _bytes: Vec<u8>) -> PrResult<()> { Ok(()) }
     async fn insert_summary(&self, _summary: Summary) -> PrResult<()> { Ok(()) }
     async fn update_summary(&self, _summary: Summary) -> PrResult<()> { Ok(()) }
     async fn update_or_insert_book(&self, _book: Book) -> PrResult<()> { Ok(()) }
@@ -458,4 +460,42 @@ impl Db for DbPostgres {
             }
         }
     }
+
+    async fn find_cover(&self, book_number: u32) -> Option<Image> {
+        let mut result = None;
+        match sqlx::query_as::<_, Image>(
+            "select * from covers where number = $1")
+            .bind(book_number as i32)
+            .fetch_one(&self.pool)
+            .await
+        {
+            Ok(image) => {
+                info!("Found cover image for {book_number}");
+                result = Some(image)
+            }
+            Err(e) => {
+                info!("Couldn't retrieve cover for {book_number}: {e}");
+            }
+        }
+
+        result
+    }
+
+    async fn insert_cover(&self, book_number: u32, bytes: Vec<u8>) -> PrResult<()> {
+        match sqlx::query!("insert into covers (number, image, size) values ($1, $2, $3)",
+            book_number as i32, bytes, bytes.len() as i32)
+            .execute(&self.pool)
+            .await
+        {
+            Ok(_) => {
+                info!("Inserted new cover image for book {book_number}");
+                Ok(())
+            }
+            Err(error) => {
+                error!("Error inserting new cover {}: {error}", book_number);
+                Err(InsertingCoverImage(error.to_string(), book_number as i32))
+            }
+        }
+    }
+
 }

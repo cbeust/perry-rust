@@ -37,4 +37,10 @@ impl Response {
             .content_type("application/json")
             .body(json)
     }
+
+    pub fn png(bytes: Vec<u8>) -> HttpResponse {
+        HttpResponse::Ok()
+            .content_type("image/png")
+            .body(bytes)
+    }
 }
