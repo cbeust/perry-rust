@@ -79,6 +79,7 @@ async fn main() -> std::io::Result<()> {
             .service(resource("/api/cycles/{number}").route(get().to(api_cycles)))
 
             // Summaries
+            .service(resource("/summaries").route(post().to(summaries_post)))
             .service(resource("/summaries/{number}").route(get().to(summaries)))
             .service(resource("/summaries/{number}/edit").route(get().to(edit_summary)))
             .service(resource("/api/summaries").route(post().to(post_summary)))
