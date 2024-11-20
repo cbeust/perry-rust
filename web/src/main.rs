@@ -33,7 +33,7 @@ use crate::pages::cycles::{api_cycles, index};
 use crate::pages::edit::{edit_summary};
 use crate::pages::pending::{approve_pending, delete_pending, pending, pending_delete_all};
 use crate::pages::summaries::{api_summaries, post_summary, summaries, summaries_post};
-use crate::perrypedia::{CoverFinder, LocalImageProvider, PerryPedia};
+use crate::perrypedia::{CoverFinder, LocalImageProvider};
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {

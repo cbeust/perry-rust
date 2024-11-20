@@ -1,7 +1,7 @@
-use std::io::{Cursor, Read};
+use std::io::{Cursor};
 use std::sync::Arc;
 use std::time::Duration;
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::{HttpResponse};
 use actix_web::web::{Data, Path};
 use image::imageops::FilterType;
 use image::{ImageFormat, load_from_memory};
@@ -33,7 +33,7 @@ async fn find_cover_image(book_number: u32, db: &Arc<Box<dyn Db>>) -> PrResult<V
     match db.find_cover(book_number).await {
         None => {
             info!("Couldn't find cover for {book_number} in database, fetching it");
-            let perry_pedia: Box<dyn CoverFinder> = Box::new(PerryPedia::new());
+            let perry_pedia = Box::new(PerryPedia::new());
             match perry_pedia.find_cover_url(book_number).await {
                 None => {
                     Err(PerryPediaCouldNotFind(book_number as i32))
@@ -92,7 +92,7 @@ fn resize_image(bytes: &[u8], target_width: u32, target_height: u32) -> Vec<u8> 
     let resized = img.resize(new_width, new_height, FilterType::Lanczos3);
 
     // Convert back to PNG bytes
-    let mut output_bytes: Vec<u8> = Vec::new();
+    let output_bytes: Vec<u8> = Vec::new();
     let mut cursor = Cursor::new(output_bytes);
     resized.write_to(&mut cursor, ImageFormat::Png).unwrap();
 
