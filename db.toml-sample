@@ -1,0 +1,3 @@
+postgres_dir = "C:\\Program Files\\PostgreSQL\\16"
+prod_url = ""
+local_url = "postgresql://localhost:5432/perry"
