@@ -28,7 +28,6 @@ pub async fn cover(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
 }
 
 async fn find_cover_image(book_number: u32, db: &Arc<Box<dyn Db>>) -> PrResult<Vec<u8>> {
-
     // Try to get the image from the database
     match db.find_cover(book_number).await {
         None => {
@@ -44,9 +43,11 @@ async fn find_cover_image(book_number: u32, db: &Arc<Box<dyn Db>>) -> PrResult<V
                         Ok(Ok(response)) => {
                             match response.bytes().await {
                                 Ok(bytes) => {
-                                    info!("Found cover for {book_number} at {url2} ({} bytes),\
-                                        inserting it into the database", bytes.len());
+                                    let len = bytes.len();
                                     let new_bytes = resize_image(&bytes, 800, 600);
+                                    info!("Found cover for {book_number} at {url2},\
+                                        inserting it into the database after shrinking it\
+                                         from {} to {} bytes", len, new_bytes.len());
                                     db.insert_cover(book_number, new_bytes.clone()).await?;
                                     Ok(new_bytes.into())
                                 }
