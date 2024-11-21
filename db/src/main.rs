@@ -6,7 +6,7 @@ use clap::{Arg, Command};
 use figment::Figment;
 use figment::providers::{Format, Toml};
 use serde::Deserialize;
-use tracing::info;
+use tracing::{error, info};
 use crate::import::run_import;
 
 mod import;
@@ -14,9 +14,11 @@ mod db;
 mod test;
 
 pub fn main() {
-    // import.toml sample:
-    // prod_url = "postgres://..."
-    // local_url = "postgresql://localhost:5432/perry"
+    if File::open("db.toml").is_err() {
+        error!("Couldn't find db.toml");
+        exit(1);
+    }
+
     let config: Config = Figment::new()
         .merge(Toml::file("db.toml"))
         .extract()
@@ -76,7 +78,7 @@ impl Postgres {
     pub fn psql(&self) -> String { format!("{}\\bin\\psql.exe", self.dir) }
 }
 
-/// Format of the file import.toml
+/// Format of the file db.toml
 #[allow(unused)]
 #[derive(Default, Deserialize)]
 pub struct Config {

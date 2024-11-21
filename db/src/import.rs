@@ -19,8 +19,6 @@ pub fn run_import(args: &Args) {
         Some(file) => {
             // With user/password:  postgresql://user:pass@localhost:5432/perry
             // let default_url: String = "postgresql://localhost:5432/perry".into();
-            let local_url = args.config.local_url.clone();
-            info!("Restoring local database {local_url} from file {file}");
             restore(args, file.to_string());
         }
     }
@@ -56,7 +54,10 @@ fn import(args: &Args) -> Option<String> {
 }
 
 fn restore(args: &Args, filename: String) {
-    let db = Db::parse_jdbc_url(&args.config.prod_url);
+    let local_url = args.config.local_url.clone();
+    info!("Restoring local database {local_url} from file {filename}");
+
+    let db = Db::parse_jdbc_url(&args.config.local_url);
     println!("Running {} -U {} -h {} -d {} {}", args.postgres.psql(), db.username, db.host,
         db.database_name, filename);
 
