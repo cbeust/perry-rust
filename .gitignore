@@ -3,7 +3,7 @@ target/
 files
 .env
 local.toml
-import.toml
+db.toml
 *dump
 .sqlx
 
