@@ -2,9 +2,11 @@ use std::fs::File;
 use std::io::{Read, Write};
 use std::process::exit;
 use std::str::FromStr;
+use clap::{Arg, Command};
 use figment::Figment;
 use figment::providers::{Format, Toml};
 use serde::Deserialize;
+use tracing::info;
 use crate::import::run_import;
 
 mod import;
@@ -26,7 +28,38 @@ pub fn main() {
     }
 
     let args = Args { config, postgres };
-    run_import(&args);
+
+    let matches = Command::new("db")
+        .about("Database operations")
+        .subcommand_required(true)
+        .subcommand(
+            Command::new("import")
+                .about("Import from the production database")
+                // .arg(Arg::new("branch").help("Branch to checkout"))
+        )
+        .subcommand(
+            Command::new("test")
+                .about("Test subcommand")
+                .arg(Arg::new("short")
+                    .short('s')
+                    .long("short")
+                    .help("Use short status output")
+                ))
+        .get_matches();
+
+    // Handle subcommands
+    match matches.subcommand() {
+        Some(("import", sub_matches)) => {
+            run_import(&args);
+        }
+        Some(("test", sub_matches)) => {
+            println!("Testing");
+        }
+        _ => {
+            info!("Unknown command: {:#?}", matches.subcommand())
+        }
+    }
+
 }
 
 pub struct Args {
