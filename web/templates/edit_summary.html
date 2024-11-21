@@ -45,8 +45,9 @@
                 </div>
 
                 <div class="col-3 pr-4">
-                    <div class="title-xs c-off-white i">summarized on
+                    <div class="title-xs c-off-white i">summarized
                         {% if summary.date.is_some() %}
+                        on
                         <span id="date">
                             [[summary.date.as_ref().unwrap()]]
                         </span>
