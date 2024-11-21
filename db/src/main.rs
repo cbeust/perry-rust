@@ -18,7 +18,7 @@ pub fn main() {
     // prod_url = "postgres://..."
     // local_url = "postgresql://localhost:5432/perry"
     let config: Config = Figment::new()
-        .merge(Toml::file("import.toml"))
+        .merge(Toml::file("db.toml"))
         .extract()
         .unwrap();
     let postgres = Postgres { dir: config.postgres_dir.clone() };
