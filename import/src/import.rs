@@ -3,11 +3,12 @@ use std::io::{Read, Write};
 use std::process::Command;
 use std::str::FromStr;
 use tracing::{error, info};
-use crate::{Config, Db, parse_jdbc_url, pg_dump, psql};
+use crate::{Args, Config};
+use crate::db::Db;
 
-pub fn run_import(config: &Config, db: &Db) {
+pub fn run_import(args: &Args) {
     // Import production database
-    let import_result = import(&config.postgres_dir, db);
+    let import_result = import(&args);
     // let import_result = Some(FILE);
 
     // Restore local database
@@ -18,17 +19,18 @@ pub fn run_import(config: &Config, db: &Db) {
         Some(file) => {
             // With user/password:  postgresql://user:pass@localhost:5432/perry
             // let default_url: String = "postgresql://localhost:5432/perry".into();
-            let local_url = config.local_url.clone();
+            let local_url = args.config.local_url.clone();
             info!("Restoring local database {local_url} from file {file}");
-            restore(&config.postgres_dir, parse_jdbc_url(&local_url), file.to_string());
+            restore(args, file.to_string());
         }
     }
 }
 
-fn import(pg: &str, db: &Db) -> Option<String> {
+fn import(args: &Args) -> Option<String> {
+    let db = Db::parse_jdbc_url(&args.config.local_url);
     let file = "db.dump";
     println!("Importing database \"{}\" from {} into file {file}", db.database_name, db.host);
-    match Command::new(pg_dump(pg))
+    match Command::new(args.postgres.pg_dump())
         .env("PGPASSWORD", db.password.clone())
         .arg(format!("--username={}", db.username.clone()))
         .arg("-f")
@@ -53,11 +55,12 @@ fn import(pg: &str, db: &Db) -> Option<String> {
     }
 }
 
-fn restore(pg: &str, db: Db, filename: String) {
-    println!("Running {} -U {} -h {} -d {} {}", psql(pg), db.username, db.host, db.database_name,
-        filename);
+fn restore(args: &Args, filename: String) {
+    let db = Db::parse_jdbc_url(&args.config.prod_url);
+    println!("Running {} -U {} -h {} -d {} {}", args.postgres.psql(), db.username, db.host,
+        db.database_name, filename);
 
-    let mut command = Command::new(psql(pg))
+    let mut command = Command::new(args.postgres.psql())
         .stdin(std::process::Stdio::piped())
         .env("PGPASSWORD", db.password)
         .arg("-U")
@@ -101,8 +104,4 @@ fn restore(pg: &str, db: Db, filename: String) {
             println!("Error: {e}");
         }
     }
-}
-
-fn default_local_url() -> String {
-    "postgresql://localhost:5432/perry".into()
 }
