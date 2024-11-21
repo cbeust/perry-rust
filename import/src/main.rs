@@ -1,11 +1,15 @@
 use std::fs::File;
 use std::io::{Read, Write};
-use std::process::{Command, exit};
+use std::process::exit;
 use std::str::FromStr;
+
 use figment::Figment;
 use figment::providers::{Format, Toml};
 use serde::Deserialize;
-use tracing::{error, info};
+
+use crate::import::run_import;
+
+mod import;
 
 pub fn main() {
     // import.toml sample:
@@ -21,105 +25,7 @@ pub fn main() {
     }
 
     let db = parse_jdbc_url(&config.prod_url);
-
-    // Import production database
-    let import_result = import(&config.postgres_dir, db);
-    // let import_result = Some(FILE);
-
-    // Restore local database
-    match import_result {
-        None => {
-            error!("Something went wrong during import");
-        }
-        Some(file) => {
-            // With user/password:  postgresql://user:pass@localhost:5432/perry
-            // let default_url: String = "postgresql://localhost:5432/perry".into();
-            let local_url = config.local_url;
-            info!("Restoring local database {local_url} from file {file}");
-            restore(&config.postgres_dir, parse_jdbc_url(&local_url), file.to_string());
-        }
-    }
-}
-
-fn pg_dump(pg: &str) -> String { format!("{pg}\\bin\\pg_dump.exe") }
-fn psql(pg: &str) -> String { format!("{pg}\\bin\\psql.exe") }
-
-fn import(pg: &str, db: Db) -> Option<String> {
-    let file = "db.dump";
-    println!("Importing database \"{}\" from {} into file {file}", db.database_name, db.host);
-    match Command::new(pg_dump(pg))
-        .env("PGPASSWORD", db.password)
-        .arg(format!("--username={}", db.username))
-        .arg("-f")
-        .arg(file)
-        .arg("-v")
-        .arg("--no-password")
-        .arg(format!("--dbname={}", db.database_name))
-        .arg(format!("--host={}", db.host))
-        .arg(format!("--port={}", db.port))
-        .output()
-    {
-        Ok(_output) => {
-            // println!("stdout: {:#?}", String::from_utf8_lossy(&output.stdout));
-            // println!("stderr: {:#?}", String::from_utf8_lossy(&output.stderr));
-            println!("Created file {file}");
-            Some(file.to_string())
-        }
-        Err(e) => {
-            println!("Error: {e}");
-            None
-        }
-    }
-}
-
-fn restore(pg: &str, db: Db, filename: String) {
-    println!("Running {} -U {} -h {} -d {} {}", psql(pg), db.username, db.host, db.database_name,
-        filename);
-
-    let mut command = Command::new(psql(pg))
-        .stdin(std::process::Stdio::piped())
-        .env("PGPASSWORD", db.password)
-        .arg("-U")
-        .arg(db.username)
-        .arg("-h")
-        .arg(db.host)
-        .arg("-v")
-        .arg("ON_ERROR_CONTINUE=on")
-        .arg("-d")
-        .arg("postgres")
-        .spawn()
-        .unwrap();
-
-    let stdin = command.stdin.as_mut().expect("failed to open stdin");
-
-    let commands = vec![
-        "drop database perry;\n",
-        "create database perry;\n",
-        "\\c perry\n"
-    ];
-
-    for c in commands {
-        println!("Issuing command '{c}'");
-        stdin.write_all(c.as_bytes()).expect("Write to stdin");
-    }
-    let mut buffer: Vec<u8> = Vec::new();
-    File::open(filename).unwrap().read_to_end(&mut buffer).expect("Create file");
-
-    stdin.write_all(&buffer).expect("Write to stdin");
-    drop(stdin); // Close the stdin pipe
-
-    match command.wait_with_output() {
-        Ok(output) => {
-            // println!("stdout: {:#?}", String::from_utf8_lossy(&output.stdout));
-            // println!("stderr: {:#?}", String::from_utf8_lossy(&output.stderr));
-            println!("Database restored:\nstdout:{}\nstderr:{}",
-                String::from_utf8_lossy(&output.stdout),
-                String::from_utf8_lossy(&output.stderr));
-        }
-        Err(e) => {
-            println!("Error: {e}");
-        }
-    }
+    run_import(&config, &db);
 }
 
 fn parse_jdbc_url(url: &str) -> Db {
@@ -165,29 +71,9 @@ fn parse_jdbc_url(url: &str) -> Db {
     result
 }
 
-#[allow(unused)]
-#[derive(Debug, Default, Deserialize)]
-struct Db {
-    host: String,
-    port: u16,
-    database_name: String,
-    username: String,
-    password: String,
-}
 
-/// Format of the file import.toml
-#[allow(unused)]
-#[derive(Default, Deserialize)]
-struct Config {
-    postgres_dir: String,
-    prod_url: String,
-    #[serde(default = "default_local_url")]
-    local_url: String,
-}
-
-fn default_local_url() -> String {
-    "postgresql://localhost:5432/perry".into()
-}
+pub fn pg_dump(pg: &str) -> String { format!("{pg}\\bin\\pg_dump.exe") }
+fn psql(pg: &str) -> String { format!("{pg}\\bin\\psql.exe") }
 
 #[test]
 fn test_jdbc_url() {
@@ -205,4 +91,24 @@ fn test_jdbc_url() {
         assert_eq!(db.database_name, "the_db");
     }
 
+}
+
+#[allow(unused)]
+#[derive(Debug, Default, Deserialize)]
+pub struct Db {
+    host: String,
+    port: u16,
+    database_name: String,
+    username: String,
+    password: String,
+}
+
+/// Format of the file import.toml
+#[allow(unused)]
+#[derive(Default, Deserialize)]
+pub struct Config {
+    postgres_dir: String,
+    prod_url: String,
+    #[serde(default = "default_local_url")]
+    local_url: String,
 }
