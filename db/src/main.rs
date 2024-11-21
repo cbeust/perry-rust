@@ -1,3 +1,4 @@
+use std::{env, io};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::process::exit;
@@ -14,6 +15,8 @@ mod db;
 mod test;
 
 pub fn main() {
+    println!("Current directory: {}", env::current_dir().unwrap().to_str().unwrap());
+
     if File::open("db.toml").is_err() {
         error!("Couldn't find db.toml");
         exit(1);
