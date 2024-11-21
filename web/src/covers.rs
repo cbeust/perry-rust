@@ -33,7 +33,7 @@ async fn find_cover_image(book_number: u32, db: &Arc<Box<dyn Db>>) -> PrResult<V
     match db.find_cover(book_number).await {
         None => {
             info!("Couldn't find cover for {book_number} in database, fetching it");
-            let perry_pedia = Box::new(PerryPedia::new());
+            let perry_pedia = Box::new(PerryPedia);
             match perry_pedia.find_cover_url(book_number).await {
                 None => {
                     Err(PerryPediaCouldNotFind(book_number as i32))
