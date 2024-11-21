@@ -239,7 +239,7 @@ impl Db for DbPostgres {
                         result = books;
                     }
                     Err(e) => {
-                        error!("Couldn't retrieve book for cycle {cycle_number}: {e}");
+                        error!("find_books(): couldn't retrieve book for cycle {cycle_number}: {e}");
                     }
                 }
             }
@@ -288,7 +288,7 @@ impl Db for DbPostgres {
                         result = summaries;
                     }
                     Err(e) => {
-                        error!("Couldn't retrieve book for cycle {cycle_number}: {e}");
+                        error!("find_summaries(): couldn't retrieve book for cycle {cycle_number}: {e}");
                     }
                 }
             }
