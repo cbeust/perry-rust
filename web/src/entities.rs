@@ -36,7 +36,7 @@ pub struct Summary {
     pub number: i32,
     pub author_email: String,
     pub author_name: String,
-    pub date: String,
+    pub date: Option<String>,
     pub english_title: String,
     pub summary: String,
     pub time: Option<String>,

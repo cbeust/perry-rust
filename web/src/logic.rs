@@ -41,7 +41,7 @@ pub async fn save_summary(state: &PerryState, user: Option<User>, form_data: For
         number: form_data.number as i32,
         author_email: form_data.author_email.clone(),
         author_name: form_data.author_name.clone(),
-        date: form_data.date.clone(),
+        date: Some(form_data.date.clone()),
         english_title: english_title.clone(),
         summary: form_data.summary.clone(),
         time: None,

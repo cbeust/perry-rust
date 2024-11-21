@@ -114,8 +114,9 @@ pub struct TemplateRecentSummary {
 
 impl TemplateRecentSummary {
     pub(crate) async fn new(summary: Summary, cover_url: String) -> Self {
-        let pretty_date = if ! summary.date.is_empty() {
-            match NaiveDate::parse_from_str(&summary.date, "%Y-%m-%d %H:%M") {
+        let pretty_date = if summary.date.is_some() {
+            let date = summary.date.clone().unwrap();
+            match NaiveDate::parse_from_str(&date, "%Y-%m-%d %H:%M") {
                 Ok(date) => {
                     let time = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
                     let date_time = NaiveDateTime::new(date, time);
@@ -126,7 +127,7 @@ impl TemplateRecentSummary {
                     pretty_date
                 }
                 Err(e) => {
-                    warn!("Couldn't parse date {}: {e}", summary.date);
+                    warn!("Couldn't parse date {}: {e}", date);
                     "".into()
                 }
             }
