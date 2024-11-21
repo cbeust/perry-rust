@@ -12,6 +12,8 @@ use crate::PerryState;
 use crate::url::Urls;
 
 
+// For some reason, Rust Analyzer thinks this structure is never created.
+#[allow(dead_code)]
 #[derive(Template)]
 #[template(path = "email-summary.html")]
 struct SendEmailTemplate {
