@@ -190,7 +190,6 @@ impl Db for DbPostgres {
             .await
         {
             Ok(summaries) => {
-                info!("Found {} recent summaries", summaries.len());
                 result = summaries
             }
             Err(e) => {
