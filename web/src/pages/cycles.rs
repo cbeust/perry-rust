@@ -27,7 +27,6 @@ pub async fn index(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {
             // Summaries
             let rs: Vec<Summary> = state.db.fetch_most_recent_summaries().await;
             let numbers: Vec<u32> = rs.iter().map(|s| s.number as u32).collect();
-            let start = Instant::now();
             let cover_urls: Vec<String> = state.cover_finder.find_cover_urls(numbers).await
                 .iter().map(|url| {
                 match url {
@@ -35,10 +34,10 @@ pub async fn index(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {
                     Some(s) => { s.clone() }
                 }
             }).collect();
-            info!("Time to fetch recent summaries: {} ms", start.elapsed().as_millis());
             let mut recent_summaries: Vec<TemplateRecentSummary> = Vec::new();
             for (i, s) in rs.iter().enumerate() {
-                recent_summaries.push(TemplateRecentSummary::new(s.clone(), cover_urls[i].clone()).await);
+                recent_summaries.push(
+                    TemplateRecentSummary::new(s.clone(), cover_urls[i].clone()).await);
             }
             let summary_count = state.db.fetch_summary_count().await;
             let book_count = state.db.fetch_book_count().await;
