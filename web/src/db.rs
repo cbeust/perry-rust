@@ -322,19 +322,13 @@ impl Db for DbPostgres {
 
     async fn find_cover(&self, book_number: u32) -> Option<Image> {
         let mut result = None;
-        match sqlx::query_as::<_, Image>(
+        if let Ok(image) = sqlx::query_as::<_, Image>(
             "select * from covers where number = $1")
             .bind(book_number as i32)
             .fetch_one(&self.pool)
             .await
         {
-            Ok(image) => {
-                info!("Found cover image for {book_number}");
-                result = Some(image)
-            }
-            Err(e) => {
-                info!("Couldn't retrieve cover for {book_number}: {e}");
-            }
+            result = Some(image)
         }
 
         result
