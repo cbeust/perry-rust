@@ -5,7 +5,7 @@ use askama::Template;
 use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use tracing::{error, info, warn};
+use tracing::*;
 use crate::banner_info::BannerInfo;
 use crate::cookies::Cookies;
 use crate::entities::{Book, Cycle, Summary};

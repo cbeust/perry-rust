@@ -17,7 +17,7 @@ mod covers;
 
 use std::sync::Arc;
 use actix_web::{App, HttpServer};
-use actix_web::web::{Data, FormConfig, get, post, resource};
+use actix_web::web::{Data, FormConfig, get, head, post, resource};
 use bon::builder;
 use tracing::{ info};
 use tracing_subscriber::fmt;
@@ -29,7 +29,7 @@ use crate::db::{create_db, Db};
 use crate::email::{Email, EmailService};
 use crate::login::{api_login, logout};
 use crate::pages::cycle::cycle;
-use crate::pages::cycles::{api_cycles, index};
+use crate::pages::cycles::{api_cycles, index, root_head};
 use crate::pages::edit::{edit_summary};
 use crate::pages::pending::{approve_pending, delete_pending, pending, pending_delete_all};
 use crate::pages::summaries::{api_summaries, post_summary, summaries, summaries_post};
