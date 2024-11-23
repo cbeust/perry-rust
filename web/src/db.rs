@@ -221,6 +221,25 @@ impl Db for DbPostgres {
         result
     }
 
+    async fn find_cycle_by_book(&self, book_number: u32) -> Option<Cycle> {
+        let book_number = book_number as i32;
+        match sqlx::query_as::<_, Cycle>(
+            "select * from cycles where $1 between start and \"end\"")
+            .bind(book_number)
+            .bind(book_number)
+            .fetch_one(&self.pool)
+            .await
+        {
+            Ok(cycle) => {
+                Some(cycle)
+            }
+            Err(e) => {
+                error!("Couldn't retrieve cycle from book {book_number}: {e}");
+                None
+            }
+        }
+    }
+
     async fn find_books(&self, cycle_number: u32) -> Vec<Book> {
         let mut result = Vec::new();
         match self.find_cycle(cycle_number).await {
@@ -249,25 +268,6 @@ impl Db for DbPostgres {
         }
 
         result
-    }
-
-    async fn find_cycle_by_book(&self, book_number: u32) -> Option<Cycle> {
-        let book_number = book_number as i32;
-        match sqlx::query_as::<_, Cycle>(
-            "select * from cycles where $1 between start and \"end\"")
-            .bind(book_number)
-            .bind(book_number)
-            .fetch_one(&self.pool)
-            .await
-        {
-            Ok(cycle) => {
-                Some(cycle)
-            }
-            Err(e) => {
-                error!("Couldn't retrieve cycle from book {book_number}: {e}");
-                None
-            }
-        }
     }
 
     async fn find_summaries(&self, cycle_number: u32) -> Vec<Summary> {
@@ -318,6 +318,59 @@ impl Db for DbPostgres {
         }
 
         result
+    }
+
+    async fn find_cover(&self, book_number: u32) -> Option<Image> {
+        let mut result = None;
+        match sqlx::query_as::<_, Image>(
+            "select * from covers where number = $1")
+            .bind(book_number as i32)
+            .fetch_one(&self.pool)
+            .await
+        {
+            Ok(image) => {
+                info!("Found cover image for {book_number}");
+                result = Some(image)
+            }
+            Err(e) => {
+                info!("Couldn't retrieve cover for {book_number}: {e}");
+            }
+        }
+
+        result
+    }
+
+    async fn delete_cover(&self, book_number: u32) -> PrResult<()> {
+        match sqlx::query!("delete from covers where number = $1", book_number as i32)
+            .execute(&self.pool)
+            .await
+        {
+            Ok(_) => {
+                info!("Deleted cover {book_number}");
+                Ok(())
+            }
+            Err(error) => {
+                error!("Error deleting cover {book_number}: {error}");
+                Err(DeletingCover(error.to_string(), book_number as i32))
+            }
+        }
+    }
+
+    async fn insert_cover(&self, book_number: u32, bytes: Vec<u8>) -> PrResult<()> {
+        match sqlx::query!("insert into covers (number, image, size) values ($1, $2, $3)",
+            book_number as i32, bytes, bytes.len() as i32)
+            .execute(&self.pool)
+            .await
+        {
+            Ok(_) => {
+                info!("Inserted new cover image for book {book_number}");
+                Ok(())
+            }
+            Err(error) => {
+                error!("Error inserting new cover {}: {error}", book_number);
+                Err(InsertingCoverImage(error.to_string(), book_number as i32))
+            }
+        }
     }
 
     async fn insert_summary(&self, summary: Summary) -> PrResult<()> {
@@ -457,59 +510,6 @@ impl Db for DbPostgres {
             Err(e) => {
                 error!("Couldn't retrieve pending: {e}");
                 Vec::new()
-            }
-        }
-    }
-
-    async fn delete_cover(&self, book_number: u32) -> PrResult<()> {
-        match sqlx::query!("delete from covers where number = $1", book_number as i32)
-            .execute(&self.pool)
-            .await
-        {
-            Ok(_) => {
-                info!("Deleted cover {book_number}");
-                Ok(())
-            }
-            Err(error) => {
-                error!("Error deleting cover {book_number}: {error}");
-                Err(DeletingCover(error.to_string(), book_number as i32))
-            }
-        }
-    }
-
-    async fn find_cover(&self, book_number: u32) -> Option<Image> {
-        let mut result = None;
-        match sqlx::query_as::<_, Image>(
-            "select * from covers where number = $1")
-            .bind(book_number as i32)
-            .fetch_one(&self.pool)
-            .await
-        {
-            Ok(image) => {
-                info!("Found cover image for {book_number}");
-                result = Some(image)
-            }
-            Err(e) => {
-                info!("Couldn't retrieve cover for {book_number}: {e}");
-            }
-        }
-
-        result
-    }
-
-    async fn insert_cover(&self, book_number: u32, bytes: Vec<u8>) -> PrResult<()> {
-        match sqlx::query!("insert into covers (number, image, size) values ($1, $2, $3)",
-            book_number as i32, bytes, bytes.len() as i32)
-            .execute(&self.pool)
-            .await
-        {
-            Ok(_) => {
-                info!("Inserted new cover image for book {book_number}");
-                Ok(())
-            }
-            Err(error) => {
-                error!("Error inserting new cover {}: {error}", book_number);
-                Err(InsertingCoverImage(error.to_string(), book_number as i32))
             }
         }
     }
