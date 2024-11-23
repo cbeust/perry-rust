@@ -6,7 +6,7 @@ use tracing::{error, info};
 use tracing::log::warn;
 use crate::config::Config;
 use crate::entities::{Book, Cycle, Image, PendingSummary, Summary, User};
-use crate::errors::Error::{FetchingCycles, InsertingBook, InsertingCoverImage, InsertingInPending, InsertingSummary, UpdatingBook, UpdatingSummary, UpdatingUser};
+use crate::errors::Error::{DeletingCover, FetchingCycles, InsertingBook, InsertingCoverImage, InsertingInPending, InsertingSummary, UpdatingBook, UpdatingSummary, UpdatingUser};
 use crate::errors::PrResult;
 
 pub async fn create_db(config: &Config) -> Box<dyn Db> {
@@ -36,6 +36,7 @@ pub trait Db: Send + Sync {
     async fn find_summaries(&self, _cycle_number: u32) -> Vec<Summary> { Vec::new() }
     async fn find_book(&self, _book_number: u32) -> Option<Book> { None }
     async fn find_cover(&self, _book_number: u32) -> Option<Image> { None }
+    async fn delete_cover(&self, _book_number: u32) -> PrResult<()> { Ok(()) }
     async fn insert_cover(&self, _book_number: u32, _bytes: Vec<u8>) -> PrResult<()> { Ok(()) }
     async fn insert_summary(&self, _summary: Summary) -> PrResult<()> { Ok(()) }
     async fn update_summary(&self, _summary: Summary) -> PrResult<()> { Ok(()) }
@@ -456,6 +457,22 @@ impl Db for DbPostgres {
             Err(e) => {
                 error!("Couldn't retrieve pending: {e}");
                 Vec::new()
+            }
+        }
+    }
+
+    async fn delete_cover(&self, book_number: u32) -> PrResult<()> {
+        match sqlx::query!("delete from covers where number = $1", book_number as i32)
+            .execute(&self.pool)
+            .await
+        {
+            Ok(_) => {
+                info!("Deleted cover {book_number}");
+                Ok(())
+            }
+            Err(error) => {
+                error!("Error deleting cover {book_number}: {error}");
+                Err(DeletingCover(error.to_string(), book_number as i32))
             }
         }
     }

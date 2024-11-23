@@ -24,7 +24,7 @@ use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use crate::config::{Config, create_config};
-use crate::covers::cover;
+use crate::covers::{cover, delete_cover};
 use crate::db::{create_db, Db};
 use crate::email::{Email, EmailService};
 use crate::login::{api_login, logout};
@@ -98,6 +98,7 @@ async fn main() -> std::io::Result<()> {
 
             // Covers
             .service(resource("/covers/{number}").route(get().to(cover)))
+            .service(resource("/covers/{number}/delete").route(get().to(delete_cover)))
     })
         .bind(("0.0.0.0", config.port))?
         .run()

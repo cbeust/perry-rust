@@ -14,6 +14,20 @@ use crate::perrypedia::{CoverFinder, PerryPedia, TIMEOUT_MS};
 use crate::PerryState;
 use crate::response::Response;
 
+pub async fn delete_cover(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
+    let book_number = path.into_inner();
+    match state.db.delete_cover(book_number).await {
+        Ok(_) => {
+            info!("Successfully deleted cover {}", book_number);
+        }
+        Err(e) => {
+            error!("Couldn't delete cover {book_number}: {e}");
+        }
+    }
+
+    Response::redirect(format!("/covers/{book_number}"))
+}
+
 pub async fn cover(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let book_number = path.into_inner();
     match find_cover_image(book_number, &state.db).await {
