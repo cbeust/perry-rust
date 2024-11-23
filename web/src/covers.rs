@@ -45,7 +45,7 @@ async fn find_cover_image(book_number: u32, db: &Arc<Box<dyn Db>>) -> PrResult<V
                             match response.bytes().await {
                                 Ok(bytes) => {
                                     let len = bytes.len();
-                                    let new_bytes = resize_image(&bytes, 800, 600);
+                                    let new_bytes = resize_image(&bytes, 400, 300);
                                     info!("Found cover for {book_number} at {url2},\
                                         inserting it into the database after shrinking it\
                                          from {} to {} bytes", len, new_bytes.len());
@@ -90,7 +90,7 @@ fn resize_image(bytes: &[u8], target_width: u32, target_height: u32) -> Vec<u8> 
     };
 
     // Resize the image
-    let resized = img.resize(new_width, new_height, FilterType::Lanczos3);
+    let resized = img.resize(new_width, new_height, FilterType::Gaussian);
 
     // Convert back to PNG bytes
     let output_bytes: Vec<u8> = Vec::new();
