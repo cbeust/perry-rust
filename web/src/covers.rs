@@ -1,12 +1,13 @@
 use std::io::{Cursor};
 use std::sync::Arc;
 use std::time::Duration;
-use actix_web::{HttpResponse};
+use actix_web::{HttpRequest, HttpResponse};
 use actix_web::web::{Data, Path};
 use image::imageops::FilterType;
 use image::{ImageFormat, load_from_memory};
 use tokio::time::timeout;
 use tracing::{error, info};
+use crate::cookies::Cookies;
 use crate::db::Db;
 use crate::errors::Error::{CouldNotFindCoverImage, PerryPediaCouldNotFind, UnknownCoverImageError};
 use crate::errors::PrResult;
@@ -14,14 +15,16 @@ use crate::perrypedia::{CoverFinder, PerryPedia, TIMEOUT_MS};
 use crate::PerryState;
 use crate::response::Response;
 
-pub async fn delete_cover(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
+pub async fn delete_cover(req: HttpRequest, state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let book_number = path.into_inner();
-    match state.db.delete_cover(book_number).await {
-        Ok(_) => {
-            info!("Successfully deleted cover {}", book_number);
-        }
-        Err(e) => {
-            error!("Couldn't delete cover {book_number}: {e}");
+    if Cookies::find_user(&req, &state.db).await.is_some() {
+        match state.db.delete_cover(book_number).await {
+            Ok(_) => {
+                info!("Successfully deleted cover {}", book_number);
+            }
+            Err(e) => {
+                error!("Couldn't delete cover {book_number}: {e}");
+            }
         }
     }
 
