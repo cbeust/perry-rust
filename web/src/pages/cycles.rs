@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::time::Instant;
 use actix_web::{HttpRequest, HttpResponse};
 use actix_web::web::{Data, Path};
 use askama::Template;
@@ -13,6 +12,12 @@ use crate::entities::{Book, Cycle, Summary};
 use crate::PerryState;
 use crate::response::Response;
 use crate::url::Urls;
+
+pub async fn root_head() -> HttpResponse {
+    HttpResponse::Ok()
+        .append_header(("Content-Type", "text/plain"))
+        .finish()
+}
 
 pub async fn index(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {
     // Cycles
