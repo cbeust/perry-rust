@@ -29,46 +29,56 @@ pub async fn cover(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
 }
 
 async fn find_cover_image(book_number: u32, db: &Arc<Box<dyn Db>>) -> PrResult<Vec<u8>> {
+    // if book_number >= 3287 {
+    //     return fetch_cover_and_insert_into_db(book_number, db).await;
+    // }
+
     // Try to get the image from the database
     match db.find_cover(book_number).await {
         None => {
-            info!("Couldn't find cover for {book_number} in database, fetching it");
-            let perry_pedia = Box::new(PerryPedia);
-            match perry_pedia.find_cover_url(book_number).await {
-                None => {
-                    Err(PerryPediaCouldNotFind(book_number as i32))
-                }
-                Some(url) => {
-                    let url2 = url.clone();
-                    match timeout(Duration::from_millis(TIMEOUT_MS), reqwest::get(url)).await {
-                        Ok(Ok(response)) => {
-                            match response.bytes().await {
-                                Ok(bytes) => {
-                                    let len = bytes.len();
-                                    let new_bytes = resize_image(&bytes, 400, 300);
-                                    info!("Found cover for {book_number} at {url2},\
-                                        inserting it into the database after shrinking it\
+            fetch_cover_and_insert_into_db(book_number, db).await
+        }
+        Some(image) => {
+            Ok(image.image)
+        }
+    }
+}
+
+async fn fetch_cover_and_insert_into_db(book_number: u32, db: &Arc<Box<dyn Db>>)
+    -> PrResult<Vec<u8>>
+{
+    info!("Couldn't find cover for {book_number} in database, fetching it");
+    let perry_pedia = Box::new(PerryPedia);
+    match perry_pedia.find_cover_url(book_number).await {
+        None => {
+            Err(PerryPediaCouldNotFind(book_number as i32))
+        }
+        Some(url) => {
+            let url2 = url.clone();
+            match timeout(Duration::from_millis(TIMEOUT_MS), reqwest::get(url)).await {
+                Ok(Ok(response)) => {
+                    match response.bytes().await {
+                        Ok(bytes) => {
+                            let len = bytes.len();
+                            let new_bytes = resize_image(&bytes, 400, 300);
+                            info!("Found cover for {book_number} at {url2} ,\
+                                        inserting it into the database after shrinking it \
                                          from {} to {} bytes", len, new_bytes.len());
-                                    db.insert_cover(book_number, new_bytes.clone()).await?;
-                                    Ok(new_bytes.into())
-                                }
-                                Err(e) => {
-                                    Err(CouldNotFindCoverImage(e.to_string(), book_number as i32))
-                                }
-                            }
+                            db.insert_cover(book_number, new_bytes.clone()).await?;
+                            Ok(new_bytes.into())
                         }
                         Err(e) => {
                             Err(CouldNotFindCoverImage(e.to_string(), book_number as i32))
                         }
-                        _ => {
-                            Err(UnknownCoverImageError(book_number as i32))
-                        }
                     }
                 }
+                Err(e) => {
+                    Err(CouldNotFindCoverImage(e.to_string(), book_number as i32))
+                }
+                _ => {
+                    Err(UnknownCoverImageError(book_number as i32))
+                }
             }
-        }
-        Some(image) => {
-            Ok(image.image)
         }
     }
 }
