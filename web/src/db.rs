@@ -410,7 +410,7 @@ impl Db for DbPostgres {
         match self.find_book(book.number as u32).await {
             Some(_) => {
                 match sqlx::query!("update hefte set title = $2::text, author = $3::text,\
-                     german_File = $4::text \
+                     german_file = $4::text \
                      where number = $1",
                 book.number, book.title, book.author, book.german_file)
                     .execute(&self.pool)

@@ -35,7 +35,7 @@ pub async fn cover(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let book_number = path.into_inner();
     match find_cover_image(book_number, &state.db).await {
         Ok(bytes) => {
-            info!("Returning cover image size {} bytes", bytes.len());
+            info!("Returning cover image for book {}, size {} bytes", book_number, bytes.len());
             Response::png(bytes)
         }
         Err(e) => {
