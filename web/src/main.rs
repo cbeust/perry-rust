@@ -77,8 +77,7 @@ async fn main() -> std::io::Result<()> {
             .service(resource("/favicon.{ext}").route(get().to(favicon)))
 
             // Cycles
-            .service(resource("/").route(get().to(index)))
-            .service(resource("/").route(head().to(root_head)))
+            .service(resource("/").route(get().to(index)).route(head().to(root_head)))
             .service(resource("/cycles/{number}").route(get().to(cycle)))
             .service(resource("/api/cycles/{number}").route(get().to(api_cycles)))
 
