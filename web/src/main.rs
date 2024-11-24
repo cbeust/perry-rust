@@ -29,7 +29,7 @@ use crate::db::{create_db, Db};
 use crate::email::{Email, EmailService};
 use crate::login::{api_login, logout};
 use crate::pages::cycle::cycle;
-use crate::pages::cycles::{api_cycles, index, root_head};
+use crate::pages::cycles::{api_cycles, favicon, index, root_head};
 use crate::pages::edit::{edit_summary};
 use crate::pages::pending::{approve_pending, delete_pending, pending, pending_delete_all};
 use crate::pages::summaries::{api_summaries, post_summary, summaries, summaries_post};
@@ -72,6 +72,9 @@ async fn main() -> std::io::Result<()> {
             //
             // URL's
             //
+
+            // favicon
+            .service(resource("/favicon.{ext}").route(get().to(favicon)))
 
             // Cycles
             .service(resource("/").route(get().to(index)))

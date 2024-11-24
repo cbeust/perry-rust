@@ -19,6 +19,11 @@ pub async fn root_head() -> HttpResponse {
         .finish()
 }
 
+pub async fn favicon() -> HttpResponse {
+    let favicon = include_bytes!("../../../web/static/favicon.png");
+    Response::png(favicon.into())
+}
+
 pub async fn index(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {
     // Cycles
     let mut cycles: Vec<HtmlTemplate> = Vec::new();
