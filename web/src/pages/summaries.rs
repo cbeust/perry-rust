@@ -1,5 +1,5 @@
 use actix_web::{HttpRequest, HttpResponse};
-use actix_web::web::{Data, Form, Path};
+use actix_web::web::{Data, Form, Path, Query};
 use askama::Template;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -25,6 +25,15 @@ pub async fn summaries(req: HttpRequest, state: Data<PerryState>) -> HttpRespons
         banner_info: BannerInfo::new(Cookies::find_user(&req, &state.db).await).await,
     };
     Response::html(template.render().unwrap())
+}
+
+#[derive(Deserialize)]
+pub struct DisplaySummaryQueryParams {
+    number: u32
+}
+
+pub async fn php_display_summary(query: Query<DisplaySummaryQueryParams>) -> HttpResponse {
+    Response::redirect(format!("/summaries/{}", query.number))
 }
 
 pub async fn api_summaries(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {

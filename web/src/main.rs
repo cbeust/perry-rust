@@ -32,7 +32,7 @@ use crate::pages::cycle::cycle;
 use crate::pages::cycles::{api_cycles, favicon, index, root_head};
 use crate::pages::edit::{edit_summary};
 use crate::pages::pending::{approve_pending, delete_pending, pending, pending_delete_all};
-use crate::pages::summaries::{api_summaries, post_summary, summaries, summaries_post};
+use crate::pages::summaries::{api_summaries, php_display_summary, post_summary, summaries, summaries_post};
 use crate::perrypedia::{CoverFinder, LocalImageProvider};
 
 #[actix_web::main]
@@ -102,6 +102,9 @@ async fn main() -> std::io::Result<()> {
             // Covers
             .service(resource("/covers/{number}").route(get().to(cover)))
             .service(resource("/covers/{number}/delete").route(get().to(delete_cover)))
+
+            // PHP backward compatibility
+            .service(resource("/php/displaySummary.php").route(get().to(php_display_summary)))
     })
         .bind(("0.0.0.0", config.port))?
         .run()
