@@ -27,7 +27,7 @@ use crate::config::{Config, create_config};
 use crate::covers::{cover, delete_cover};
 use crate::db::{create_db, Db};
 use crate::email::{Email, EmailService};
-use crate::login::{api_login, logout};
+use crate::login::{login, logout};
 use crate::pages::cycle::cycle;
 use crate::pages::cycles::{api_cycles, favicon, index, root_head};
 use crate::pages::edit::{edit_summary};
@@ -96,7 +96,7 @@ async fn main() -> std::io::Result<()> {
             .service(resource("/delete/{id}").route(get().to(delete_pending)))
 
             // Login / log out
-            .service(resource("/login").route(post().to(api_login)))
+            .service(resource("/login").route(post().to(login)))
             .service(resource("/logout").route(get().to(logout)))
 
             // Covers

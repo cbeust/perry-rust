@@ -4,7 +4,6 @@ use serde::Deserialize;
 use tracing::info;
 use tracing::log::warn;
 use crate::cookies::Cookies;
-use crate::logic::login;
 use crate::PerryState;
 use crate::response::Response;
 use crate::url::Urls;
@@ -20,8 +19,8 @@ pub async fn logout() -> HttpResponse {
     Response::cookie(Urls::root(), cookie)
 }
 
-pub async fn api_login(state: Data<PerryState>, form: Form<LoginFormData>) -> HttpResponse {
-    match login(&state.db, &form.username, &form.password).await {
+pub async fn login(state: Data<PerryState>, form: Form<LoginFormData>) -> HttpResponse {
+    match crate::logic::login(&state.db, &form.username, &form.password).await {
         Ok((auth_token, days)) => {
             let cookie = Cookies::create_auth_token_cookie(auth_token.clone(), days).await;
             info!("Setting cookie for user {}: {}", form.username, cookie);
