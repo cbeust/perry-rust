@@ -20,7 +20,7 @@ pub async fn root_head() -> HttpResponse {
 }
 
 pub async fn favicon() -> HttpResponse {
-    let favicon = include_bytes!("../../../web/static/favicon.png");
+    let favicon = include_bytes!("../../static/favicon.png");
     Response::png(favicon.into())
 }
 
