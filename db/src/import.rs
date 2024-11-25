@@ -39,9 +39,10 @@ fn import(args: &Args) -> Option<String> {
         .arg(format!("--port={}", db.port))
         .output()
     {
-        Ok(_output) => {
-            // println!("stdout: {:#?}", String::from_utf8_lossy(&output.stdout));
-            // println!("stderr: {:#?}", String::from_utf8_lossy(&output.stderr));
+        Ok(output) => {
+            if output.stderr.len() > 0 {
+                println!("stderr: {:#?}", String::from_utf8_lossy(&output.stderr));
+            }
             println!("Created file {file}");
             Some(file.to_string())
         }
@@ -70,7 +71,7 @@ fn restore(args: &Args, filename: String) {
         .arg("-v")
         .arg("ON_ERROR_CONTINUE=on")
         .arg("-d")
-        .arg("postgres")
+        .arg("perry")
         .spawn()
         .unwrap();
 
@@ -87,7 +88,10 @@ fn restore(args: &Args, filename: String) {
         stdin.write_all(c.as_bytes()).expect("Write to stdin");
     }
     let mut buffer: Vec<u8> = Vec::new();
-    File::open(filename).unwrap().read_to_end(&mut buffer).expect("Create file");
+    File::open(filename.clone())
+        .expect(&format!("File should exist: {filename}"))
+        .read_to_end(&mut buffer)
+        .expect(&format!("Should have read to end: {filename}"));
 
     stdin.write_all(&buffer).expect("Write to stdin");
     drop(stdin); // Close the stdin pipe
