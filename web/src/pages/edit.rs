@@ -1,16 +1,21 @@
-use actix_web::HttpResponse;
+use actix_web::{HttpRequest, HttpResponse};
 use actix_web::web::{Data, Path};
 use askama::Template;
 use serde::Deserialize;
 use tracing::{error, info};
+use crate::cookies::Cookies;
 
 use crate::entities::{Book, Cycle, Summary};
 use crate::PerryState;
 use crate::response::Response;
 
-pub async fn edit_summary(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
+pub async fn edit_summary(req: HttpRequest, state: Data<PerryState>, path: Path<u32>)
+    -> HttpResponse
+{
     let book_number = path.into_inner();
-    info!("Editing summary {book_number}");
+    let user = Cookies::find_user(&req, &state.db).await;
+    let username = user.clone().map_or("<unknown>".to_string(), |u| u.email.clone());
+    info!("{username} editing summary {book_number}");
     match tokio::join!(
             state.db.find_summary(book_number),
             state.db.find_cycle_by_book(book_number),
