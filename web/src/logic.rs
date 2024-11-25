@@ -57,7 +57,7 @@ pub async fn save_summary(state: &PerryState, user: Option<User>, form_data: For
     };
     let book_number = book.number as u32;
     let db = &state.db;
-    let username = user.map_or("<unknown>", |u| &u.email.clone());
+    let username = user.clone().map_or("<unknown>".to_string(), |u| u.email.clone());
 
     if user.map_or(false, |u| u.can_post()) {
         // User is logged in, save the summary
