@@ -1,9 +1,8 @@
 use std::fs::File;
 use std::io::{Read, Write};
 use std::process::Command;
-use std::str::FromStr;
 use tracing::{error, info};
-use crate::{Args, Config};
+use crate::{Args};
 use crate::db::Db;
 
 pub fn run_import(args: &Args) {

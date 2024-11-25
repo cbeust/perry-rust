@@ -1,21 +1,39 @@
-use std::{env, io};
+use std::{env};
 use std::fs::File;
-use std::io::{Read, Write};
 use std::process::exit;
-use std::str::FromStr;
 use clap::{Arg, Command};
 use figment::Figment;
 use figment::providers::{Format, Toml};
 use serde::Deserialize;
+use sqlx::Error;
 use tracing::{error, info};
+use tracing_subscriber::fmt;
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
+use crate::images::images;
 use crate::import::run_import;
 
 mod import;
 mod db;
 mod test;
+mod images;
 
-pub fn main() {
-    println!("Current directory: {}", env::current_dir().unwrap().to_str().unwrap());
+pub fn init_logging(sqlx: bool) {
+    let debug_sqlx = if sqlx { "debug" } else { "info" };
+    tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(tracing_subscriber::EnvFilter::new(
+            format!("crate=debug,sqlx={debug_sqlx},info")
+            // format!("sqlx={debug_sqlx},reqwest=info,hyper_util:info,debug")
+        ))
+        .init();
+}
+
+
+#[tokio::main]
+pub async fn main() -> Result<(), sqlx::Error> {
+    init_logging(false);
+    info!("Current directory: {}", env::current_dir().unwrap().to_str().unwrap());
 
     if File::open("db.toml").is_err() {
         error!("Couldn't find db.toml");
@@ -50,6 +68,10 @@ pub fn main() {
                     .long("short")
                     .help("Use short status output")
                 ))
+        .subcommand(
+            Command::new("images")
+                .about("Images")
+        )
         .get_matches();
 
     // Handle subcommands
@@ -60,11 +82,22 @@ pub fn main() {
         Some(("test", sub_matches)) => {
             println!("Testing");
         }
+        Some(("images", sub_matches)) => {
+            match images(&args).await {
+                Ok(_) => {
+                    info!("Done processing images");
+                }
+                Err(e) => {
+                    error!("Error while processing images: {e}");
+                }
+            }
+        }
         _ => {
             info!("Unknown command: {:#?}", matches.subcommand())
         }
     }
 
+    Ok(())
 }
 
 pub struct Args {
