@@ -57,6 +57,7 @@ pub async fn save_summary(state: &PerryState, user: Option<User>, form_data: For
     };
     let book_number = book.number as u32;
     let db = &state.db;
+    let username = user.map_or("<unknown>", |u| &u.email.clone());
 
     if user.map_or(false, |u| u.can_post()) {
         // User is logged in, save the summary
@@ -70,7 +71,6 @@ pub async fn save_summary(state: &PerryState, user: Option<User>, form_data: For
         //
         // Notify the admin that a summary has been edited or added
         //
-        let s = if already_exists { "updated" } else { "added" };
         let mut admin_content = format!("New summary {book_number}<br>==========<br>\
                 English title: {english_title}<br>\
                 Author: {} {}<br>\
@@ -86,8 +86,11 @@ pub async fn save_summary(state: &PerryState, user: Option<User>, form_data: For
             admin_content.push_str(&old_content);
         }
 
+        let s = if already_exists { "updated" } else { "added" };
         state.email_service.send_email(ADMIN,
-            &format!("Summary {book_number} {s}: {}", english_title.clone()),
+            &format!("Summary {book_number} {s} by {}: {}",
+                username,
+                english_title.clone()),
             &admin_content)?;
 
         //
