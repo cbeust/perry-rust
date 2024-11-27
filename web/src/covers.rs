@@ -78,7 +78,7 @@ async fn fetch_cover_and_insert_into_db(book_number: u32, db: &Arc<Box<dyn Db>>)
                         Ok(bytes) => {
                             let len = bytes.len();
                             let new_bytes = resize_image(&bytes, 400, 300);
-                            info!("Found cover for {book_number} at {url2} ,\
+                            info!("Found cover for {book_number} at {url2}, \
                                         inserting it into the database after shrinking it \
                                          from {} to {} bytes", len, new_bytes.len());
                             db.insert_cover(book_number, new_bytes.clone()).await?;
