@@ -70,7 +70,7 @@ pub struct FormData {
     pub summary: String,
     pub book_author: String,
     pub author_email: String,
-    pub date: String,
+    pub date: Option<String>,
     pub _time: Option<String>,
     pub author_name: String,
 }

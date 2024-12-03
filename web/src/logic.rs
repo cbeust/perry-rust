@@ -37,11 +37,18 @@ pub async fn save_summary(state: &PerryState, user: Option<User>, form_data: For
     -> PrResult<()>
 {
     let english_title = form_data.english_title.clone();
+
+    let date = if form_data.date.is_none() {
+        Some(Utc::now().naive_local().format("%B%e, %Y").to_string())
+    } else {
+        form_data.date.clone()
+    };
+
     let summary = Summary {
         number: form_data.number as i32,
         author_email: form_data.author_email.clone(),
         author_name: form_data.author_name.clone(),
-        date: Some(form_data.date.clone()),
+        date,
         english_title: english_title.clone(),
         summary: form_data.summary.clone(),
         time: None,
