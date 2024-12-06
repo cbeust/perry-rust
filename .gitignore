@@ -6,6 +6,7 @@ local.toml
 db.toml
 *dump
 .sqlx
+*.http
 
 # Exclude workspace and local settings files
 .idea/workspace.xml
