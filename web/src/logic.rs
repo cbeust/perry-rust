@@ -39,11 +39,12 @@ pub async fn save_summary(state: &Data<PerryState>, user: Option<User>, form_dat
 {
     let english_title = form_data.english_title.clone();
 
-    let date = if form_data.date.is_none() {
-        Some(Utc::now().naive_local().format("%B%e, %Y").to_string())
-    } else {
-        form_data.date.clone()
-    };
+    let date = Some(match form_data.date.clone() {
+        None => {
+            Utc::now().naive_local().format("%B%e, %Y").to_string()
+        }
+        Some(d) => { d.trim().into() }
+    });
 
     let book_number = form_data.number as i32;
     let summary = Summary {
