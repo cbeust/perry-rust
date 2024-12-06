@@ -27,6 +27,7 @@ use crate::config::{Config, create_config};
 use crate::covers::{cover, delete_cover};
 use crate::db::{create_db, Db};
 use crate::email::{Email, EmailService};
+use crate::errors::PrResult;
 use crate::login::{login, logout};
 use crate::pages::cycle::cycle;
 use crate::pages::cycles::{api_cycles, favicon, index, root_head};
@@ -125,7 +126,7 @@ pub struct PerryState {
 }
 
 #[actix_web::main]
-async fn _main() {
+async fn _main() -> PrResult<()> {
     init_logging().sqlx(false).actix(true).call();
     let config = create_config();
     let state = Data::new(PerryState {
@@ -138,7 +139,7 @@ async fn _main() {
 
     let content = Email::create_email_content_for_summary(&state, 1000,
         "https://perryrhodan.us".into()).await;
-    state.email_service.send_email("cbeust@gmail.com", "Summary for 1000", &content.unwrap());
+    state.email_service.send_email("cbeust@gmail.com", "Summary for 1000", &content.unwrap())
     // println!("Content: {}", content.unwrap());
 }
 

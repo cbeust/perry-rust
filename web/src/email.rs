@@ -1,4 +1,3 @@
-use actix_web::web::Data;
 use askama::Template;
 use lettre::{Message, SmtpTransport, Transport};
 use lettre::message::header::ContentType;
