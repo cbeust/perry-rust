@@ -14,8 +14,9 @@ pub async fn edit_summary(req: HttpRequest, state: Data<PerryState>, path: Path<
 {
     let book_number = path.into_inner();
     let user = Cookies::find_user(&req, &state.db).await;
-    let username = user.clone().map_or("<unknown>".to_string(), |u| u.email.clone());
-    info!("{username} editing summary {book_number}");
+    let author_name = user.clone().map_or("<".to_string(), |u| u.name.clone());
+    let author_email = user.clone().map_or("".to_string(), |u| u.email.clone());
+    info!("{author_name} editing summary {book_number}");
     match tokio::join!(
             state.db.find_summary(book_number),
             state.db.find_cycle_by_book(book_number),
@@ -34,6 +35,10 @@ pub async fn edit_summary(req: HttpRequest, state: Data<PerryState>, path: Path<
         }
         (_, Some(cycle), book, cover_url) => {
             let mut template = TemplateEdit::default();
+            template.summary = Summary {
+                author_name, author_email,
+                ..Default::default()
+            };
             template.book = if let Some(b) = book { b } else {
                 let mut result = Book::default();
                 result.number = book_number as i32;
