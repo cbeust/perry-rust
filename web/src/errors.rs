@@ -3,6 +3,7 @@ use crate::entities::Summary;
 
 pub type PrResult<T> = Result<T, Error>;
 
+#[derive(Debug)]
 pub enum Error {
     InsertingSummary(String, i32),
     UpdatingSummary(String, i32),

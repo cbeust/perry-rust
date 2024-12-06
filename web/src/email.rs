@@ -6,6 +6,7 @@ use lettre::transport::smtp::authentication::Credentials;
 use tracing::{error, info};
 use tracing::log::warn;
 use crate::config::Config;
+use crate::constants::ADMIN;
 use crate::errors::Error::{EmailError, FetchingCycles, Unknown};
 use crate::errors::PrResult;
 use crate::PerryState;
@@ -52,7 +53,11 @@ impl Email {
         }
     }
 
-    pub async fn _create_email_content_for_summary(state: Data<PerryState>, book_number: u32,
+    pub async fn notify_admin(state: &PerryState, subject: &str, content: &str) -> PrResult<()> {
+        state.email_service.send_email(ADMIN, subject, content)
+    }
+
+    pub async fn create_email_content_for_summary(state: &PerryState, book_number: u32,
             host: String)
         -> PrResult<String>
     {
@@ -71,7 +76,7 @@ impl Email {
                     (Some(book), Some(summary)) => {
                         let template = SendEmailTemplate {
                             cycle_name,
-                            cover_url: cover_url.unwrap_or("".to_string()),
+                            cover_url: format!("{}{}", host, cover_url.unwrap_or("".to_string())),
                             english_title: summary.english_title,
                             german_title: book.title,
                             heft_author: book.author,

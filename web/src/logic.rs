@@ -3,8 +3,9 @@ use actix_web::web::{Data, Form};
 use chrono::{Utc};
 use tracing::info;
 use uuid::Uuid;
-use crate::constants::{ADMIN, GROUP_EMAIL_ADDRESS};
+use crate::constants::{ADMIN, GROUP_EMAIL_ADDRESS, PRODUCTION_HOST};
 use crate::db::Db;
+use crate::email::Email;
 use crate::pages::edit::FormData;
 use crate::entities::{Book, Cycle, Summary, User};
 use crate::errors::Error::{IncorrectPassword, UnknownUser};
@@ -33,7 +34,7 @@ pub async fn _get_data(state: &Data<PerryState>, book_number: u32)
     }
 }
 
-pub async fn save_summary(state: &PerryState, user: Option<User>, form_data: Form<FormData>)
+pub async fn save_summary(state: &Data<PerryState>, user: Option<User>, form_data: Form<FormData>)
     -> PrResult<()>
 {
     let english_title = form_data.english_title.clone();
@@ -44,8 +45,9 @@ pub async fn save_summary(state: &PerryState, user: Option<User>, form_data: For
         form_data.date.clone()
     };
 
+    let book_number = form_data.number as i32;
     let summary = Summary {
-        number: form_data.number as i32,
+        number: book_number,
         author_email: form_data.author_email.clone(),
         author_name: form_data.author_name.clone(),
         date,
@@ -58,7 +60,7 @@ pub async fn save_summary(state: &PerryState, user: Option<User>, form_data: For
     let title = form_data.german_title.clone();
     let author = form_data.book_author.clone();
     let book = Book {
-        number: form_data.number as i32,
+        number: book_number,
         title, author,
         german_file: None,
     };
@@ -94,11 +96,9 @@ pub async fn save_summary(state: &PerryState, user: Option<User>, form_data: For
         }
 
         let s = if already_exists { "updated" } else { "added" };
-        state.email_service.send_email(ADMIN,
-            &format!("Summary {book_number} {s} by {}: {}",
-                username,
-                english_title.clone()),
-            &admin_content)?;
+        Email::notify_admin(state,
+            &format!("Summary {book_number} {s} by {}: {}", username, english_title.clone()),
+            &admin_content).await?;
 
         //
         // Update or insert the summary
@@ -114,9 +114,20 @@ pub async fn save_summary(state: &PerryState, user: Option<User>, form_data: For
             } else {
                 ADMIN
             };
-            state.email_service.send_email(to,
-                &format!("{book_number}: {}", form_data.english_title.clone()),
-                &summary.summary)?;
+            match Email::create_email_content_for_summary(state, book_number, PRODUCTION_HOST.into())
+                    .await
+            {
+                Ok(email_content) => {
+                    state.email_service.send_email(to,
+                        &email_content,
+                        &summary.summary)?;
+                }
+                Err(e) => {
+                    Email::notify_admin(state,
+                        &format!("Couldn't send summary for {book_number} to group"),
+                        &format!("Error: {}", e.to_string())).await?;
+                }
+            };
             // Insert
             db.insert_summary(summary).await
         }

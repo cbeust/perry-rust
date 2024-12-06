@@ -51,17 +51,6 @@ async fn main() -> std::io::Result<()> {
         cover_finder: Arc::new(Box::new(LocalImageProvider)),
     });
 
-    // match Email::create_email_content_for_summary(&state.db, 2000,
-    //         format!("https://{}", PRODUCTION_HOST)).await
-    // {
-    //     Ok(content) => {
-    //         state.email_service.send_email("New summary".into(), content);
-    //     }
-    //     Err(_) => {}
-    // }
-    //
-    // std::process::exit(0);
-
     let result = HttpServer::new(move || {
         App::new()
             // Serve static files under /static
@@ -134,3 +123,22 @@ pub struct PerryState {
     pub email_service: Arc<Box<dyn EmailService>>,
     pub cover_finder: Arc<Box<dyn CoverFinder>>,
 }
+
+#[actix_web::main]
+async fn _main() {
+    init_logging().sqlx(false).actix(true).call();
+    let config = create_config();
+    let state = Data::new(PerryState {
+        app_name: "Perry Rust".into(),
+        config: config.clone(),
+        db: Arc::new(create_db(&config).await),
+        email_service: Arc::new(Email::create_email_service(&config).await),
+        cover_finder: Arc::new(Box::new(LocalImageProvider)),
+    });
+
+    let content = Email::create_email_content_for_summary(&state, 1000,
+        "https://perryrhodan.us".into()).await;
+    state.email_service.send_email("cbeust@gmail.com", "Summary for 1000", &content.unwrap());
+    // println!("Content: {}", content.unwrap());
+}
+
