@@ -400,7 +400,7 @@ impl Db for DbPostgres {
                 Ok(())
             }
             Err(error) => {
-                error!("Error inserting new summary {}: {error}", summary.number);
+                error!("Error updating summary {}: {error}", summary.number);
                 Err(UpdatingSummary(error.to_string(), summary.number))
             }
         }
