@@ -12,7 +12,6 @@ pub fn create_config() -> Config {
     match Figment::new()
         .merge(Toml::file("local.toml"))
         .merge(Env::raw())
-        .merge(Env::raw())
         .extract()
     {
         Ok(config) => { config }
