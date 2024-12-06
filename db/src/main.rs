@@ -5,7 +5,6 @@ use clap::{Arg, Command};
 use figment::Figment;
 use figment::providers::{Format, Toml};
 use serde::Deserialize;
-use sqlx::Error;
 use tracing::{error, info};
 use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
@@ -76,13 +75,13 @@ pub async fn main() -> Result<(), sqlx::Error> {
 
     // Handle subcommands
     match matches.subcommand() {
-        Some(("import", sub_matches)) => {
+        Some(("import", _sub_matches)) => {
             run_import(&args);
         }
-        Some(("test", sub_matches)) => {
+        Some(("test", _sub_matches)) => {
             println!("Testing");
         }
-        Some(("images", sub_matches)) => {
+        Some(("images", _sub_matches)) => {
             match images(&args).await {
                 Ok(_) => {
                     info!("Done processing images");
