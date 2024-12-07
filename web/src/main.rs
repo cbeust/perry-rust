@@ -30,11 +30,33 @@ use crate::email::{Email, EmailService};
 use crate::errors::PrResult;
 use crate::login::{login, logout};
 use crate::pages::cycle::cycle;
-use crate::pages::cycles::{api_cycles, favicon, index, root_head};
+use crate::pages::cycles::{api_cycles, favicon, index, parse_date, root_head};
 use crate::pages::edit::{edit_summary};
 use crate::pages::pending::{approve_pending, delete_pending, pending, pending_delete_all};
 use crate::pages::summaries::{api_summaries, php_display_summary, post_summary, summaries, summaries_post};
 use crate::perrypedia::{CoverFinder, LocalImageProvider};
+
+#[actix_web::main]
+async fn _main() -> PrResult<()> {
+    let date = parse_date("december 5, 2024");
+    println!("Date: {date:#?}");
+
+    init_logging().sqlx(false).actix(true).call();
+    let config = create_config();
+    let state = Data::new(PerryState {
+        app_name: "Perry Rust".into(),
+        config: config.clone(),
+        db: Arc::new(create_db(&config).await),
+        email_service: Arc::new(Email::create_email_service(&config).await),
+        cover_finder: Arc::new(Box::new(LocalImageProvider)),
+    });
+
+    let content = Email::create_email_content_for_summary(&state, 1000,
+        "https://perryrhodan.us".into()).await;
+    state.email_service.send_email("cbeust@gmail.com", "Summary for 1000", &content.unwrap())
+    // println!("Content: {}", content.unwrap());
+}
+
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
@@ -123,23 +145,5 @@ pub struct PerryState {
     pub db: Arc<Box<dyn Db>>,
     pub email_service: Arc<Box<dyn EmailService>>,
     pub cover_finder: Arc<Box<dyn CoverFinder>>,
-}
-
-#[actix_web::main]
-async fn _main() -> PrResult<()> {
-    init_logging().sqlx(false).actix(true).call();
-    let config = create_config();
-    let state = Data::new(PerryState {
-        app_name: "Perry Rust".into(),
-        config: config.clone(),
-        db: Arc::new(create_db(&config).await),
-        email_service: Arc::new(Email::create_email_service(&config).await),
-        cover_finder: Arc::new(Box::new(LocalImageProvider)),
-    });
-
-    let content = Email::create_email_content_for_summary(&state, 1000,
-        "https://perryrhodan.us".into()).await;
-    state.email_service.send_email("cbeust@gmail.com", "Summary for 1000", &content.unwrap())
-    // println!("Content: {}", content.unwrap());
 }
 
