@@ -68,7 +68,9 @@ impl Email {
         );
 
         match cycle_number {
-            None => { Err(FetchingCycles("".into())) }
+            None => {
+                Err(FetchingCycles(format!("Couldn't resolve cycle number for book {book_number}")))
+            }
             Some(cycle) => {
                 let cycle_name = cycle.english_title;
                 match (book, summary) {
