@@ -115,6 +115,15 @@ pub async fn api_cycles(state: Data<PerryState>, path: Path<u32>) -> HttpRespons
     Response::json(json)
 }
 
+pub fn parse_date(s: &str) -> Option<NaiveDate> {
+    for format in &["%Y-%m-%d %H:%M", "%B %d, %Y"] {
+        if let Ok(date) = NaiveDate::parse_from_str(s, format) {
+            return Some(date);
+        }
+    }
+    return None;
+}
+
 pub struct TemplateRecentSummary {
     pub summary: Summary,
     pub cover_url: String,
@@ -125,8 +134,8 @@ impl TemplateRecentSummary {
     pub(crate) async fn new(summary: Summary, cover_url: String) -> Self {
         let pretty_date = if summary.date.is_some() {
             let date = summary.date.clone().unwrap();
-            match NaiveDate::parse_from_str(&date, "%Y-%m-%d %H:%M") {
-                Ok(date) => {
+            match parse_date(&date) {
+                Some(date) => {
                     let time = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
                     let date_time = NaiveDateTime::new(date, time);
                     let local_timezone = Local::now().timezone();
@@ -135,8 +144,9 @@ impl TemplateRecentSummary {
                         .format("%B %d, %Y").to_string();
                     pretty_date
                 }
-                Err(e) => {
-                    warn!("Couldn't parse date {}: {e}", date);
+                None => {
+                    // Couldn't parse date December 5, 2024: input contains invalid characters
+                    warn!("Couldn't parse date {date}");
                     "".into()
                 }
             }
