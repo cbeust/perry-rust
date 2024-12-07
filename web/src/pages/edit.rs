@@ -48,9 +48,10 @@ pub async fn edit_summary(req: HttpRequest, state: Data<PerryState>, path: Path<
                 };
             }
             template.book = if let Some(b) = book { b } else {
-                let mut result = Book::default();
-                result.number = book_number as i32;
-                result
+                Book {
+                    number: book_number as i32,
+                    ..Default::default()
+                }
             };
             template.cycle = cycle;
             template.book.number = book_number as i32;
