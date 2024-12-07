@@ -138,9 +138,9 @@ pub async fn save_summary(state: &Data<PerryState>, user: Option<User>, form_dat
         let result = db.insert_summary_in_pending(book, summary.clone()).await;
 
         let body = format!("Summary: {:#?}", summary.clone());
-        state.email_service.send_email(ADMIN,
+        Email::notify_admin(state,
             &format!("New pending summary {}: {}", book_number, summary.english_title),
-            &body)?;
+            &body).await?;
         result
     }
 }
