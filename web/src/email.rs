@@ -6,7 +6,7 @@ use tracing::{error, info};
 use tracing::log::warn;
 use crate::config::Config;
 use crate::constants::ADMIN;
-use crate::errors::Error::{EmailError, FetchingCycles, Unknown};
+use crate::errors::Error::{EmailError, Unknown};
 use crate::errors::PrResult;
 use crate::PerryState;
 use crate::url::Urls;
@@ -67,31 +67,32 @@ impl Email {
             state.cover_finder.find_cover_url(book_number),
         );
 
-        match cycle_number {
+        let cycle_name = match cycle_number {
             None => {
-                Err(FetchingCycles(format!("Couldn't resolve cycle number for book {book_number}")))
+                Email::notify_admin(state,
+                    &format!("Couldn't find cycle for book {book_number}"), "".into()).await?;
+                "<unknown cycle>".into()
             }
-            Some(cycle) => {
-                let cycle_name = cycle.english_title;
-                match (book, summary) {
-                    (Some(book), Some(summary)) => {
-                        let template = SendEmailTemplate {
-                            cycle_name,
-                            cover_url: format!("{}{}", host, cover_url.unwrap_or("".to_string())),
-                            english_title: summary.english_title,
-                            german_title: book.title,
-                            heft_author: book.author,
-                            summary_author_name: summary.author_name,
-                            summary_text: summary.summary,
-                            summary_url: format!("{}{}", host, Urls::summary(book_number as i32)),
-                        };
-                        let content = template.render().unwrap();
-                        Ok(content.into())
-                    }
-                    _ => {
-                        Err(Unknown)
-                    }
-                }
+            Some(cycle) => { cycle.english_title }
+        };
+
+        match (book, summary) {
+            (Some(book), Some(summary)) => {
+                let template = SendEmailTemplate {
+                    cycle_name,
+                    cover_url: format!("{}{}", host, cover_url.unwrap_or("".to_string())),
+                    english_title: summary.english_title,
+                    german_title: book.title,
+                    heft_author: book.author,
+                    summary_author_name: summary.author_name,
+                    summary_text: summary.summary,
+                    summary_url: format!("{}{}", host, Urls::summary(book_number as i32)),
+                };
+                let content = template.render().unwrap();
+                Ok(content.into())
+            }
+            _ => {
+                Err(Unknown)
             }
         }
     }
