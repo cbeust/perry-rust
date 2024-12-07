@@ -226,7 +226,6 @@ impl Db for DbPostgres {
         match sqlx::query_as::<_, Cycle>(
             "select * from cycles where $1 between start and \"end\"")
             .bind(book_number)
-            .bind(book_number)
             .fetch_one(&self.pool)
             .await
         {
