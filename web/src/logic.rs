@@ -110,25 +110,8 @@ pub async fn save_summary(state: &Data<PerryState>, user: Option<User>, form_dat
         } else {
             // New summary
             // Notify the group
-            let to = if state.config.is_heroku {
-                GROUP_EMAIL_ADDRESS
-            } else {
-                ADMIN
-            };
-            match Email::create_email_content_for_summary(state, book_number, PRODUCTION_HOST.into())
-                    .await
-            {
-                Ok(email_content) => {
-                    state.email_service.send_email(to,
-                        &email_content,
-                        &summary.summary)?;
-                }
-                Err(e) => {
-                    Email::notify_admin(state,
-                        &format!("Couldn't send summary for {book_number} to group"),
-                        &format!("Error: {}", e.to_string())).await?;
-                }
-            };
+            send_summary_to_group(state, &summary).await?;
+
             // Insert
             db.insert_summary(summary).await
         }
@@ -143,6 +126,33 @@ pub async fn save_summary(state: &Data<PerryState>, user: Option<User>, form_dat
             &body).await?;
         result
     }
+}
+
+pub async fn send_summary_to_group(state: &PerryState, summary: &Summary) -> PrResult<()> {
+    let to = if state.config.is_heroku {
+        ADMIN
+        // GROUP_EMAIL_ADDRESS
+    } else {
+        ADMIN
+    };
+    let book_number = summary.number;
+    match Email::create_email_content_for_summary(state, book_number as u32,
+            PRODUCTION_HOST.into())
+        .await
+    {
+        Ok(email_content) => {
+            state.email_service.send_email(to,
+                &format!("New summary posted: {book_number}"),
+                &email_content)?;
+        }
+        Err(e) => {
+            Email::notify_admin(state,
+                &format!("Couldn't send summary for {book_number} to group"),
+                &format!("Error: {}", e.to_string())).await?;
+        }
+    };
+
+    Ok(())
 }
 
 fn verify_password(supplied_password: &str, salt: &Vec<u8>, password: &Vec<u8>) -> bool {

@@ -26,7 +26,7 @@ use tracing_subscriber::util::SubscriberInitExt;
 use crate::config::{Config, create_config};
 use crate::covers::{cover, delete_cover};
 use crate::db::{create_db, Db};
-use crate::email::{Email, EmailService};
+use crate::email::{api_send_email, Email, EmailService};
 use crate::errors::PrResult;
 use crate::login::{login, logout};
 use crate::pages::cycle::cycle;
@@ -99,6 +99,7 @@ async fn main() -> std::io::Result<()> {
             .service(resource("/summaries/{number}/edit").route(get().to(edit_summary)))
             .service(resource("/api/summaries").route(post().to(post_summary)))
             .service(resource("/api/summaries/{number}").route(get().to(api_summaries)))
+            .service(resource("/api/sendEmail/{number}").route(get().to(api_send_email)))
 
             // Pending
             .service(resource("/pending").route(get().to(pending)))
@@ -128,7 +129,7 @@ async fn main() -> std::io::Result<()> {
 #[builder]
 pub fn init_logging(sqlx: bool, actix: bool) {
     let debug_sqlx = if sqlx { "debug" } else { "info" };
-    let debug_actix = if actix { "debug" } else { "info" };
+    let debug_actix = if actix { "trace" } else { "info" };
     tracing_subscriber::registry()
         .with(fmt::layer())
         .with(tracing_subscriber::EnvFilter::new(

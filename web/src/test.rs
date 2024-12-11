@@ -3,7 +3,7 @@
 #[cfg(test)]
 mod tests {
     use crate::config::Config;
-    use crate::db::{Db, MockDb};
+    use crate::db::{Db};
     use crate::email::Email;
     use crate::entities::{Book, Cycle, Summary};
     use crate::errors::PrResult;

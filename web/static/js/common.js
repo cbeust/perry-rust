@@ -5,7 +5,7 @@ function httpGet(url, xmlHttp = new XMLHttpRequest()) {
 }
 
 function sendEmailMailingList(number) {
-    httpGet("/api/sendEmail?number=" + number);
+    httpGet("/api/sendEmail/" + number);
 }
 
 function numberFromPath() {
