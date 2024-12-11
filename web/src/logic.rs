@@ -130,8 +130,7 @@ pub async fn save_summary(state: &Data<PerryState>, user: Option<User>, form_dat
 
 pub async fn send_summary_to_group(state: &PerryState, summary: &Summary) -> PrResult<()> {
     let to = if state.config.is_heroku {
-        ADMIN
-        // GROUP_EMAIL_ADDRESS
+        GROUP_EMAIL_ADDRESS
     } else {
         ADMIN
     };
