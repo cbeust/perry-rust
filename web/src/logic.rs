@@ -142,16 +142,15 @@ pub async fn send_summary_to_group(state: &PerryState, summary: &Summary) -> PrR
         Ok(email_content) => {
             state.email_service.send_email(to,
                 &format!("New summary posted: {book_number}"),
-                &email_content)?;
+                &email_content)
         }
         Err(e) => {
             Email::notify_admin(state,
                 &format!("Couldn't send summary for {book_number} to group"),
                 &format!("Error: {}", e.to_string())).await?;
+            Err(e)
         }
-    };
-
-    Ok(())
+    }
 }
 
 fn verify_password(supplied_password: &str, salt: &Vec<u8>, password: &Vec<u8>) -> bool {

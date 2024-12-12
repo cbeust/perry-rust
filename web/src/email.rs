@@ -12,9 +12,7 @@ use crate::errors::Error::{EmailError, Unknown};
 use crate::errors::PrResult;
 use crate::logic::send_summary_to_group;
 use crate::PerryState;
-use crate::response::Response;
 use crate::url::Urls;
-
 
 // For some reason, Rust Analyzer thinks this structure is never created.
 #[allow(dead_code)]
@@ -102,10 +100,10 @@ impl Email {
     }
 }
 
-pub async fn api_send_email(state: Data<PerryState>, path: Path<(u32)>) -> HttpResponse {
-    let (book_number) = path.into_inner();
+pub async fn api_send_email(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
+    let book_number = path.into_inner();
     if let Some(summary) = state.db.find_summary(book_number).await {
-        send_summary_to_group(&state, &summary).await;
+        let _ = send_summary_to_group(&state, &summary).await;
     }
 
     HttpResponse::Ok().finish()
