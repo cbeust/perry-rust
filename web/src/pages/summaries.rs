@@ -92,7 +92,7 @@ pub async fn post_summary(req: HttpRequest, state: Data<PerryState>, form: Form<
 {
     let number = form.number as i32;
     if let Err(e) =  save_summary(&state, Cookies::find_user(&req, &state.db).await, form).await {
-        error!("{e}");
+        error!("Error when saving the summary: {e}");
     };
 
     Response::redirect(Urls::summary(number))
