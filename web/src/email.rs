@@ -8,6 +8,7 @@ use tracing::{error, info};
 use tracing::log::warn;
 use crate::config::Config;
 use crate::constants::ADMIN;
+use crate::entities::Summary;
 use crate::errors::Error::{EmailError, Unknown};
 use crate::errors::PrResult;
 use crate::logic::send_summary_to_group;
@@ -58,13 +59,13 @@ impl Email {
         state.email_service.send_email(ADMIN, subject, content)
     }
 
-    pub async fn create_email_content_for_summary(state: &PerryState, book_number: u32,
+    pub async fn create_email_content_for_summary(state: &PerryState, summary: &Summary,
             host: String)
         -> PrResult<String>
     {
-        let (book, summary, cycle_number, cover_url) = tokio::join!(
+        let book_number = summary.number as u32;
+        let (book, cycle_number, cover_url) = tokio::join!(
             state.db.find_book(book_number),
-            state.db.find_summary(book_number),
             state.db.find_cycle_by_book(book_number),
             state.cover_finder.find_cover_url(book_number),
         );
@@ -78,23 +79,27 @@ impl Email {
             Some(cycle) => { cycle.english_title }
         };
 
-        match (book, summary) {
-            (Some(book), Some(summary)) => {
+        let english_title = summary.english_title.clone();
+        let summary_author_name = summary.author_name.clone();
+        let summary_text = summary.summary.clone();
+        match book {
+            Some(book) => {
                 let template = SendEmailTemplate {
                     cycle_name,
                     cover_url: format!("{}{}", host, cover_url.unwrap_or("".to_string())),
-                    english_title: summary.english_title,
+                    english_title,
                     german_title: book.title,
                     heft_author: book.author,
-                    summary_author_name: summary.author_name,
-                    summary_text: summary.summary,
+                    summary_author_name,
+                    summary_text,
                     summary_url: format!("{}{}", host, Urls::summary(book_number as i32)),
                 };
                 let content = template.render().unwrap();
                 Ok(content.into())
             }
             _ => {
-                Err(Unknown)
+                Err(Unknown("create_email_content_for_summary:\
+                 Couldn't find book to write summary for: {book_number}".into()))
             }
         }
     }

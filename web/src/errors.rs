@@ -20,7 +20,7 @@ pub enum Error {
     CouldNotFindCoverImage(String, i32),
     UnknownCoverImageError(i32),
     DeletingCover(String, i32),
-    Unknown,
+    Unknown(String),
 }
 
 impl Display for Error {
@@ -44,7 +44,7 @@ impl Display for Error {
             CouldNotFindCoverImage(e, n) => { format!("Couldn't load cover image for {n}: {e}") }
             UnknownCoverImageError(n) => { format!("Couldn't load cover image for {n}") }
             DeletingCover(e, n) => { format!("Couldn't delete cover {n}: {e}") }
-            Unknown => { "Unknown error".into() }
+            Unknown(s) => { format!("Unknown error: {s}") }
         };
 
         f.write_str(&string)

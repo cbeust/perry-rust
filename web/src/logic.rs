@@ -134,17 +134,19 @@ pub async fn send_summary_to_group(state: &PerryState, summary: &Summary) -> PrR
     } else {
         ADMIN
     };
+    info!("Sending summary to {to}");
     let book_number = summary.number;
-    match Email::create_email_content_for_summary(state, book_number as u32,
-            PRODUCTION_HOST.into())
+    match Email::create_email_content_for_summary(state, summary, PRODUCTION_HOST.into())
         .await
     {
         Ok(email_content) => {
+            info!("Content created, sending");
             state.email_service.send_email(to,
                 &format!("New summary posted: {book_number}"),
                 &email_content)
         }
         Err(e) => {
+            info!("Couldn't create content: {e}");
             Email::notify_admin(state,
                 &format!("Couldn't send summary for {book_number} to group"),
                 &format!("Error: {}", e.to_string())).await?;

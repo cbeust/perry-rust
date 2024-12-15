@@ -51,10 +51,11 @@ async fn _main() -> PrResult<()> {
         cover_finder: Arc::new(Box::new(LocalImageProvider)),
     });
 
-    let content = Email::create_email_content_for_summary(&state, 1000,
-        "https://perryrhodan.us".into()).await;
-    state.email_service.send_email("cbeust@gmail.com", "Summary for 1000", &content.unwrap())
+    // let content = Email::create_email_content_for_summary(&state, 1000,
+    //     "https://perryrhodan.us".into()).await;
+    // state.email_service.send_email("cbeust@gmail.com", "Summary for 1000", &content.unwrap())
     // println!("Content: {}", content.unwrap());
+    Ok(())
 }
 
 
