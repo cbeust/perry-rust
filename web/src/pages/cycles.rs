@@ -115,13 +115,36 @@ pub async fn api_cycles(state: Data<PerryState>, path: Path<u32>) -> HttpRespons
     Response::json(json)
 }
 
-pub fn parse_date(s: &str) -> Option<NaiveDate> {
-    for format in &["%Y-%m-%d", "%Y-%m-%d %H:%M", "%B %d, %Y"] {
-        if let Ok(date) = NaiveDate::parse_from_str(s, format) {
-            return Some(date);
+pub fn to_pretty_date(date: Option<String>) -> String {
+    fn parse_date(s: &str) -> Option<NaiveDate> {
+        for format in &["%Y-%m-%d", "%Y-%m-%d %H:%M", "%B %d, %Y"] {
+            if let Ok(date) = NaiveDate::parse_from_str(s, format) {
+                return Some(date);
+            }
         }
+        return None;
     }
-    return None;
+
+    if let Some(date) = date {
+        match parse_date(&date) {
+            Some(date) => {
+                let time = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
+                let date_time = NaiveDateTime::new(date, time);
+                let local_timezone = Local::now().timezone();
+                // let local = Local::from_local_datetime(&date);
+                let pretty_date = local_timezone.from_local_datetime(&date_time).unwrap()
+                    .format("%B %d, %Y").to_string();
+                pretty_date
+            }
+            None => {
+                // Couldn't parse date December 5, 2024: input contains invalid characters
+                warn!("Couldn't parse date {date}");
+                "".into()
+            }
+        }
+    } else {
+        "".to_string()
+    }
 }
 
 pub struct TemplateRecentSummary {
@@ -132,27 +155,7 @@ pub struct TemplateRecentSummary {
 
 impl TemplateRecentSummary {
     pub(crate) async fn new(summary: Summary, cover_url: String) -> Self {
-        let pretty_date = if summary.date.is_some() {
-            let date = summary.date.clone().unwrap();
-            match parse_date(&date) {
-                Some(date) => {
-                    let time = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
-                    let date_time = NaiveDateTime::new(date, time);
-                    let local_timezone = Local::now().timezone();
-                    // let local = Local::from_local_datetime(&date);
-                    let pretty_date = local_timezone.from_local_datetime(&date_time).unwrap()
-                        .format("%B %d, %Y").to_string();
-                    pretty_date
-                }
-                None => {
-                    // Couldn't parse date December 5, 2024: input contains invalid characters
-                    warn!("Couldn't parse date {date}");
-                    "".into()
-                }
-            }
-        } else {
-            "".into()
-        };
+        let pretty_date = to_pretty_date(summary.date.clone());
         Self {
             summary,
             cover_url,

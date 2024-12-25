@@ -8,6 +8,7 @@ use crate::banner_info::BannerInfo;
 use crate::cookies::Cookies;
 use crate::entities::{Cycle, Summary};
 use crate::logic::save_summary;
+use crate::pages::cycles::to_pretty_date;
 use crate::pages::edit::FormData;
 use crate::perrypedia::PerryPedia;
 use crate::PerryState;
@@ -47,10 +48,12 @@ pub async fn api_summaries(state: Data<PerryState>, path: Path<u32>) -> HttpResp
         {
             (Some(summary), Some(cycle), Some(book), cover_url) => {
                 let cycle_number = cycle.number;
+                let summary_date = summary.date.clone();
                 TemplateSummary {
                     found: true,
                     number: book_number,
                     summary,
+                    pretty_date: to_pretty_date(summary_date),
                     cycle,
                     book_author: book.author,
                     german_title: book.title,
@@ -118,6 +121,7 @@ struct TemplateSummary {
     email_mailing_list: String,
     book_author: String,
     german_title: String,
+    pretty_date: String,
 }
 
 #[derive(Deserialize)]
