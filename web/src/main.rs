@@ -28,7 +28,6 @@ use crate::config::{Config, create_config};
 use crate::covers::{cover, delete_cover};
 use crate::db::{create_db, Db};
 use crate::email::{api_send_email, Email, EmailService};
-use crate::errors::PrResult;
 use crate::login::{login, logout};
 use crate::pages::cycle::cycle;
 use crate::pages::cycles::{api_cycles, favicon, index, root_head};
