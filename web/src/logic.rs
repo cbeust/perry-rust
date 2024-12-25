@@ -41,7 +41,7 @@ pub async fn save_summary(state: &Data<PerryState>, user: Option<User>, form_dat
 
     let date = Some(match form_data.date.clone() {
         None => {
-            Utc::now().naive_local().format("%B%e, %Y").to_string()
+            Utc::now().naive_local().format("%Y-%m-%d").to_string()
         }
         Some(d) => { d.trim().into() }
     });
