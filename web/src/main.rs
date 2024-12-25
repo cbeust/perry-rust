@@ -19,6 +19,7 @@ use std::sync::Arc;
 use actix_web::{App, HttpServer};
 use actix_web::web::{Data, FormConfig, get, head, post, resource};
 use bon::builder;
+use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use tracing::{ info};
 use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
@@ -30,34 +31,23 @@ use crate::email::{api_send_email, Email, EmailService};
 use crate::errors::PrResult;
 use crate::login::{login, logout};
 use crate::pages::cycle::cycle;
-use crate::pages::cycles::{api_cycles, favicon, index, parse_date, root_head};
+use crate::pages::cycles::{api_cycles, favicon, index, root_head};
 use crate::pages::edit::{edit_summary};
 use crate::pages::pending::{approve_pending, delete_pending, pending, pending_delete_all};
 use crate::pages::summaries::{api_summaries, php_display_summary, post_summary, summaries, summaries_post};
 use crate::perrypedia::{CoverFinder, LocalImageProvider};
 
-#[actix_web::main]
-async fn _main() -> PrResult<()> {
-    let date = parse_date("december 5, 2024");
-    println!("Date: {date:#?}");
+fn _main() {
+    use chrono::{Local, TimeZone};
 
-    init_logging().sqlx(false).actix(true).call();
-    let config = create_config();
-    let state = Data::new(PerryState {
-        app_name: "Perry Rust".into(),
-        config: config.clone(),
-        db: Arc::new(create_db(&config).await),
-        email_service: Arc::new(Email::create_email_service(&config).await),
-        cover_finder: Arc::new(Box::new(LocalImageProvider)),
-    });
-
-    // let content = Email::create_email_content_for_summary(&state, 1000,
-    //     "https://perryrhodan.us".into()).await;
-    // state.email_service.send_email("cbeust@gmail.com", "Summary for 1000", &content.unwrap())
-    // println!("Content: {}", content.unwrap());
-    Ok(())
+    let time = NaiveTime::from_hms_opt(0, 0, 0).unwrap();
+    let date = NaiveDate::from_ymd_opt(2024, 12, 15).unwrap();
+    let date_time = NaiveDateTime::new(date, time);
+    let local_timezone = Local::now().timezone();
+    let pretty_date = local_timezone.from_local_datetime(&date_time).unwrap()
+        .format("%Y-%m-%d").to_string();
+    println!("Date: {pretty_date}");
 }
-
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
