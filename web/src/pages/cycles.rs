@@ -116,7 +116,7 @@ pub async fn api_cycles(state: Data<PerryState>, path: Path<u32>) -> HttpRespons
 }
 
 pub fn parse_date(s: &str) -> Option<NaiveDate> {
-    for format in &["%Y-%m-%d %H:%M", "%B %d, %Y"] {
+    for format in &["%Y-%m-%d", "%Y-%m-%d %H:%M", "%B %d, %Y"] {
         if let Ok(date) = NaiveDate::parse_from_str(s, format) {
             return Some(date);
         }
