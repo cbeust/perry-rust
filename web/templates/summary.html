@@ -48,7 +48,9 @@
 
             <div class="mt-4 mb-10">
                 <div id="img-cover" class="ml--65 fl-l">
-                    <img v-bind:src="result.cover_url" alt="cover image" class="img-cover">
+                    <a v-bind:href="result.perry_pedia">
+                        <img v-bind:src="result.cover_url" alt="cover image" class="img-cover">
+                    </a>
                 </div>
                 <p class="p-lg c-off-white lh-15 op-8" v-html="result.summary.summary">
                 </p>

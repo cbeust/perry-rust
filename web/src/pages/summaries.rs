@@ -10,7 +10,7 @@ use crate::entities::{Cycle, Summary};
 use crate::logic::save_summary;
 use crate::pages::cycles::to_pretty_date;
 use crate::pages::edit::FormData;
-use crate::perrypedia::PerryPedia;
+use crate::perrypedia::{CoverFinder, PerryPedia};
 use crate::PerryState;
 use crate::response::Response;
 use crate::url::Urls;
@@ -44,9 +44,10 @@ pub async fn api_summaries(state: Data<PerryState>, path: Path<u32>) -> HttpResp
             state.db.find_summary(book_number),
             state.db.find_cycle_by_book(book_number),
             state.db.find_book(book_number),
-            state.cover_finder.find_cover_url(book_number))
+            state.cover_finder.find_cover_url(book_number),
+            PerryPedia{}.find_cover_url(book_number))
         {
-            (Some(summary), Some(cycle), Some(book), cover_url) => {
+            (Some(summary), Some(cycle), Some(book), cover_url, perry_pedia) => {
                 let cycle_number = cycle.number;
                 let summary_date = summary.date.clone();
                 TemplateSummary {
@@ -60,12 +61,12 @@ pub async fn api_summaries(state: Data<PerryState>, path: Path<u32>) -> HttpResp
                     hide_left: false,
                     href_back: Urls::cycles(cycle_number),
                     href_edit: "".into(),
-                    perry_pedia: PerryPedia::summary_url(book_number),
                     email_mailing_list: "".into(),
                     cover_url: cover_url.unwrap_or("".to_string()),
+                    perry_pedia: perry_pedia.unwrap_or("".into())
                 }
             }
-            (_, Some(cycle), book, cover_url) => {
+            (_, Some(cycle), book, cover_url, perry_pedia) => {
                 let (book_title, book_author) = match book {
                     Some(book) => { (book.title, book.author) }
                     None => { ("".into(), "".into()) }
@@ -81,7 +82,7 @@ pub async fn api_summaries(state: Data<PerryState>, path: Path<u32>) -> HttpResp
                 result
 
             }
-            (_, _, _, _) => {
+            (_, _, _, _, _) => {
                 TemplateSummary::default()
             }
         }
