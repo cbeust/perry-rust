@@ -11,7 +11,6 @@ use crate::errors::Error::{CouldNotFindCoverImage, PerryPediaCouldNotFind, Unkno
 use crate::errors::{OkContent, PrResult, PrResultBuilder};
 use crate::perrypedia::{CoverFinder, PerryPedia, TIMEOUT_MS};
 use crate::PerryState;
-use crate::response::Response;
 
 pub async fn delete_cover_logic<T>(state: Arc<PerryState>, cookie_manager: impl CookieManager<T>,
         book_number: u32) -> PrResult

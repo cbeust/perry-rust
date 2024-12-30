@@ -9,7 +9,6 @@ use crate::cookies::{CookieManager};
 use crate::entities::{Book, Cycle, Summary};
 use crate::errors::{PrResult, PrResultBuilder};
 use crate::PerryState;
-use crate::response::Response;
 use crate::url::Urls;
 
 pub async fn index_logic<T>(state: &PerryState, cookie_manager: impl CookieManager<T>)

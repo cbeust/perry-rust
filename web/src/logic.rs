@@ -6,9 +6,9 @@ use crate::constants::{ADMIN, GROUP_EMAIL_ADDRESS, PRODUCTION_HOST};
 use crate::db::Db;
 use crate::email::Email;
 use crate::pages::edit::FormData;
-use crate::entities::{Book, Cycle, Summary, User};
+use crate::entities::{Book, Summary, User};
 use crate::errors::Error::{IncorrectPassword, UnknownUser};
-use crate::errors::{DbResult, Error, PrResult};
+use crate::errors::{DbResult, Error};
 use crate::PerryState;
 
 pub async fn save_summary_logic(state: &PerryState, user: Option<User>, form_data: FormData)

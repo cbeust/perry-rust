@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use askama::Template;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -12,7 +11,6 @@ use crate::pages::cycles::to_pretty_date;
 use crate::pages::edit::FormData;
 use crate::perrypedia::{CoverFinder, PerryPedia};
 use crate::PerryState;
-use crate::response::Response;
 use crate::url::Urls;
 
 /// This is used by the text field on the main page: if the user types a number
@@ -67,7 +65,7 @@ pub async fn api_summaries_logic(state: &PerryState, book_number: u32) -> PrResu
                     perry_pedia: perry_pedia.unwrap_or("".into())
                 }
             }
-            (_, Some(cycle), book, cover_url, perry_pedia) => {
+            (_, Some(cycle), book, cover_url, _perry_pedia) => {
                 let (book_title, book_author) = match book {
                     Some(book) => { (book.title, book.author) }
                     None => { ("".into(), "".into()) }

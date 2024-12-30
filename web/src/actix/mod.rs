@@ -1,21 +1,21 @@
-use std::sync::Arc;
+pub mod cookies;
+pub mod response;
+
 use actix_web::{App, HttpRequest, HttpResponse, HttpServer};
 use actix_web::web::{Data, Form, FormConfig, get, head, Path, post, Query, resource};
-use askama::Template;
 use serde::Deserialize;
 use tracing::{error, info};
 use tracing::log::warn;
-use crate::banner_info::BannerInfo;
 use crate::config::Config;
 use crate::cookies::{ActixCookies, CookieManager};
 use crate::covers::{cover_logic, delete_cover_logic};
 use crate::email::api_send_email_logic;
-use crate::errors::{OkContent, PrResult, PrResultBuilder};
+use crate::errors::{OkContent, PrResult};
 use crate::pages::cycle::cycle_logic;
 use crate::pages::cycles::{api_cycles_logic, index_logic};
 use crate::pages::edit::{edit_summary_logic, FormData};
 use crate::pages::pending::{pending_logic};
-use crate::pages::summaries::{api_summaries_logic, DisplaySummaryQueryParams, php_display_summary_logic, post_summary_logic, SingleSummaryData, summaries_logic, summaries_post_logic};
+use crate::pages::summaries::*;
 use crate::PerryState;
 use crate::response::Response;
 use crate::url::Urls;
@@ -224,7 +224,7 @@ pub async fn root_head() -> HttpResponse {
 }
 
 pub async fn favicon() -> HttpResponse {
-    let favicon = include_bytes!("../static/favicon.png");
+    let favicon = include_bytes!("../../static/favicon.png");
     Response::png(favicon.into())
 }
 

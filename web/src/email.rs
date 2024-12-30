@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use askama::Template;
 use lettre::{Message, SmtpTransport, Transport};
 use lettre::message::header::ContentType;
