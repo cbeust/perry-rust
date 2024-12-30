@@ -18,9 +18,11 @@ use crate::pages::edit::{edit_summary_logic, FormData};
 use crate::pages::pending::{pending_logic};
 use crate::pages::summaries::*;
 use crate::{CookieManager, PerryState};
+use crate::constants::PRODUCTION_HOST;
 use crate::url::Urls;
 
 pub async fn main_actix(config: Config, state: PerryState) -> std::io::Result<()> {
+    info!("Starting actix");
     let state = Data::new(state);
     let result = HttpServer::new(move || {
         App::new()
@@ -107,7 +109,7 @@ fn send_response(pr_result: PrResult) -> HttpResponse {
         Err(e) => {
             error!("Received error: {e}");
             // e.into_response()
-            Response::redirect("https://localhost:9000".into())
+            Response::redirect(PRODUCTION_HOST.into())
         }
     }
 }
@@ -115,7 +117,7 @@ fn send_response(pr_result: PrResult) -> HttpResponse {
 pub async fn cycle(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {
     let cookie_manager = ActixCookies::new(&req);
     let state = state.into_inner();
-    send_response(cycle_logic(state, cookie_manager).await)
+    send_response(cycle_logic(&state, cookie_manager).await)
 }
 
 pub async fn edit_summary(req: HttpRequest, state: Data<PerryState>, path: Path<u32>)
@@ -156,7 +158,7 @@ pub struct LoginFormData {
     pub password: String,
 }
 
-pub async fn login(req: HttpRequest, state: Data<PerryState>, form: Form<LoginFormData>) -> HttpResponse {
+async fn login(req: HttpRequest, state: Data<PerryState>, form: Form<LoginFormData>) -> HttpResponse {
     let cookie_manager = ActixCookies::new(&req);
     match crate::logic::login(&state.db, &form.username, &form.password).await {
         Ok((auth_token, days)) => {
@@ -171,64 +173,64 @@ pub async fn login(req: HttpRequest, state: Data<PerryState>, form: Form<LoginFo
     }
 }
 
-pub async fn delete_cover(req: HttpRequest, state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
+async fn delete_cover(req: HttpRequest, state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let cookie_manager = ActixCookies::new(&req);
     let book_number = path.into_inner();
     send_response(delete_cover_logic(state.into_inner(), cookie_manager, book_number).await)
 }
 
-pub async fn summaries_post(form_data: Form<SingleSummaryData>) -> HttpResponse {
+async fn summaries_post(form_data: Form<SingleSummaryData>) -> HttpResponse {
     send_response(summaries_post_logic(form_data.into_inner()).await)
 }
 
-pub async fn php_display_summary(query: Query<DisplaySummaryQueryParams>) -> HttpResponse {
+async fn php_display_summary(query: Query<DisplaySummaryQueryParams>) -> HttpResponse {
     send_response(php_display_summary_logic(query.into_inner()).await)
 }
 
-pub async fn api_summaries(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
+async fn api_summaries(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let book_number = path.into_inner();
     send_response(api_summaries_logic(&state.into_inner(), book_number).await)
 }
 
-pub async fn cover(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
+async fn cover(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let book_number = path.into_inner();
     send_response(cover_logic(&state.into_inner(), book_number).await)
 }
 
-pub async fn api_send_email(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
+async fn api_send_email(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let book_number = path.into_inner();
     send_response(api_send_email_logic(&state.into_inner(), book_number).await)
 }
 
-pub async fn approve_pending(path: Path<u32>) -> HttpResponse {
+async fn approve_pending(path: Path<u32>) -> HttpResponse {
     let id = path.into_inner();
     info!("Approving id {id}");
     Response::redirect("/pending".into())
 }
 
-pub async fn delete_pending(path: Path<u32>) -> HttpResponse {
+async fn delete_pending(path: Path<u32>) -> HttpResponse {
     let id = path.into_inner();
     info!("Deleting id {id}");
     Response::redirect("/pending".into())
 }
 
-pub async fn pending_delete_all() -> HttpResponse {
+async fn pending_delete_all() -> HttpResponse {
     info!("Deleting all pendings");
     Response::redirect("/pending".into())
 }
 
-pub async fn root_head() -> HttpResponse {
+async fn root_head() -> HttpResponse {
     HttpResponse::Ok()
         .append_header(("Content-Type", "text/plain"))
         .finish()
 }
 
-pub async fn favicon() -> HttpResponse {
+async fn favicon() -> HttpResponse {
     let favicon = include_bytes!("../../static/favicon.png");
     Response::png(favicon.into())
 }
 
-pub async fn api_cycles(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
+async fn api_cycles(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let book_number = path.into_inner();
     send_response(api_cycles_logic(&state.into_inner(), book_number).await)
 }

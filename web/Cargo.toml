@@ -5,6 +5,11 @@ edition = "2021"
 default-run = "perry"
 
 [dependencies]
+
+axum = { version = "0.8.0-rc.1" }
+axum-extra = { version = "0.10.0-rc.1", features = [ "cookie"] }
+tower-http = { version = "0.6.2", features = [ "fs", "trace" ] }
+
 actix-web = { version = "4.9.0" }
 actix-files = "0.6.6"
 actix-session = { version = "0.10.1", features = [ "cookie-session"] }
@@ -37,3 +42,4 @@ lettre = "0.11.10"
 anyhow = "1.0.93"
 dotenv = "0.15.0"
 image = "0.25.5"
+http = "0.2.12"

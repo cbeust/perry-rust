@@ -10,7 +10,7 @@ struct TemplateCycle {
     pub banner_info: BannerInfo,
 }
 
-pub async fn cycle_logic<T>(state: Arc<PerryState>, cookie_manager: impl CookieManager<T>)
+pub async fn cycle_logic<T>(state: &PerryState, cookie_manager: impl CookieManager<T>)
     -> PrResult
 {
     let template = TemplateCycle {

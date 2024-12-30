@@ -12,6 +12,7 @@ mod constants;
 mod test;
 mod covers;
 mod actix;
+mod axum;
 
 use std::sync::Arc;
 use async_trait::async_trait;
@@ -24,6 +25,7 @@ use crate::config::{Config, create_config};
 use crate::db::{create_db, Db};
 use crate::email::{Email, EmailService};
 use crate::actix::main_actix;
+use crate::axum::main_axum;
 use crate::entities::User;
 use crate::perrypedia::{CoverFinder, LocalImageProvider};
 
@@ -41,8 +43,8 @@ fn _main() {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
+    println!("main starting");
     init_logging(false, true);
-    info!("Starting perry-rust");
     let config = create_config();
 
     info!("Starting server on port {}, config.database_url: {}", config.port,
@@ -55,7 +57,8 @@ async fn main() -> std::io::Result<()> {
         cover_finder: Arc::new(Box::new(LocalImageProvider)),
     };
 
-    main_actix(config, state).await
+    // main_actix(config, state).await
+    main_axum(config, state).await
 }
 
 pub fn init_logging(sqlx: bool, web: bool) {
@@ -64,7 +67,7 @@ pub fn init_logging(sqlx: bool, web: bool) {
     tracing_subscriber::registry()
         .with(fmt::layer())
         .with(tracing_subscriber::EnvFilter::new(
-            format!("crate=debug,sqlx={debug_sqlx},actix_web={debug_actix},info")
+            format!("crate=debug,sqlx={debug_sqlx},axum={debug_actix},actix_web={debug_actix},info")
             // format!("sqlx={debug_sqlx},reqwest=info,hyper_util:info,debug")
         ))
         .init();
