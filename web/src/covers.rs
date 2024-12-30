@@ -5,12 +5,11 @@ use image::imageops::FilterType;
 use image::{ImageFormat, load_from_memory};
 use tokio::time::timeout;
 use tracing::{error, info};
-use crate::cookies::CookieManager;
 use crate::db::Db;
 use crate::errors::Error::{CouldNotFindCoverImage, PerryPediaCouldNotFind, UnknownCoverImageError};
 use crate::errors::{OkContent, PrResult, PrResultBuilder};
 use crate::perrypedia::{CoverFinder, PerryPedia, TIMEOUT_MS};
-use crate::PerryState;
+use crate::{CookieManager, PerryState};
 
 pub async fn delete_cover_logic<T>(state: Arc<PerryState>, cookie_manager: impl CookieManager<T>,
         book_number: u32) -> PrResult

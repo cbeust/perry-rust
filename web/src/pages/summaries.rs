@@ -3,14 +3,13 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::error;
 use crate::banner_info::BannerInfo;
-use crate::cookies::CookieManager;
 use crate::entities::{Cycle, Summary};
 use crate::errors::{PrResult, PrResultBuilder};
 use crate::logic::save_summary_logic;
 use crate::pages::cycles::to_pretty_date;
 use crate::pages::edit::FormData;
 use crate::perrypedia::{CoverFinder, PerryPedia};
-use crate::PerryState;
+use crate::{CookieManager, PerryState};
 use crate::url::Urls;
 
 /// This is used by the text field on the main page: if the user types a number

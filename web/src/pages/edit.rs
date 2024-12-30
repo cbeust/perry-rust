@@ -2,11 +2,10 @@ use std::sync::Arc;
 use askama::Template;
 use serde::Deserialize;
 use tracing::{error, info};
-use crate::cookies::CookieManager;
 
 use crate::entities::{Book, Cycle, Summary};
 use crate::errors::{PrResult, PrResultBuilder};
-use crate::PerryState;
+use crate::{CookieManager, PerryState};
 
 pub async fn edit_summary_logic<T>(state: Arc<PerryState>, cookie_manager: impl CookieManager<T>,
         book_number: u32)

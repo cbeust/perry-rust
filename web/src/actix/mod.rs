@@ -6,8 +6,9 @@ use actix_web::web::{Data, Form, FormConfig, get, head, Path, post, Query, resou
 use serde::Deserialize;
 use tracing::{error, info};
 use tracing::log::warn;
+use crate::actix::cookies::ActixCookies;
+use crate::actix::response::Response;
 use crate::config::Config;
-use crate::cookies::{ActixCookies, CookieManager};
 use crate::covers::{cover_logic, delete_cover_logic};
 use crate::email::api_send_email_logic;
 use crate::errors::{OkContent, PrResult};
@@ -16,8 +17,7 @@ use crate::pages::cycles::{api_cycles_logic, index_logic};
 use crate::pages::edit::{edit_summary_logic, FormData};
 use crate::pages::pending::{pending_logic};
 use crate::pages::summaries::*;
-use crate::PerryState;
-use crate::response::Response;
+use crate::{CookieManager, PerryState};
 use crate::url::Urls;
 
 pub async fn main_actix(config: Config, state: PerryState) -> std::io::Result<()> {

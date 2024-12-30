@@ -1,9 +1,8 @@
 use std::sync::Arc;
 use askama::Template;
 use crate::banner_info::BannerInfo;
-use crate::cookies::CookieManager;
 use crate::errors::{PrResult, PrResultBuilder};
-use crate::PerryState;
+use crate::{CookieManager, PerryState};
 
 #[derive(Template)]
 #[template(path = "cycle.html")]

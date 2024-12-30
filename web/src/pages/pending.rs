@@ -1,7 +1,6 @@
 use askama::Template;
-use crate::cookies::CookieManager;
 use crate::errors::{PrResult, PrResultBuilder};
-use crate::PerryState;
+use crate::{CookieManager, PerryState};
 
 pub async fn pending_logic<T>(state: &PerryState, cookie_manager: impl CookieManager<T>)
     -> PrResult

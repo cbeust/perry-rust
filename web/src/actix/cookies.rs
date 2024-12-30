@@ -5,17 +5,9 @@ use actix_web::cookie::time::OffsetDateTime;
 use actix_web::HttpRequest;
 use async_trait::async_trait;
 use tracing::log::trace;
+use crate::{CookieManager, COOKIE_AUTH_TOKEN};
 use crate::db::Db;
 use crate::entities::User;
-
-const NAME: &str = &"authToken";
-
-#[async_trait]
-pub trait CookieManager<T>: Sync {
-    async fn find_user(&self, db: Arc<Box<dyn Db>>) -> Option<User>;
-    async fn clear_auth_token_cookie(&self) -> T;
-    async fn create_auth_token_cookie(&self, auth_token: String, days: u16) -> T;
-}
 
 pub struct ActixCookies {
     cookies: Vec<Cookie<'static>>,
@@ -34,7 +26,7 @@ impl ActixCookies {
 #[async_trait]
 impl CookieManager<Cookie<'static>> for ActixCookies {
     async fn find_user(&self, db: Arc<Box<dyn Db>>) -> Option<User> {
-        if let Some(cookie) = self.cookies.iter().find(|c| c.name() == NAME) {
+        if let Some(cookie) = self.cookies.iter().find(|c| c.name() == COOKIE_AUTH_TOKEN) {
             let auth_token = cookie.value().replace('+', " ");
             db.find_user_by_auth_token(&auth_token).await
         } else {
@@ -48,7 +40,7 @@ impl CookieManager<Cookie<'static>> for ActixCookies {
     }
 
     async fn create_auth_token_cookie(&self, auth_token: String, days: u16) -> Cookie<'static> {
-        Cookie::build(NAME, auth_token)
+        Cookie::build(COOKIE_AUTH_TOKEN, auth_token)
             // .http_only(true)
             // .domain("perryrhodan.us")
             .path("/")

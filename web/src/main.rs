@@ -14,7 +14,7 @@ mod covers;
 mod actix;
 
 use std::sync::Arc;
-use bon::builder;
+use async_trait::async_trait;
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 use tracing::{ info};
 use tracing_subscriber::fmt;
@@ -23,7 +23,8 @@ use tracing_subscriber::util::SubscriberInitExt;
 use crate::config::{Config, create_config};
 use crate::db::{create_db, Db};
 use crate::email::{Email, EmailService};
-use crate::actix::*;
+use crate::actix::main_actix;
+use crate::entities::User;
 use crate::perrypedia::{CoverFinder, LocalImageProvider};
 
 fn _main() {
@@ -40,7 +41,7 @@ fn _main() {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    init_logging().sqlx(false).actix(true).call();
+    init_logging(false, true);
     info!("Starting perry-rust");
     let config = create_config();
 
@@ -57,11 +58,9 @@ async fn main() -> std::io::Result<()> {
     main_actix(config, state).await
 }
 
-
-#[builder]
-pub fn init_logging(sqlx: bool, actix: bool) {
+pub fn init_logging(sqlx: bool, web: bool) {
     let debug_sqlx = if sqlx { "debug" } else { "info" };
-    let debug_actix = if actix { "trace" } else { "info" };
+    let debug_actix = if web { "trace" } else { "info" };
     tracing_subscriber::registry()
         .with(fmt::layer())
         .with(tracing_subscriber::EnvFilter::new(
@@ -80,3 +79,11 @@ pub struct PerryState {
     pub cover_finder: Arc<Box<dyn CoverFinder>>,
 }
 
+const COOKIE_AUTH_TOKEN: &str = &"authToken";
+
+#[async_trait]
+pub trait CookieManager<T>: Sync {
+    async fn find_user(&self, db: Arc<Box<dyn Db>>) -> Option<User>;
+    async fn clear_auth_token_cookie(&self) -> T;
+    async fn create_auth_token_cookie(&self, auth_token: String, days: u16) -> T;
+}
