@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use actix_web::web::{Data, Form};
 use chrono::{Utc};
 use tracing::info;
 use uuid::Uuid;
@@ -11,28 +10,6 @@ use crate::entities::{Book, Cycle, Summary, User};
 use crate::errors::Error::{IncorrectPassword, UnknownUser};
 use crate::errors::{DbResult, Error, PrResult};
 use crate::PerryState;
-
-pub async fn _get_data(state: &Data<PerryState>, book_number: u32)
-    -> Option<(Cycle, Summary, Book, String)>
-{
-    let (summary, cycle, book, cover_url) = tokio::join!(
-        state.db.find_summary(book_number),
-        state.db.find_cycle_by_book(book_number),
-        state.db.find_book(book_number),
-        state.cover_finder.find_cover_url(book_number),
-    );
-
-    let cover_url = cover_url.unwrap_or("".to_string());
-
-    match (summary, cycle, book) {
-        (Some(summary), Some(cycle), Some(book)) => {
-            Some((cycle, summary, book, cover_url))
-        }
-        _ => {
-            None
-        }
-    }
-}
 
 pub async fn save_summary_logic(state: &PerryState, user: Option<User>, form_data: FormData)
     -> DbResult<()>

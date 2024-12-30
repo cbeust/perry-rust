@@ -1,7 +1,4 @@
 use std::collections::HashMap;
-use actix_web::{HttpRequest, HttpResponse};
-use actix_web::cookie::Cookie;
-use actix_web::web::{Data, Path};
 use askama::Template;
 use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
 use serde::{Deserialize, Serialize};
@@ -15,18 +12,7 @@ use crate::PerryState;
 use crate::response::Response;
 use crate::url::Urls;
 
-pub async fn root_head() -> HttpResponse {
-    HttpResponse::Ok()
-        .append_header(("Content-Type", "text/plain"))
-        .finish()
-}
-
-pub async fn favicon() -> HttpResponse {
-    let favicon = include_bytes!("../../static/favicon.png");
-    Response::png(favicon.into())
-}
-
-pub async fn index_logic(state: &PerryState, cookie_manager: impl CookieManager<Cookie<'_>>)
+pub async fn index_logic<T>(state: &PerryState, cookie_manager: impl CookieManager<T>)
     -> PrResult
 {
     // Cycles
@@ -74,8 +60,7 @@ pub async fn index_logic(state: &PerryState, cookie_manager: impl CookieManager<
     }
 }
 
-pub async fn api_cycles(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
-    let number = path.into_inner();
+pub async fn api_cycles_logic(state: &PerryState, number: u32) -> PrResult {
     let json = match state.db.find_cycle(number).await {
         Some(cycle) => {
             let mut books: Vec<TemplateBook> = Vec::new();
@@ -117,7 +102,7 @@ pub async fn api_cycles(state: Data<PerryState>, path: Path<u32>) -> HttpRespons
         }
     };
 
-    Response::json(json)
+    PrResultBuilder::json(json)
 }
 
 pub fn to_pretty_date(date: Option<String>) -> String {

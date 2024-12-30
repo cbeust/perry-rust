@@ -1,6 +1,4 @@
 use std::sync::Arc;
-use actix_web::{HttpRequest, HttpResponse};
-use actix_web::web::{Data, Path};
 use askama::Template;
 use serde::Deserialize;
 use tracing::{error, info};

@@ -1,23 +1,77 @@
 use std::sync::Arc;
-use actix_web::{HttpRequest, HttpResponse};
-use actix_web::web::{Data, Form, Path, Query};
+use actix_web::{App, HttpRequest, HttpResponse, HttpServer};
+use actix_web::web::{Data, Form, FormConfig, get, head, Path, post, Query, resource};
 use askama::Template;
 use serde::Deserialize;
 use tracing::{error, info};
 use tracing::log::warn;
 use crate::banner_info::BannerInfo;
+use crate::config::Config;
 use crate::cookies::{ActixCookies, CookieManager};
 use crate::covers::{cover_logic, delete_cover_logic};
 use crate::email::api_send_email_logic;
 use crate::errors::{OkContent, PrResult, PrResultBuilder};
 use crate::pages::cycle::cycle_logic;
-use crate::pages::cycles::index_logic;
+use crate::pages::cycles::{api_cycles_logic, index_logic};
 use crate::pages::edit::{edit_summary_logic, FormData};
-use crate::pages::pending::pending_logic;
+use crate::pages::pending::{pending_logic};
 use crate::pages::summaries::{api_summaries_logic, DisplaySummaryQueryParams, php_display_summary_logic, post_summary_logic, SingleSummaryData, summaries_logic, summaries_post_logic};
 use crate::PerryState;
 use crate::response::Response;
 use crate::url::Urls;
+
+pub async fn main_actix(config: Config, state: PerryState) -> std::io::Result<()> {
+    let state = Data::new(state);
+    let result = HttpServer::new(move || {
+        App::new()
+            // Serve static files under /static
+            .service(actix_files::Files::new("static", "web/static").show_files_listing())
+            .app_data(FormConfig::default().limit(250 * 1024)) // Sets limit to 250kB
+            .app_data(state.clone())
+
+            //
+            // URL's
+            //
+
+            // favicon
+            .service(resource("/favicon.{ext}").route(get().to(favicon)))
+
+            // Cycles
+            .service(resource("/").route(get().to(index)).route(head().to(root_head)))
+            .service(resource("/cycles/{number}").route(get().to(cycle)))
+            .service(resource("/api/cycles/{number}").route(get().to(api_cycles)))
+
+            // Summaries
+            .service(resource("/summaries").route(post().to(summaries_post)))
+            .service(resource("/summaries/{number}").route(get().to(summaries)))
+            .service(resource("/summaries/{number}/edit").route(get().to(edit_summary)))
+            .service(resource("/api/summaries").route(post().to(post_summary)))
+            .service(resource("/api/summaries/{number}").route(get().to(api_summaries)))
+            .service(resource("/api/sendEmail/{number}").route(get().to(api_send_email)))
+
+            // Pending
+            .service(resource("/pending").route(get().to(pending)))
+            .service(resource("/pending/delete_all").route(post().to(pending_delete_all)))
+            .service(resource("/approve/{id}").route(get().to(approve_pending)))
+            .service(resource("/delete/{id}").route(get().to(delete_pending)))
+
+            // Login / log out
+            .service(resource("/login").route(post().to(login)))
+            .service(resource("/logout").route(get().to(logout)))
+
+            // Covers
+            .service(resource("/covers/{number}").route(get().to(cover)))
+            .service(resource("/covers/{number}/delete").route(get().to(delete_cover)))
+
+            // PHP backward compatibility
+            .service(resource("/php/displaySummary.php").route(get().to(php_display_summary)))
+    })
+        .bind(("0.0.0.0", config.port))?
+        .run()
+        .await;
+    info!("Actix server exiting");
+    result
+}
 
 pub async fn index(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {
     let cookie_manager = ActixCookies::new(&req);
@@ -144,4 +198,37 @@ pub async fn cover(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
 pub async fn api_send_email(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let book_number = path.into_inner();
     send_response(api_send_email_logic(&state.into_inner(), book_number).await)
+}
+
+pub async fn approve_pending(path: Path<u32>) -> HttpResponse {
+    let id = path.into_inner();
+    info!("Approving id {id}");
+    Response::redirect("/pending".into())
+}
+
+pub async fn delete_pending(path: Path<u32>) -> HttpResponse {
+    let id = path.into_inner();
+    info!("Deleting id {id}");
+    Response::redirect("/pending".into())
+}
+
+pub async fn pending_delete_all() -> HttpResponse {
+    info!("Deleting all pendings");
+    Response::redirect("/pending".into())
+}
+
+pub async fn root_head() -> HttpResponse {
+    HttpResponse::Ok()
+        .append_header(("Content-Type", "text/plain"))
+        .finish()
+}
+
+pub async fn favicon() -> HttpResponse {
+    let favicon = include_bytes!("../static/favicon.png");
+    Response::png(favicon.into())
+}
+
+pub async fn api_cycles(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
+    let book_number = path.into_inner();
+    send_response(api_cycles_logic(&state.into_inner(), book_number).await)
 }

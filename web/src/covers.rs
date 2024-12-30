@@ -1,7 +1,6 @@
 use std::io::{Cursor};
 use std::sync::Arc;
 use std::time::Duration;
-use actix_web::web::{Data, Path};
 use image::imageops::FilterType;
 use image::{ImageFormat, load_from_memory};
 use tokio::time::timeout;
