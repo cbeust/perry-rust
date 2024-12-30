@@ -7,17 +7,18 @@ use image::imageops::FilterType;
 use image::{ImageFormat, load_from_memory};
 use tokio::time::timeout;
 use tracing::{error, info};
-use crate::cookies::Cookies;
+use crate::cookies::CookieManager;
 use crate::db::Db;
 use crate::errors::Error::{CouldNotFindCoverImage, PerryPediaCouldNotFind, UnknownCoverImageError};
-use crate::errors::PrResult;
+use crate::errors::{OkContent, PrResult, PrResultBuilder};
 use crate::perrypedia::{CoverFinder, PerryPedia, TIMEOUT_MS};
 use crate::PerryState;
 use crate::response::Response;
 
-pub async fn delete_cover(req: HttpRequest, state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
-    let book_number = path.into_inner();
-    if Cookies::find_user(&req, &state.db).await.is_some() {
+pub async fn delete_cover_logic<T>(state: Arc<PerryState>, cookie_manager: impl CookieManager<T>,
+        book_number: u32) -> PrResult
+{
+    if cookie_manager.find_user(state.db.clone()).await.is_some() {
         match state.db.delete_cover(book_number).await {
             Ok(_) => {
                 info!("Successfully deleted cover {}", book_number);
@@ -28,13 +29,13 @@ pub async fn delete_cover(req: HttpRequest, state: Data<PerryState>, path: Path<
         }
     }
 
-    Response::redirect(format!("/covers/{book_number}"))
+    PrResultBuilder::redirect(format!("/covers/{book_number}"))
 }
 
 pub async fn cover(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let book_number = path.into_inner();
     match find_cover_image(book_number, &state.db).await {
-        Ok(bytes) => {
+        Ok(OkContent::Image(bytes)) => {
             info!("Returning cover image for book {}, size {} bytes", book_number, bytes.len());
             Response::png(bytes)
         }
@@ -42,10 +43,14 @@ pub async fn cover(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
             error!("Couldn't fetch cover: {e}");
             Response::png(Vec::new())
         }
+        _ => {
+            error!("Unknown error while fetching cover for {book_number}");
+            Response::png(Vec::new())
+        }
     }
 }
 
-async fn find_cover_image(book_number: u32, db: &Arc<Box<dyn Db>>) -> PrResult<Vec<u8>> {
+async fn find_cover_image(book_number: u32, db: &Arc<Box<dyn Db>>) -> PrResult {
     // if book_number >= 3287 {
     //     return fetch_cover_and_insert_into_db(book_number, db).await;
     // }
@@ -56,13 +61,13 @@ async fn find_cover_image(book_number: u32, db: &Arc<Box<dyn Db>>) -> PrResult<V
             fetch_cover_and_insert_into_db(book_number, db).await
         }
         Some(image) => {
-            Ok(image.image)
+            PrResultBuilder::image(image.image)
         }
     }
 }
 
 async fn fetch_cover_and_insert_into_db(book_number: u32, db: &Arc<Box<dyn Db>>)
-    -> PrResult<Vec<u8>>
+    -> PrResult
 {
     info!("Couldn't find cover for {book_number} in database, fetching it");
     let perry_pedia = Box::new(PerryPedia);
@@ -82,7 +87,7 @@ async fn fetch_cover_and_insert_into_db(book_number: u32, db: &Arc<Box<dyn Db>>)
                                         inserting it into the database after shrinking it \
                                          from {} to {} bytes", len, new_bytes.len());
                             db.insert_cover(book_number, new_bytes.clone()).await?;
-                            Ok(new_bytes.into())
+                            PrResultBuilder::image(new_bytes)
                         }
                         Err(e) => {
                             Err(CouldNotFindCoverImage(e.to_string(), book_number as i32))

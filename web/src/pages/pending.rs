@@ -2,7 +2,8 @@ use actix_web::{HttpRequest, HttpResponse};
 use actix_web::web::{Data, Path};
 use askama::Template;
 use tracing::info;
-use crate::cookies::Cookies;
+use crate::cookies::CookieManager;
+use crate::errors::{PrResult, PrResultBuilder};
 use crate::PerryState;
 use crate::response::Response;
 
@@ -23,8 +24,10 @@ pub async fn pending_delete_all(_req: HttpRequest, _state: Data<PerryState>) -> 
     Response::redirect("/pending".into())
 }
 
-pub async fn pending(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {
-    if let Some(_) = Cookies::find_user(&req, &state.db).await {
+pub async fn pending_logic<T>(state: &PerryState, cookie_manager: impl CookieManager<T>)
+    -> PrResult
+{
+    if let Some(_) = cookie_manager.find_user(state.db.clone()).await {
         let summaries = state.db.find_pending_summaries().await;
         let pending_summaries: Vec<PendingSummaryTemplate> = summaries.iter().map(|s| {
             PendingSummaryTemplate {
@@ -39,9 +42,9 @@ pub async fn pending(req: HttpRequest, state: Data<PerryState>) -> HttpResponse 
             pending_summaries,
         };
 
-        Response::html(template.render().unwrap())
+        PrResultBuilder::html(template.render().unwrap())
     } else {
-        Response::root()
+        PrResultBuilder::root()
     }
 }
 

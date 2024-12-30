@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use actix_web::HttpResponse;
 use actix_web::web::{Data, Path};
 use askama::Template;
@@ -10,7 +11,7 @@ use crate::config::Config;
 use crate::constants::ADMIN;
 use crate::entities::Summary;
 use crate::errors::Error::{EmailError, Unknown};
-use crate::errors::PrResult;
+use crate::errors::{Error, PrResult};
 use crate::logic::send_summary_to_group;
 use crate::PerryState;
 use crate::url::Urls;
@@ -55,13 +56,20 @@ impl Email {
         }
     }
 
-    pub async fn notify_admin(state: &PerryState, subject: &str, content: &str) -> PrResult<()> {
-        state.email_service.send_email(ADMIN, subject, content)
+    pub async fn notify_admin(state: &PerryState, subject: &str, content: &str) {
+        match state.email_service.send_email(ADMIN, subject, content) {
+            Ok(_) => {
+                info!("Successfully notified admin with Subject: {subject}");
+            }
+            Err(e) => {
+                error!("Couldn't notify admin: {e}");
+            }
+        }
     }
 
     pub async fn create_email_content_for_summary(state: &PerryState, summary: &Summary,
             host: String)
-        -> PrResult<String>
+        -> Result<String, Error>
     {
         let book_number = summary.number as u32;
         let (book, cycle_number, cover_url) = tokio::join!(
@@ -73,7 +81,7 @@ impl Email {
         let cycle_name = match cycle_number {
             None => {
                 Email::notify_admin(state,
-                    &format!("Couldn't find cycle for book {book_number}"), "".into()).await?;
+                    &format!("Couldn't find cycle for book {book_number}"), "".into()).await;
                 "<unknown cycle>".into()
             }
             Some(cycle) => { cycle.english_title }
@@ -115,13 +123,13 @@ pub async fn api_send_email(state: Data<PerryState>, path: Path<u32>) -> HttpRes
 }
 
 pub trait EmailService: Send + Sync {
-    fn send_email(&self, to: &str, subject: &str, body: &str) -> PrResult<()>;
+    fn send_email(&self, to: &str, subject: &str, body: &str) -> Result<(), Error>;
 }
 
 pub struct EmailMock;
 
 impl EmailService for EmailMock {
-    fn send_email(&self, to: &str, subject: &str, _body: &str) -> PrResult<()> {
+    fn send_email(&self, to: &str, subject: &str, _body: &str) -> Result<(), Error> {
         info!("Would have sent email to {to} with subject '{subject}'");
         Ok(())
     }
@@ -134,7 +142,7 @@ pub struct EmailProduction {
 }
 
 impl EmailService for EmailProduction {
-    fn send_email(&self, to: &str, subject: &str, body: &str) -> PrResult<()> {
+    fn send_email(&self, to: &str, subject: &str, body: &str) -> Result<(), Error> {
         let email = Message::builder()
             .from("Perry Rhodan Summaries <perry.summary@gmail.com>".parse().unwrap())
             .reply_to("Nobody <nobody@nobody.com>".parse().unwrap())

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use actix_web::{HttpRequest, HttpResponse};
+use actix_web::cookie::Cookie;
 use actix_web::web::{Data, Path};
 use askama::Template;
 use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
@@ -7,8 +8,9 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::*;
 use crate::banner_info::BannerInfo;
-use crate::cookies::Cookies;
+use crate::cookies::{CookieManager};
 use crate::entities::{Book, Cycle, Summary};
+use crate::errors::{PrResult, PrResultBuilder};
 use crate::PerryState;
 use crate::response::Response;
 use crate::url::Urls;
@@ -24,7 +26,9 @@ pub async fn favicon() -> HttpResponse {
     Response::png(favicon.into())
 }
 
-pub async fn index(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {
+pub async fn index_logic(state: &PerryState, cookie_manager: impl CookieManager<Cookie<'_>>)
+    -> PrResult
+{
     // Cycles
     let mut cycles: Vec<HtmlTemplate> = Vec::new();
     match state.db.fetch_cycles().await {
@@ -51,20 +55,21 @@ pub async fn index(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {
             }
             let summary_count = state.db.fetch_summary_count().await;
             let book_count = state.db.fetch_book_count().await;
+            let user = cookie_manager.find_user(state.db.clone()).await;
             let template = TemplateCycles {
                 summary_count,
                 percentage: (summary_count as u32 * 100 / book_count as u32) as u8,
                 recent_summaries,
                 cycles,
-                banner_info: BannerInfo::new(Cookies::find_user(&req, &state.db).await).await,
+                banner_info: BannerInfo::new(user).await,
             };
             // println!("Template: {result}");
 
-            Response::html(template.render().unwrap())
+            PrResultBuilder::html(template.render().unwrap())
         }
         Err(e) => {
             error!("Error displaying the main page: {e}");
-            Response::html("Something went wrong: {e}".into())
+            PrResultBuilder::html("Something went wrong: {e}".into())
         }
     }
 }

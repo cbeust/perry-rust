@@ -25,15 +25,14 @@ use tracing_subscriber::fmt;
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use crate::config::{Config, create_config};
-use crate::covers::{cover, delete_cover};
+use crate::cookies::CookieManager;
+use crate::covers::{cover};
 use crate::db::{create_db, Db};
 use crate::email::{api_send_email, Email, EmailService};
-use crate::login::{login, logout};
-use crate::pages::cycle::cycle;
-use crate::pages::cycles::{api_cycles, favicon, index, root_head};
-use crate::pages::edit::{edit_summary};
-use crate::pages::pending::{approve_pending, delete_pending, pending, pending_delete_all};
-use crate::pages::summaries::{api_summaries, php_display_summary, post_summary, summaries, summaries_post};
+use crate::pages::cycle::{cycle, delete_cover, edit_summary, index, login, logout, pending, post_summary, summaries};
+use crate::pages::cycles::{api_cycles, favicon, root_head};
+use crate::pages::pending::{approve_pending, delete_pending, pending_delete_all};
+use crate::pages::summaries::{api_summaries, php_display_summary, summaries_post};
 use crate::perrypedia::{CoverFinder, LocalImageProvider};
 
 fn _main() {

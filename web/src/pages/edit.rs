@@ -1,19 +1,21 @@
+use std::sync::Arc;
 use actix_web::{HttpRequest, HttpResponse};
 use actix_web::web::{Data, Path};
 use askama::Template;
 use serde::Deserialize;
 use tracing::{error, info};
-use crate::cookies::Cookies;
+use crate::cookies::CookieManager;
 
 use crate::entities::{Book, Cycle, Summary};
+use crate::errors::{PrResult, PrResultBuilder};
 use crate::PerryState;
 use crate::response::Response;
 
-pub async fn edit_summary(req: HttpRequest, state: Data<PerryState>, path: Path<u32>)
-    -> HttpResponse
+pub async fn edit_summary_logic<T>(state: Arc<PerryState>, cookie_manager: impl CookieManager<T>,
+        book_number: u32)
+    -> PrResult
 {
-    let book_number = path.into_inner();
-    let user = Cookies::find_user(&req, &state.db).await;
+    let user = cookie_manager.find_user(state.db.clone()).await;
     let editor = if let Some(u) = &user {
         u.name.to_string()
     } else {
@@ -34,7 +36,7 @@ pub async fn edit_summary(req: HttpRequest, state: Data<PerryState>, path: Path<
                 cover_url: cover_url.unwrap_or("".to_string()),
                 cancel_url: format!("/summaries/{}", book_number),
             };
-            Response::html(template.render().unwrap())
+            PrResultBuilder::html(template.render().unwrap())
         }
         (_, Some(cycle), book, cover_url) => {
             let mut template = TemplateEdit::default();
@@ -57,11 +59,11 @@ pub async fn edit_summary(req: HttpRequest, state: Data<PerryState>, path: Path<
             template.book.number = book_number as i32;
             template.cover_url = cover_url.unwrap_or("".to_string());
             template.cancel_url = format!("/summaries/{}", book_number);
-            Response::html(template.render().unwrap())
+            PrResultBuilder::html(template.render().unwrap())
         }
         _ => {
             error!("Something went wrong while editing summary {book_number}");
-            Response::root()
+            PrResultBuilder::root()
         }
     }
 }

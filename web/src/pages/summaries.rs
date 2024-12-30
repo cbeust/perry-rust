@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use actix_web::{HttpRequest, HttpResponse};
 use actix_web::web::{Data, Form, Path, Query};
 use askama::Template;
@@ -5,9 +6,10 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::error;
 use crate::banner_info::BannerInfo;
-use crate::cookies::Cookies;
+use crate::cookies::CookieManager;
 use crate::entities::{Cycle, Summary};
-use crate::logic::save_summary;
+use crate::errors::{PrResult, PrResultBuilder};
+use crate::logic::save_summary_logic;
 use crate::pages::cycles::to_pretty_date;
 use crate::pages::edit::FormData;
 use crate::perrypedia::{CoverFinder, PerryPedia};
@@ -21,11 +23,13 @@ pub async fn summaries_post(form_data: Form<SingleSummaryData>) -> HttpResponse 
     Response::redirect(format!("/summaries/{}", form_data.number))
 }
 
-pub async fn summaries(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {
+pub async fn summaries_logic<T>(state: Data<PerryState>, cookie_manager: impl CookieManager<T>)
+    -> PrResult
+{
     let template = TemplateSummaries {
-        banner_info: BannerInfo::new(Cookies::find_user(&req, &state.db).await).await,
+        banner_info: BannerInfo::new(cookie_manager.find_user(state.db.clone()).await).await,
     };
-    Response::html(template.render().unwrap())
+    PrResultBuilder::html(template.render().unwrap())
 }
 
 #[derive(Deserialize)]
@@ -91,15 +95,18 @@ pub async fn api_summaries(state: Data<PerryState>, path: Path<u32>) -> HttpResp
     Response::json(serde_json::to_string(&json!(template)).unwrap())
 }
 
-pub async fn post_summary(req: HttpRequest, state: Data<PerryState>, form: Form<FormData>)
-    -> HttpResponse
+pub async fn post_summary_logic<T>(state: &PerryState, cookie_manager: impl CookieManager<T>,
+        form: FormData)
+    -> PrResult
 {
     let number = form.number as i32;
-    if let Err(e) =  save_summary(&state, Cookies::find_user(&req, &state.db).await, form).await {
+    let state2 = state.clone();
+    if let Err(e) = save_summary_logic(state, cookie_manager.find_user(state2.db.clone()).await,
+            form).await {
         error!("Error when saving the summary: {e}");
     };
 
-    Response::redirect(Urls::summary(number))
+    PrResultBuilder::redirect(Urls::summary(number))
 }
 
 #[derive(Template)]

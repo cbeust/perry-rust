@@ -1,7 +1,42 @@
 use std::fmt::{Display, Formatter};
 use crate::entities::Summary;
+use crate::errors::OkContent::Redirect;
 
-pub type PrResult<T> = Result<T, Error>;
+pub type DbResult<T> = Result<T, Error>;
+
+pub enum OkContent {
+    Root,
+    Html(String),
+    Json(String),
+    Image(Vec<u8>),
+    Redirect(String),
+}
+
+pub type PrResult = Result<OkContent, Error>;
+
+pub struct PrResultBuilder;
+
+impl PrResultBuilder {
+    pub fn html(s: String) -> PrResult {
+        Ok(OkContent::Html(s))
+    }
+
+    pub fn json(s: String) -> PrResult {
+        Ok(OkContent::Json(s))
+    }
+
+    pub fn root() -> PrResult {
+        Ok(OkContent::Root)
+    }
+
+    pub fn image(image: Vec<u8>) -> PrResult {
+        Ok(OkContent::Image(image))
+    }
+
+    pub fn redirect(url: String) -> PrResult {
+        Ok(Redirect(url))
+    }
+}
 
 #[derive(Debug)]
 pub enum Error {

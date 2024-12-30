@@ -9,7 +9,7 @@ use crate::email::Email;
 use crate::pages::edit::FormData;
 use crate::entities::{Book, Cycle, Summary, User};
 use crate::errors::Error::{IncorrectPassword, UnknownUser};
-use crate::errors::PrResult;
+use crate::errors::{DbResult, Error, PrResult};
 use crate::PerryState;
 
 pub async fn _get_data(state: &Data<PerryState>, book_number: u32)
@@ -34,8 +34,8 @@ pub async fn _get_data(state: &Data<PerryState>, book_number: u32)
     }
 }
 
-pub async fn save_summary(state: &Data<PerryState>, user: Option<User>, form_data: Form<FormData>)
-    -> PrResult<()>
+pub async fn save_summary_logic(state: &PerryState, user: Option<User>, form_data: FormData)
+    -> DbResult<()>
 {
     let english_title = form_data.english_title.clone();
 
@@ -99,7 +99,7 @@ pub async fn save_summary(state: &Data<PerryState>, user: Option<User>, form_dat
         let s = if already_exists { "updated" } else { "added" };
         Email::notify_admin(state,
             &format!("Summary {book_number} {s} by {}: {}", username, english_title.clone()),
-            &admin_content).await?;
+            &admin_content).await;
 
         //
         // Update or insert the summary
@@ -123,12 +123,12 @@ pub async fn save_summary(state: &Data<PerryState>, user: Option<User>, form_dat
         let body = format!("Summary: {:#?}", summary.clone());
         Email::notify_admin(state,
             &format!("New pending summary {}: {}", book_number, summary.english_title),
-            &body).await?;
+            &body).await;
         result
     }
 }
 
-pub async fn send_summary_to_group(state: &PerryState, summary: &Summary) -> PrResult<()> {
+pub async fn send_summary_to_group(state: &PerryState, summary: &Summary) -> Result<(), Error> {
     let to = if state.config.is_heroku {
         GROUP_EMAIL_ADDRESS
     } else {
@@ -149,7 +149,7 @@ pub async fn send_summary_to_group(state: &PerryState, summary: &Summary) -> PrR
             info!("Couldn't create content: {e}");
             Email::notify_admin(state,
                 &format!("Couldn't send summary for {book_number} to group"),
-                &format!("Error: {}", e.to_string())).await?;
+                &format!("Error: {}", e.to_string())).await;
             Err(e)
         }
     }
@@ -171,7 +171,7 @@ fn verify_password(supplied_password: &str, salt: &Vec<u8>, password: &Vec<u8>) 
 
 /// Return the (auth token, cookie duration in days)
 pub async fn login(db: &Arc<Box<dyn Db>>, username: &str, password: &str)
-    -> PrResult<(String, u16)>
+    -> Result<(String, u16), Error>
 {
     if let Some(user) = db.find_user_by_login(username).await {
         let ok1 = password.is_empty() && user.salt.is_none() && password.is_empty();

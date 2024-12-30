@@ -7,7 +7,7 @@ use tracing::log::warn;
 use crate::config::Config;
 use crate::entities::{Book, Cycle, Image, PendingSummary, Summary, User};
 use crate::errors::Error::{DeletingCover, FetchingCycles, InsertingBook, InsertingCoverImage, InsertingInPending, InsertingSummary, UpdatingBook, UpdatingSummary, UpdatingUser};
-use crate::errors::PrResult;
+use crate::errors::DbResult;
 
 pub async fn create_db(config: &Config) -> Box<dyn Db> {
     match DbPostgres::maybe_new(&config).await {
@@ -24,7 +24,7 @@ pub async fn create_db(config: &Config) -> Box<dyn Db> {
 
 #[async_trait]
 pub trait Db: Send + Sync {
-    async fn fetch_cycles(&self) -> PrResult<Vec<Cycle>> { Ok(Vec::new()) }
+    async fn fetch_cycles(&self) -> DbResult<Vec<Cycle>> { Ok(Vec::new()) }
     async fn fetch_users(&self) -> Vec<User> { Vec::new() }
     async fn find_summary(&self, _number: u32) -> Option<Summary> { None }
     async fn fetch_summary_count(&self) -> u16 { 4200 }
@@ -36,17 +36,17 @@ pub trait Db: Send + Sync {
     async fn find_summaries(&self, _cycle_number: u32) -> Vec<Summary> { Vec::new() }
     async fn find_book(&self, _book_number: u32) -> Option<Book> { None }
     async fn find_cover(&self, _book_number: u32) -> Option<Image> { None }
-    async fn delete_cover(&self, _book_number: u32) -> PrResult<()> { Ok(()) }
-    async fn insert_cover(&self, _book_number: u32, _bytes: Vec<u8>) -> PrResult<()> { Ok(()) }
-    async fn insert_summary(&self, _summary: Summary) -> PrResult<()> { Ok(()) }
-    async fn update_summary(&self, _summary: Summary) -> PrResult<()> { Ok(()) }
-    async fn update_or_insert_book(&self, _book: Book) -> PrResult<()> { Ok(()) }
+    async fn delete_cover(&self, _book_number: u32) -> DbResult<()> { Ok(()) }
+    async fn insert_cover(&self, _book_number: u32, _bytes: Vec<u8>) -> DbResult<()> { Ok(()) }
+    async fn insert_summary(&self, _summary: Summary) -> DbResult<()> { Ok(()) }
+    async fn update_summary(&self, _summary: Summary) -> DbResult<()> { Ok(()) }
+    async fn update_or_insert_book(&self, _book: Book) -> DbResult<()> { Ok(()) }
     async fn find_user_by_auth_token(&self, _auth_token: &str) -> Option<User> { None }
     async fn find_user_by_login(&self, _username: &str) -> Option<User> { None }
     async fn update_user(&self, _username: &str, _auth_token: &str, _last_login: &str)
-        -> PrResult<()> { Ok(()) }
+        -> DbResult<()> { Ok(()) }
     async fn insert_summary_in_pending(&self, _book: Book, _summary: Summary)
-        -> PrResult<()> { Ok(()) }
+        -> DbResult<()> { Ok(()) }
     async fn find_pending_summaries(&self) -> Vec<PendingSummary> { Vec::new() }
 }
 
@@ -144,7 +144,7 @@ impl DbPostgres {
 
 #[async_trait]
 impl Db for DbPostgres {
-    async fn fetch_cycles(&self) -> PrResult<Vec<Cycle>> {
+    async fn fetch_cycles(&self) -> DbResult<Vec<Cycle>> {
         match sqlx::query_as::<_, Cycle>(
             "select * from cycles order by number desc")
             .fetch_all(&self.pool)
@@ -333,7 +333,7 @@ impl Db for DbPostgres {
         result
     }
 
-    async fn delete_cover(&self, book_number: u32) -> PrResult<()> {
+    async fn delete_cover(&self, book_number: u32) -> DbResult<()> {
         match sqlx::query!("delete from covers where number = $1", book_number as i32)
             .execute(&self.pool)
             .await
@@ -349,7 +349,7 @@ impl Db for DbPostgres {
         }
     }
 
-    async fn insert_cover(&self, book_number: u32, bytes: Vec<u8>) -> PrResult<()> {
+    async fn insert_cover(&self, book_number: u32, bytes: Vec<u8>) -> DbResult<()> {
         match sqlx::query!("insert into covers (number, image, size) values ($1, $2, $3)",
             book_number as i32, bytes, bytes.len() as i32)
             .execute(&self.pool)
@@ -366,7 +366,7 @@ impl Db for DbPostgres {
         }
     }
 
-    async fn insert_summary(&self, summary: Summary) -> PrResult<()> {
+    async fn insert_summary(&self, summary: Summary) -> DbResult<()> {
         match sqlx::query!("insert into summaries (number, english_title, author_name, author_email, \
             date, summary, time) values ($1, $2, $3, $4, $5, $6, $7)",
                 summary.number, summary.english_title, summary.author_name, summary.author_email,
@@ -385,7 +385,7 @@ impl Db for DbPostgres {
         }
     }
 
-    async fn update_summary(&self, summary: Summary) -> PrResult<()> {
+    async fn update_summary(&self, summary: Summary) -> DbResult<()> {
         match sqlx::query!("update summaries set english_title = $2::text, author_name = $3::text,\
          author_email = $4::text, date = $5::text, summary = $6::text, time = $7::text \
          where number = $1",
@@ -405,7 +405,7 @@ impl Db for DbPostgres {
         }
     }
 
-    async fn update_or_insert_book(&self, book: Book) -> PrResult<()> {
+    async fn update_or_insert_book(&self, book: Book) -> DbResult<()> {
         match self.find_book(book.number as u32).await {
             Some(_) => {
                 match sqlx::query!("update hefte set title = $2::text, author = $3::text,\
@@ -452,7 +452,7 @@ impl Db for DbPostgres {
     }
 
     async fn update_user(&self, username: &str, auth_token: &str, last_login: &str)
-        -> PrResult<()>
+        -> DbResult<()>
     {
         match sqlx::query!("update users set auth_token = $1, last_login = $2 where login = $3",
                 auth_token, last_login, username)
@@ -469,7 +469,7 @@ impl Db for DbPostgres {
         }
     }
 
-    async fn insert_summary_in_pending(&self, book: Book, summary: Summary) -> PrResult<()> {
+    async fn insert_summary_in_pending(&self, book: Book, summary: Summary) -> DbResult<()> {
         // Note: not inserting `published`
         match sqlx::query!("insert into pending (number, german_title, author,\
             english_title, author_name, author_email, date_summary, summary) \
