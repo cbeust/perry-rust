@@ -1,7 +1,6 @@
 use std::io::{Cursor};
 use std::sync::Arc;
 use std::time::Duration;
-use actix_web::{HttpRequest, HttpResponse};
 use actix_web::web::{Data, Path};
 use image::imageops::FilterType;
 use image::{ImageFormat, load_from_memory};
@@ -32,22 +31,23 @@ pub async fn delete_cover_logic<T>(state: Arc<PerryState>, cookie_manager: impl 
     PrResultBuilder::redirect(format!("/covers/{book_number}"))
 }
 
-pub async fn cover(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
-    let book_number = path.into_inner();
-    match find_cover_image(book_number, &state.db).await {
+pub async fn cover_logic(state: &PerryState, book_number: u32) -> PrResult {
+    let bytes = match find_cover_image(book_number, &state.db).await {
         Ok(OkContent::Image(bytes)) => {
             info!("Returning cover image for book {}, size {} bytes", book_number, bytes.len());
-            Response::png(bytes)
+            bytes
         }
         Err(e) => {
             error!("Couldn't fetch cover: {e}");
-            Response::png(Vec::new())
+            Vec::new()
         }
         _ => {
             error!("Unknown error while fetching cover for {book_number}");
-            Response::png(Vec::new())
+            Vec::new()
         }
-    }
+    };
+
+    PrResultBuilder::image(bytes)
 }
 
 async fn find_cover_image(book_number: u32, db: &Arc<Box<dyn Db>>) -> PrResult {

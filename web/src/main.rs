@@ -14,6 +14,7 @@ mod constants;
 mod response;
 mod test;
 mod covers;
+mod actix;
 
 use std::sync::Arc;
 use actix_web::{App, HttpServer};
@@ -26,13 +27,11 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use crate::config::{Config, create_config};
 use crate::cookies::CookieManager;
-use crate::covers::{cover};
 use crate::db::{create_db, Db};
-use crate::email::{api_send_email, Email, EmailService};
-use crate::pages::cycle::{cycle, delete_cover, edit_summary, index, login, logout, pending, post_summary, summaries};
+use crate::email::{Email, EmailService};
+use crate::actix::*;
 use crate::pages::cycles::{api_cycles, favicon, root_head};
 use crate::pages::pending::{approve_pending, delete_pending, pending_delete_all};
-use crate::pages::summaries::{api_summaries, php_display_summary, summaries_post};
 use crate::perrypedia::{CoverFinder, LocalImageProvider};
 
 fn _main() {

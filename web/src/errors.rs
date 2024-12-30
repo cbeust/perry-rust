@@ -6,6 +6,7 @@ pub type DbResult<T> = Result<T, Error>;
 
 pub enum OkContent {
     Root,
+    Ok,
     Html(String),
     Json(String),
     Image(Vec<u8>),
@@ -27,6 +28,10 @@ impl PrResultBuilder {
 
     pub fn root() -> PrResult {
         Ok(OkContent::Root)
+    }
+
+    pub fn ok() -> PrResult {
+        Ok(OkContent::Ok)
     }
 
     pub fn image(image: Vec<u8>) -> PrResult {

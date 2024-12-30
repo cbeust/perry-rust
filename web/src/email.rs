@@ -1,6 +1,4 @@
 use std::sync::Arc;
-use actix_web::HttpResponse;
-use actix_web::web::{Data, Path};
 use askama::Template;
 use lettre::{Message, SmtpTransport, Transport};
 use lettre::message::header::ContentType;
@@ -11,7 +9,7 @@ use crate::config::Config;
 use crate::constants::ADMIN;
 use crate::entities::Summary;
 use crate::errors::Error::{EmailError, Unknown};
-use crate::errors::{Error, PrResult};
+use crate::errors::{Error, PrResult, PrResultBuilder};
 use crate::logic::send_summary_to_group;
 use crate::PerryState;
 use crate::url::Urls;
@@ -113,13 +111,12 @@ impl Email {
     }
 }
 
-pub async fn api_send_email(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
-    let book_number = path.into_inner();
+pub async fn api_send_email_logic(state: &PerryState, book_number: u32) -> PrResult {
     if let Some(summary) = state.db.find_summary(book_number).await {
         let _ = send_summary_to_group(&state, &summary).await;
     }
 
-    HttpResponse::Ok().finish()
+    PrResultBuilder::ok()
 }
 
 pub trait EmailService: Send + Sync {

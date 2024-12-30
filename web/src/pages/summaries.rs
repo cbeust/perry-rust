@@ -1,6 +1,4 @@
 use std::sync::Arc;
-use actix_web::{HttpRequest, HttpResponse};
-use actix_web::web::{Data, Form, Path, Query};
 use askama::Template;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -19,11 +17,11 @@ use crate::url::Urls;
 
 /// This is used by the text field on the main page: if the user types a number
 /// and Submit, take them directly to that summary
-pub async fn summaries_post(form_data: Form<SingleSummaryData>) -> HttpResponse {
-    Response::redirect(format!("/summaries/{}", form_data.number))
+pub async fn summaries_post_logic(form_data: SingleSummaryData) -> PrResult {
+    PrResultBuilder::redirect(format!("/summaries/{}", form_data.number))
 }
 
-pub async fn summaries_logic<T>(state: Data<PerryState>, cookie_manager: impl CookieManager<T>)
+pub async fn summaries_logic<T>(state: &PerryState, cookie_manager: impl CookieManager<T>)
     -> PrResult
 {
     let template = TemplateSummaries {
@@ -37,12 +35,11 @@ pub struct DisplaySummaryQueryParams {
     number: u32
 }
 
-pub async fn php_display_summary(query: Query<DisplaySummaryQueryParams>) -> HttpResponse {
-    Response::redirect(format!("/summaries/{}", query.number))
+pub async fn php_display_summary_logic(query: DisplaySummaryQueryParams) -> PrResult {
+    PrResultBuilder::redirect(format!("/summaries/{}", query.number))
 }
 
-pub async fn api_summaries(state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
-    let book_number = path.into_inner();
+pub async fn api_summaries_logic(state: &PerryState, book_number: u32) -> PrResult {
     let template: TemplateSummary = {
         match tokio::join!(
             state.db.find_summary(book_number),
@@ -92,7 +89,7 @@ pub async fn api_summaries(state: Data<PerryState>, path: Path<u32>) -> HttpResp
         }
     };
 
-    Response::json(serde_json::to_string(&json!(template)).unwrap())
+    PrResultBuilder::json(serde_json::to_string(&json!(template)).unwrap())
 }
 
 pub async fn post_summary_logic<T>(state: &PerryState, cookie_manager: impl CookieManager<T>,
