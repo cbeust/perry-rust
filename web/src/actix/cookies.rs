@@ -35,10 +35,6 @@ impl CookieManager<Cookie<'static>> for ActixCookies {
         }
     }
 
-    async fn clear_auth_token_cookie(&self) -> Cookie<'static> {
-        self.create_auth_token_cookie("".into(), 0).await
-    }
-
     async fn create_auth_token_cookie(&self, auth_token: String, days: u16) -> Cookie<'static> {
         Cookie::build(COOKIE_AUTH_TOKEN, auth_token)
             // .http_only(true)

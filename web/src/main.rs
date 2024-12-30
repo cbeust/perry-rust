@@ -39,7 +39,7 @@ fn _main() {
     println!("Date: {pretty_date}");
 }
 
-#[actix_web::main]
+#[tokio::main]
 async fn main() -> std::io::Result<()> {
     init_logging(false, true);
     info!("Starting perry-rust");
@@ -84,6 +84,8 @@ const COOKIE_AUTH_TOKEN: &str = &"authToken";
 #[async_trait]
 pub trait CookieManager<T>: Sync {
     async fn find_user(&self, db: Arc<Box<dyn Db>>) -> Option<User>;
-    async fn clear_auth_token_cookie(&self) -> T;
     async fn create_auth_token_cookie(&self, auth_token: String, days: u16) -> T;
+    async fn clear_auth_token_cookie(&self) -> T {
+        self.create_auth_token_cookie("".into(), 0).await
+    }
 }
