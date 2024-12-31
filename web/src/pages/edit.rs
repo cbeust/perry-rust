@@ -7,7 +7,7 @@ use crate::entities::{Book, Cycle, Summary};
 use crate::errors::{PrResult, PrResultBuilder};
 use crate::{CookieManager, PerryState};
 
-pub async fn edit_summary_logic<T>(state: Arc<PerryState>, cookie_manager: impl CookieManager<T>,
+pub async fn edit_summary_logic<T>(state: &PerryState, cookie_manager: impl CookieManager<T>,
         book_number: u32)
     -> PrResult
 {

@@ -124,9 +124,8 @@ pub async fn edit_summary(req: HttpRequest, state: Data<PerryState>, path: Path<
     -> HttpResponse
 {
     let cookie_manager = ActixCookies::new(&req);
-    let state = state.into_inner();
     let book_number = path.into_inner();
-    send_response(edit_summary_logic(state, cookie_manager, book_number).await)
+    send_response(edit_summary_logic(&state.into_inner(), cookie_manager, book_number).await)
 }
 
 pub async fn summaries(req: HttpRequest, state: Data<PerryState>) -> HttpResponse {

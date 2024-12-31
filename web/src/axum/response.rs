@@ -3,6 +3,7 @@ use axum::http::{header, StatusCode};
 use axum::Json;
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum_extra::extract::cookie::Cookie;
+use tracing::debug;
 use crate::errors::{Error, OkContent, PrResult};
 use crate::errors::Error::UnknownCoverImageError;
 use crate::url::Urls;
@@ -69,10 +70,8 @@ impl AxumResponse {
     }
 
     pub fn redirect(location: String) -> Response {
-        Response::builder()
-            .header(header::LOCATION, location)
-            .body(Body::from(""))
-            .unwrap()
+        debug!("Redirecting to {location}");
+        Redirect::to(&location).into_response()
     }
 
     pub fn html(html: String) -> Response {
