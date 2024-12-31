@@ -17,8 +17,9 @@ mod axum;
 use std::sync::Arc;
 use async_trait::async_trait;
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
-use tracing::{ info};
-use tracing_subscriber::fmt;
+use tracing::{debug, info, Level};
+use tracing::log::trace;
+use tracing_subscriber::{EnvFilter, fmt, FmtSubscriber};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use crate::config::{Config, create_config};
@@ -43,7 +44,6 @@ fn _main() {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    println!("main starting");
     init_logging(false, true);
     let config = create_config();
 
@@ -63,14 +63,19 @@ async fn main() -> std::io::Result<()> {
 
 pub fn init_logging(sqlx: bool, web: bool) {
     let debug_sqlx = if sqlx { "debug" } else { "info" };
-    let debug_actix = if web { "trace" } else { "info" };
-    tracing_subscriber::registry()
-        .with(fmt::layer())
-        .with(tracing_subscriber::EnvFilter::new(
-            format!("crate=debug,sqlx={debug_sqlx},axum={debug_actix},actix_web={debug_actix},info")
-            // format!("sqlx={debug_sqlx},reqwest=info,hyper_util:info,debug")
-        ))
-        .init();
+    let debug_web = if web { "trace" } else { "info" };
+
+    let filter = EnvFilter::from_default_env()
+        .add_directive(format!("sqlx::query={debug_sqlx}").parse().unwrap())
+        .add_directive(format!("perry::axum={debug_web}").parse().unwrap())
+        .add_directive("info".parse().unwrap())
+        ;
+
+        let subscriber = FmtSubscriber::builder()
+            .with_env_filter(filter) // Use the filter
+            .finish();
+
+    tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 }
 
 #[derive(Clone)]
