@@ -54,8 +54,6 @@ pub async fn main_axum(_config: Config, state: PerryState) -> std::io::Result<()
     }
 
     let app = Router::new()
-        .route("/", get(index))
-
         // Static files
         .nest_service("/static", serve_dir.clone())
 
@@ -67,6 +65,7 @@ pub async fn main_axum(_config: Config, state: PerryState) -> std::io::Result<()
         // .route("/favicon.{ext}").route(actix_web::web::get().to(crate::actix::favicon)))
 
         // Cycles
+        .route("/", get(index).head(root_head))
         .route("/cycles/{number}", get(cycle))
         .route("/api/cycles/{number}", get(api_cycle))
 
@@ -126,6 +125,11 @@ pub async fn main_axum(_config: Config, state: PerryState) -> std::io::Result<()
 //////////////////////////////////////////////////////
 // Endpoints
 //////////////////////////////////////////////////////
+
+
+async fn root_head() -> impl IntoResponse {
+    AxumResponse::ok()
+}
 
 async fn index(State(state): State<PerryState>, jar: CookieJar) -> Response {
     let cookie_manager = AxumCookies::new(jar);
