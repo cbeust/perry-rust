@@ -11,7 +11,7 @@ use crate::errors::{OkContent, PrResult, PrResultBuilder};
 use crate::perrypedia::{CoverFinder, PerryPedia, TIMEOUT_MS};
 use crate::{CookieManager, PerryState};
 
-pub async fn delete_cover_logic<T>(state: Arc<PerryState>, cookie_manager: impl CookieManager<T>,
+pub async fn delete_cover_logic<T>(state: &PerryState, cookie_manager: impl CookieManager<T>,
         book_number: u32) -> PrResult
 {
     if cookie_manager.find_user(state.db.clone()).await.is_some() {

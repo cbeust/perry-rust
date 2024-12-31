@@ -19,6 +19,7 @@ use crate::pages::pending::{pending_logic};
 use crate::pages::summaries::*;
 use crate::{CookieManager, PerryState};
 use crate::constants::PRODUCTION_HOST;
+use crate::logic::login_logic;
 use crate::url::Urls;
 
 pub async fn main_actix(config: Config, state: PerryState) -> std::io::Result<()> {
@@ -151,15 +152,9 @@ pub async fn logout(req: HttpRequest) -> HttpResponse {
     Response::cookie(Urls::root(), cookie)
 }
 
-#[derive(Deserialize)]
-pub struct LoginFormData {
-    pub username: String,
-    pub password: String,
-}
-
 async fn login(req: HttpRequest, state: Data<PerryState>, form: Form<LoginFormData>) -> HttpResponse {
     let cookie_manager = ActixCookies::new(&req);
-    match crate::logic::login(&state.db, &form.username, &form.password).await {
+    match login_logic(&state.db, &form.username, &form.password).await {
         Ok((auth_token, days)) => {
             let cookie = cookie_manager.create_auth_token_cookie(auth_token.clone(), days).await;
             info!("Setting cookie for user {}: {}", form.username, cookie);
@@ -175,7 +170,7 @@ async fn login(req: HttpRequest, state: Data<PerryState>, form: Form<LoginFormDa
 async fn delete_cover(req: HttpRequest, state: Data<PerryState>, path: Path<u32>) -> HttpResponse {
     let cookie_manager = ActixCookies::new(&req);
     let book_number = path.into_inner();
-    send_response(delete_cover_logic(state.into_inner(), cookie_manager, book_number).await)
+    send_response(delete_cover_logic(&state.into_inner(), cookie_manager, book_number).await)
 }
 
 async fn summaries_post(form_data: Form<SingleSummaryData>) -> HttpResponse {

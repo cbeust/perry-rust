@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use askama::Template;
 use serde::Deserialize;
 use tracing::{error, info};

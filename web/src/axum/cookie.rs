@@ -37,6 +37,6 @@ impl CookieManager<Cookie<'static>> for AxumCookies {
             // .domain("perryrhodan.us")
             .path("/")
             .expires(OffsetDateTime::now_utc() + Duration::from_secs(60 * 60 * 24 * days as u64))
-            .finish()
+            .into()
     }
 }

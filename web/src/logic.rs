@@ -1,5 +1,6 @@
 use std::sync::Arc;
 use chrono::{Utc};
+use serde::Deserialize;
 use tracing::info;
 use uuid::Uuid;
 use crate::constants::{ADMIN, GROUP_EMAIL_ADDRESS, PRODUCTION_HOST};
@@ -146,8 +147,14 @@ fn verify_password(supplied_password: &str, salt: &Vec<u8>, password: &Vec<u8>) 
     success
 }
 
+#[derive(Deserialize)]
+pub struct LoginFormData {
+    pub username: String,
+    pub password: String,
+}
+
 /// Return the (auth token, cookie duration in days)
-pub async fn login(db: &Arc<Box<dyn Db>>, username: &str, password: &str)
+pub async fn login_logic(db: &Arc<Box<dyn Db>>, username: &str, password: &str)
     -> Result<(String, u16), Error>
 {
     if let Some(user) = db.find_user_by_login(username).await {

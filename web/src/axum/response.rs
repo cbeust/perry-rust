@@ -1,6 +1,5 @@
 use axum::body::Body;
 use axum::http::{header, StatusCode};
-use axum::Json;
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum_extra::extract::cookie::Cookie;
 use tracing::debug;
@@ -47,7 +46,7 @@ impl IntoResponse for OkContent {
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
         match self {
-            UnknownCoverImageError(n) => {
+            UnknownCoverImageError(_n) => {
                 Redirect::to("https://perryrhodan.us").into_response()
                 // (StatusCode::SEE_OTHER, format!("https://perryrhodan.us"))
             }
@@ -81,6 +80,7 @@ impl AxumResponse {
     pub fn cookie(location: String, cookie: Cookie) -> Response {
         Response::builder()
             .header(header::SET_COOKIE, cookie.to_string())
+            .status(StatusCode::SEE_OTHER)
             .header(header::LOCATION, location)
             .body(Body::from(""))
             .unwrap()

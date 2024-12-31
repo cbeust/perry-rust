@@ -1,4 +1,3 @@
-use std::sync::Arc;
 use askama::Template;
 use crate::banner_info::BannerInfo;
 use crate::errors::{PrResult, PrResultBuilder};

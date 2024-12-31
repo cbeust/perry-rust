@@ -2,52 +2,41 @@ mod cookie;
 mod response;
 
 use std::net::SocketAddr;
-use axum::extract::{Path, State};
-use axum::http::{StatusCode};
-use axum::response::{Html, IntoResponse, Redirect, Response};
+use axum::extract::{Path, Query, State};
+use axum::response::{IntoResponse, Response};
 use axum::{Form, Router};
-use axum::routing::{get, get_service, post};
-use tracing::log::{trace, warn};
+use axum::routing::{get, post};
+use tracing::log::{warn};
 use tower_http::services::{ServeDir, ServeFile};
 use crate::config::Config;
-use crate::entities::Summary;
-use crate::errors::{Error, OkContent, PrResult};
-use crate::errors::Error::{CouldNotFindCoverImage, UnknownCoverImageError};
 use crate::{CookieManager, PerryState};
 
 use axum::{http::{Request}};
-use std::time::Duration;
-use actix_web::web::resource;
 use axum::body::Body;
-use axum::middleware::{from_fn, map_request, Next};
+use axum::middleware::{from_fn, Next};
 use axum_extra::extract::CookieJar;
-use tower_http::trace::{self, MakeSpan, OnRequest, OnResponse, OnFailure, TraceLayer};
-use tracing::{debug, error, info, Level, Span};
-use tower_http::trace::Trace;
-use tracing_subscriber::{EnvFilter, FmtSubscriber};
-use crate::actix::cookies::ActixCookies;
+use tracing::{debug, info};
 use crate::axum::cookie::AxumCookies;
 use crate::axum::response::{AxumResponse, WrappedPrResult};
-use crate::covers::cover_logic;
+use crate::covers::{cover_logic, delete_cover_logic};
+use crate::email::api_send_email_logic;
+use crate::logic::{login_logic, LoginFormData};
 use crate::pages::cycle::cycle_logic;
 use crate::pages::cycles::{api_cycles_logic, index_logic};
 use crate::pages::edit::{edit_summary_logic, FormData};
-use crate::pages::summaries::{api_summaries_logic, post_summary_logic, SingleSummaryData, summaries_logic, summaries_post_logic};
+use crate::pages::pending::pending_logic;
+use crate::pages::summaries::{api_summaries_logic, DisplaySummaryQueryParams, php_display_summary_logic, post_summary_logic, SingleSummaryData, summaries_logic, summaries_post_logic};
+use crate::url::Urls;
 
 pub async fn main_axum(_config: Config, state: PerryState) -> std::io::Result<()> {
     info!("Starting axum");
     let serve_dir = ServeDir::new("web/static").not_found_service(ServeFile::new("static"));
 
-    async fn log_request<B>(request: Request<B>) -> Request<B> {
-        debug!("{} {}", request.method(), request.uri());
-        request
-    }
-
     async fn log_middleware(request: Request<Body>, next: Next) -> Response {
         let uri = request.uri().clone();
         let method = request.method().clone();
         let response = next.run(request).await;
-        debug!("=== {method} {uri} {}", response.status());
+        debug!("=== {method} \"{uri}\" \"{}\"", response.status());
         response
     }
 
@@ -72,44 +61,31 @@ pub async fn main_axum(_config: Config, state: PerryState) -> std::io::Result<()
         .route("/summaries/{number}", get(summaries))
         .route("/summaries/{number}/edit", get(edit_summary))
         .route("/api/summaries", post(post_summary))
-
         .route("/api/summaries/{number}", get(api_summaries))
+        .route("/api/sendEmail/{number}", get(api_send_email))
+
+        // Pending
+        .route("/pending", get(pending))
+        .route("/pending/delete_all", get(pending_delete_all))
+        .route("/approve/{id}", get(approve_pending))
+        .route("/delete/{id}", get(delete_pending))
+
+        // Login / log out
+        .route("/login", post(login))
+        .route("/logout", get(logout))
 
         // Covers
         .route("/covers/{number}", get(cover))
+        .route("/covers/{number}/delete", get(delete_cover))
+
+        // PHP backward compatibility
+        .route("/php/displaySummary.php", get(php_display_summary))
 
         // State
         .with_state(state)
-        // .layer(LiveReloadLayer::new())
-        // .layer(Extension(config))
-        // .layer(Extension(pool.clone()));
 
         // Tracing
         .layer(from_fn(log_middleware))
-        // .layer(tower_http::trace::TraceLayer::new_for_http()
-        //             // .make_span_with(|request: &Request<_>| {
-        //             //     tracing::info_span!(
-        //             //     "http_request",
-        //             //     method = %request.method(),
-        //             //     uri = %request.uri(),
-        //             //     version = ?request.version(),
-        //             // )
-        //             // })
-        //     .on_request(|request: &Request<_>, span: &Span| {
-        //         // let _entered = span.enter();
-        //         println!("PERRY ON REQUEST");
-        //         info!("on_request called");
-        //     })
-        //     // .on_response(|request: &Request<_>, latency: Duration, span: &Span| {
-        //     // })
-        // )
-        //     // .on_response(|response: &Response<_>, latency: Duration, span: &Span| {
-        //     //     info!(
-        //     //     parent: span,
-        //     //     status = response.status().as_u16(),
-        //     //     latency = ?latency,
-        //     //     "finished processing request"
-        //     // }))
         ;
 
     // run it
@@ -127,6 +103,10 @@ pub async fn main_axum(_config: Config, state: PerryState) -> std::io::Result<()
 // Endpoints
 //////////////////////////////////////////////////////
 
+async fn favicon() -> Response {
+    let favicon = include_bytes!("../../static/favicon.png");
+    AxumResponse::png(favicon.into())
+}
 
 async fn root_head() -> impl IntoResponse {
     AxumResponse::ok()
@@ -164,17 +144,63 @@ async fn edit_summary(State(state): State<PerryState>, jar: CookieJar, Path(book
     WrappedPrResult(edit_summary_logic(&state, AxumCookies::new(jar), book_number).await).into_response()
 }
 
-async fn api_summaries(State(state): State<PerryState>, Path(book_number): Path<u32>) -> Response {
-    WrappedPrResult(api_summaries_logic(&state, book_number).await).into_response()
-}
-
 async fn post_summary(State(state): State<PerryState>, jar: CookieJar, Form(form_data): Form<FormData>)
     -> Response
 {
     WrappedPrResult(post_summary_logic(&state, AxumCookies::new(jar), form_data).await).into_response()
 }
 
-async fn favicon() -> Response {
-    let favicon = include_bytes!("../../static/favicon.png");
-    AxumResponse::png(favicon.into())
+async fn api_summaries(State(state): State<PerryState>, Path(book_number): Path<u32>) -> Response {
+    WrappedPrResult(api_summaries_logic(&state, book_number).await).into_response()
+}
+
+async fn api_send_email(State(state): State<PerryState>, Path(book_number): Path<u32>) -> Response {
+    WrappedPrResult(api_send_email_logic(&state, book_number).await).into_response()
+}
+
+async fn pending(State(state): State<PerryState>, jar: CookieJar) -> Response {
+    WrappedPrResult(pending_logic(&state, AxumCookies::new(jar)).await).into_response()
+}
+
+async fn pending_delete_all() -> Response {
+    AxumResponse::redirect("/pending".into()).into_response()
+}
+
+async fn approve_pending() -> Response {
+    AxumResponse::redirect("/pending".into()).into_response()
+}
+
+async fn delete_pending() -> Response {
+    AxumResponse::redirect("/pending".into()).into_response()
+}
+
+async fn login(State(state): State<PerryState>, jar: CookieJar, Form(form): Form<LoginFormData>)
+    -> Response
+{
+    let cookie_manager = AxumCookies::new(jar);
+    match login_logic(&state.db, &form.username, &form.password).await {
+        Ok((auth_token, days)) => {
+            let cookie = cookie_manager.create_auth_token_cookie(auth_token.clone(), days).await;
+            info!("Setting cookie for user {}: {}", form.username, cookie);
+            AxumResponse::cookie(Urls::root(), cookie)
+        }
+        Err(e) => {
+            warn!("Not setting cookie for user {}: {e}", form.username);
+            AxumResponse::root()
+        }
+    }
+}
+
+async fn logout(jar: CookieJar) -> Response {
+    let cookie_manager = AxumCookies::new(jar);
+    let cookie = cookie_manager.clear_auth_token_cookie().await;
+    AxumResponse::cookie(Urls::root(), cookie)
+}
+
+async fn delete_cover(State(state): State<PerryState>, jar: CookieJar, Path(book_number): Path<u32>) -> Response {
+    WrappedPrResult(delete_cover_logic(&state, AxumCookies::new(jar), book_number).await).into_response()
+}
+
+async fn php_display_summary(Query(params): Query<DisplaySummaryQueryParams>) -> Response {
+    WrappedPrResult(php_display_summary_logic(params).await).into_response()
 }
