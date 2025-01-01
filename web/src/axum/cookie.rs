@@ -1,9 +1,8 @@
 use std::sync::Arc;
-use std::time::Duration;
-use actix_web::cookie::time::OffsetDateTime;
 use async_trait::async_trait;
 use axum_extra::extract::cookie::Cookie;
 use axum_extra::extract::CookieJar;
+use cookie::time::Duration;
 use tracing::log::trace;
 use crate::{CookieManager, COOKIE_AUTH_TOKEN};
 use crate::db::Db;
@@ -36,7 +35,7 @@ impl CookieManager<Cookie<'static>> for AxumCookies {
             // .http_only(true)
             // .domain("perryrhodan.us")
             .path("/")
-            .expires(OffsetDateTime::now_utc() + Duration::from_secs(60 * 60 * 24 * days as u64))
+            .max_age(Duration::days(days as i64))  // 365 days in seconds
             .into()
     }
 }

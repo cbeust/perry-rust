@@ -36,7 +36,7 @@ pub async fn main_axum(_config: Config, state: PerryState) -> std::io::Result<()
         let uri = request.uri().clone();
         let method = request.method().clone();
         let response = next.run(request).await;
-        debug!("=== {method} \"{uri}\" \"{}\"", response.status());
+        debug!("=== {method} \"{uri}\": {}", response.status());
         response
     }
 

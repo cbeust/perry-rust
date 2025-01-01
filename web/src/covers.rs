@@ -4,7 +4,7 @@ use std::time::Duration;
 use image::imageops::FilterType;
 use image::{ImageFormat, load_from_memory};
 use tokio::time::timeout;
-use tracing::{error, info};
+use tracing::{debug, error, info};
 use crate::db::Db;
 use crate::errors::Error::{CouldNotFindCoverImage, PerryPediaCouldNotFind, UnknownCoverImageError};
 use crate::errors::{OkContent, PrResult, PrResultBuilder};
@@ -31,7 +31,7 @@ pub async fn delete_cover_logic<T>(state: &PerryState, cookie_manager: impl Cook
 pub async fn cover_logic(state: &PerryState, book_number: u32) -> PrResult {
     let bytes = match find_cover_image(book_number, &state.db).await {
         Ok(OkContent::Image(bytes)) => {
-            info!("Returning cover image for book {}, size {} bytes", book_number, bytes.len());
+            debug!("Returning cover image for book {}, size {} bytes", book_number, bytes.len());
             bytes
         }
         Err(e) => {
