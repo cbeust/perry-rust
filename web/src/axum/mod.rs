@@ -28,7 +28,7 @@ use crate::pages::pending::pending_logic;
 use crate::pages::summaries::{api_summaries_logic, DisplaySummaryQueryParams, php_display_summary_logic, post_summary_logic, SingleSummaryData, summaries_logic, summaries_post_logic};
 use crate::url::Urls;
 
-pub async fn main_axum(_config: Config, state: PerryState) -> std::io::Result<()> {
+pub async fn main_axum(config: Config, state: PerryState) -> std::io::Result<()> {
     info!("Starting axum");
     let serve_dir = ServeDir::new("web/static").not_found_service(ServeFile::new("static"));
 
@@ -89,7 +89,13 @@ pub async fn main_axum(_config: Config, state: PerryState) -> std::io::Result<()
         ;
 
     // run it
-    let addr = SocketAddr::from(([0, 0, 0, 0], 9000));
+    // Determine port from environment variable or default to 3000
+    let port = std::env::var("PORT")
+        .ok()
+        .and_then(|p| p.parse::<u16>().ok())
+        .unwrap_or(config.port);
+
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
     info!("Listening on {}", addr);
     let listener = tokio::net::TcpListener::bind(&addr).await.unwrap();
     axum::serve(listener, app.into_make_service())
@@ -122,7 +128,6 @@ async fn cycle(State(state): State<PerryState>, jar: CookieJar) -> impl IntoResp
 }
 
 async fn api_cycle(State(state): State<PerryState>, Path(number): Path<u32>) -> impl IntoResponse {
-    info!("api_cycles number: {number}");
     WrappedPrResult(api_cycles_logic(&state, number).await).into_response()
 }
 

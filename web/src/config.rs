@@ -35,6 +35,6 @@ pub struct Config {
     pub email_password: Option<String>,
 }
 
-fn default_port() -> u16 { 8080 }
+fn default_port() -> u16 { 9000 }
 fn default_is_heroku() -> bool { false }
 fn default_send_emails() -> bool { false }
