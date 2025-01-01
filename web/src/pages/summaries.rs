@@ -8,7 +8,6 @@ use crate::errors::{PrResult, PrResultBuilder};
 use crate::logic::save_summary_logic;
 use crate::pages::cycles::to_pretty_date;
 use crate::pages::edit::FormData;
-use crate::perrypedia::{CoverFinder, PerryPedia};
 use crate::{CookieManager, PerryState};
 use crate::url::Urls;
 
