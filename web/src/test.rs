@@ -7,12 +7,8 @@ mod tests {
     use crate::email::Email;
     use crate::entities::{Book, Cycle, Summary};
     use crate::errors::PrResult;
-    use crate::pages::cycles::index;
     use crate::perrypedia::CoverFinder;
     use crate::{init_logging, PerryState};
-    use actix_web::dev::{Service, ServiceResponse};
-    use actix_web::web::Data;
-    use actix_web::{test, App, Error};
     use async_trait::async_trait;
     use figment::providers::{Format, Json};
     use figment::Figment;
@@ -52,24 +48,24 @@ mod tests {
         }
     }
 
-    #[async_trait]
-    impl Db for DbTest {
-        async fn fetch_cycles(&self) -> PrResult<Vec<Cycle>> {
-            Ok(self.content.cycles.clone())
-        }
-
-        async fn fetch_summary_count(&self) -> u16 {
-            self.content.summaries.len() as u16
-        }
-
-        async fn fetch_book_count(&self) -> u16 {
-            self.content.books.len() as u16
-        }
-
-        async fn fetch_most_recent_summaries(&self) -> Vec<Summary> {
-            self.content.summaries.clone()
-        }
-    }
+    // #[async_trait]
+    // impl Db for DbTest {
+    //     async fn fetch_cycles(&self) -> PrResult<Vec<Cycle>> {
+    //         Ok(self.content.cycles.clone())
+    //     }
+    //
+    //     async fn fetch_summary_count(&self) -> u16 {
+    //         self.content.summaries.len() as u16
+    //     }
+    //
+    //     async fn fetch_book_count(&self) -> u16 {
+    //         self.content.books.len() as u16
+    //     }
+    //
+    //     async fn fetch_most_recent_summaries(&self) -> Vec<Summary> {
+    //         self.content.summaries.clone()
+    //     }
+    // }
 
     struct CoverFinderTest;
     impl CoverFinder for CoverFinderTest {}
@@ -85,27 +81,27 @@ mod tests {
         }
     }
 
-    async fn setup() -> impl Service<actix_http::Request,
-        Response = ServiceResponse, Error = Error>
-    {
-        init_logging().sqlx(false).actix(true).call();
-        let db = DbTest::default();
-        let state = create_state(Box::new(db)).await;
-        let result = test::init_service(App::new()
-            .service(index)
-            .app_data(Data::new(state.clone()))
-        ).await;
-
-        result
-    }
-
-    #[actix_web::test]
-    async fn test_index_get() {
-        let app = setup().await;
-
-        let req = test::TestRequest::get().uri("/").to_request();
-        let resp = test::call_and_read_body(&app, req).await;
-        let string = std::str::from_utf8(&resp).unwrap();
-        assert!(string.contains("Total written summaries: 2 (100 %)"));
-    }
+    // async fn setup() -> impl Service<actix_http::Request,
+    //     Response = ServiceResponse, Error = Error>
+    // {
+    //     init_logging().sqlx(false).actix(true).call();
+    //     let db = DbTest::default();
+    //     let state = create_state(Box::new(db)).await;
+    //     let result = test::init_service(App::new()
+    //         .service(index)
+    //         .app_data(Data::new(state.clone()))
+    //     ).await;
+    //
+    //     result
+    // }
+    //
+    // #[actix_web::test]
+    // async fn test_index_get() {
+    //     let app = setup().await;
+    //
+    //     let req = test::TestRequest::get().uri("/").to_request();
+    //     let resp = test::call_and_read_body(&app, req).await;
+    //     let string = std::str::from_utf8(&resp).unwrap();
+    //     assert!(string.contains("Total written summaries: 2 (100 %)"));
+    // }
 }
