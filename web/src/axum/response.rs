@@ -2,9 +2,8 @@ use axum::body::Body;
 use axum::http::{header, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum_extra::extract::cookie::Cookie;
-use tracing::debug;
+use tracing::{debug, error};
 use crate::errors::{Error, OkContent, PrResult};
-use crate::errors::Error::UnknownCoverImageError;
 use crate::url::Urls;
 
 pub struct WrappedPrResult(pub PrResult);
@@ -45,15 +44,8 @@ impl IntoResponse for OkContent {
 
 impl IntoResponse for Error {
     fn into_response(self) -> Response {
-        match self {
-            UnknownCoverImageError(_n) => {
-                Redirect::to("https://perryrhodan.us").into_response()
-                // (StatusCode::SEE_OTHER, format!("https://perryrhodan.us"))
-            }
-            _ => {
-                (StatusCode::NOT_FOUND, "Not Found").into_response()
-            }
-        }
+        error!("Error: {self}");
+        Redirect::to(&Urls::root()).into_response()
     }
 }
 

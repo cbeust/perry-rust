@@ -59,15 +59,19 @@ pub struct DbPostgres {
 async fn find_user_by(pool: &Pool<Postgres>, key: &str, value: &str) -> Option<User> {
     match sqlx::query_as::<_, User>(
         &format!("select * from users where {key} = '{value}'"))
-        .fetch_one(pool)
+        .fetch_optional(pool)
         .await
     {
-        Ok(user) => {
+        Ok(Some(user)) => {
             info!("Found user: {}", user);
             Some(user)
         }
+        Ok(None) => {
+            warn!("find_user_by(): couldn't retrieve user by {key}={value}");
+            None
+        }
         Err(e) => {
-            warn!("Couldn't retrieve user by {key}={value}: {e}");
+            warn!("find_user_by(): couldn't retrieve user by {key}={value}: {e}");
             None
         }
     }
@@ -119,7 +123,7 @@ impl DbPostgres {
                 row.get::<i64, _>(0) as u16
             }
             Err(e) => {
-                error!("Couldn't retrieve summary count: {e}. Returning 0");
+                error!("fetch_count(): couldn't retrieve summary count: {e}. Returning 0");
                 0
             }
         };
@@ -198,7 +202,7 @@ impl Db for DbPostgres {
                 result = summaries
             }
             Err(e) => {
-                error!("Couldn't retrieve recent summaries: {e}");
+                error!("fetch_most_recent_summaries(): couldn't retrieve recent summaries: {e}");
             }
         }
 
@@ -218,7 +222,7 @@ impl Db for DbPostgres {
                 result = Some(cycle)
             }
             Err(e) => {
-                error!("Couldn't retrieve cycle {number}: {e}");
+                error!("find_cycle(): couldn't retrieve cycle {number}: {e}");
             }
         }
 
@@ -241,7 +245,7 @@ impl Db for DbPostgres {
                 Some(cycle)
             }
             Err(e) => {
-                error!("Couldn't retrieve cycle from book {book_number}: {e}");
+                error!("find_cycle_by_book(): couldn't retrieve cycle from book {book_number}: {e}");
                 None
             }
         }
@@ -321,7 +325,7 @@ impl Db for DbPostgres {
                 result = Some(book)
             }
             Err(e) => {
-                error!("Couldn't retrieve book {number}: {e}");
+                error!("find_book(): couldn't retrieve book {number}: {e}");
             }
         }
 
@@ -512,7 +516,7 @@ impl Db for DbPostgres {
                 summaries
             }
             Err(e) => {
-                error!("Couldn't retrieve pending: {e}");
+                error!("find_pending_summaries(): couldn't retrieve pending: {e}");
                 Vec::new()
             }
         }

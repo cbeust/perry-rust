@@ -82,7 +82,7 @@ impl CoverFinder for PerryPedia {
                 }
             }
             _ => {
-                info!("Couldn't retrieve cover for {n} in {TIMEOUT_MS} ms");
+                info!("find_cover_url(): couldn't retrieve cover for {n} in {TIMEOUT_MS} ms");
                 None
             }
         };
