@@ -1,3 +1,16 @@
+use std::sync::Arc;
+
+use async_trait::async_trait;
+use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
+use tracing::{info};
+use tracing_subscriber::{EnvFilter, FmtSubscriber};
+use crate::axum::main_axum;
+use crate::config::{Config, create_config};
+use crate::db::{create_db, Db};
+use crate::email::{Email, EmailService};
+use crate::entities::User;
+use crate::perrypedia::{CoverFinder, LocalImageProvider};
+
 mod db;
 mod entities;
 mod perrypedia;
@@ -13,18 +26,6 @@ mod test;
 mod covers;
 // mod actix;
 mod axum;
-
-use std::sync::Arc;
-use async_trait::async_trait;
-use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
-use tracing::{info};
-use tracing_subscriber::{EnvFilter, FmtSubscriber};
-use crate::config::{Config, create_config};
-use crate::db::{create_db, Db};
-use crate::email::{Email, EmailService};
-use crate::axum::main_axum;
-use crate::entities::User;
-use crate::perrypedia::{CoverFinder, LocalImageProvider};
 
 fn _main() {
     use chrono::{Local, TimeZone};
@@ -58,20 +59,26 @@ async fn main() -> std::io::Result<()> {
 }
 
 pub fn init_logging(sqlx: bool, web: bool, perf: bool) {
-    let debug_sqlx = if sqlx { "trace" } else { "info" };
-    let debug_web = if web { "trace" } else { "info" };
+    let sqlx = if sqlx { "trace" } else { "info" };
+    let web = if web { "trace" } else { "info" };
     let perf = if perf { "debug" } else { "info" };
 
-    let filter = EnvFilter::from_default_env()
-        .add_directive(format!("sqlx::query={debug_sqlx}").parse().unwrap())
-        .add_directive(format!("perry::axum={debug_web}").parse().unwrap())
-        .add_directive(format!("perf={perf}").parse().unwrap())
-        .add_directive("debug".parse().unwrap())
-        ;
+    // If RUST_LOG is not set, use these defaults
+    let directive = [
+        format!("sqlx={sqlx}"),
+        format!("perry::axum={web}"),
+        format!("perf={perf}"),
+        "info".into(),
+    ]
+    .join(",");
 
-        let subscriber = FmtSubscriber::builder()
-            .with_env_filter(filter) // Use the filter
-            .finish();
+    let default_filter = EnvFilter::builder()
+        .try_from_env()
+        .unwrap_or(EnvFilter::new(directive));
+
+    let subscriber = FmtSubscriber::builder()
+        .with_env_filter(default_filter)
+        .finish();
 
     tracing::subscriber::set_global_default(subscriber).expect("setting default subscriber failed");
 }
