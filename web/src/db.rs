@@ -1,8 +1,9 @@
+use std::time::Instant;
 use async_trait::async_trait;
 use sqlx::{Pool, Postgres};
 use sqlx::postgres::{PgPoolOptions};
 use sqlx::Row;
-use tracing::{error, info};
+use tracing::{debug, error, info};
 use tracing::log::warn;
 use crate::config::Config;
 use crate::entities::{Book, Cycle, Image, PendingSummary, Summary, User};
@@ -161,10 +162,13 @@ impl Db for DbPostgres {
     }
 
     async fn find_summary(&self, number: u32) -> Option<Summary> {
+        let start = Instant::now();
         let s = sqlx::query_as::<_, Summary>("SELECT * FROM SUMMARIES where number = $1")
             .bind(number as i32)
             .fetch_optional(&self.pool)
             .await;
+
+        debug!(target: "perf", "find_summary() elapsed={}ms", start.elapsed().as_millis());
 
         match s {
             Ok(s) => { s }
@@ -222,13 +226,17 @@ impl Db for DbPostgres {
     }
 
     async fn find_cycle_by_book(&self, book_number: u32) -> Option<Cycle> {
+        let start = Instant::now();
         let book_number = book_number as i32;
-        match sqlx::query_as::<_, Cycle>(
+        let result = sqlx::query_as::<_, Cycle>(
             "select * from cycles where $1 between start and \"end\"")
             .bind(book_number)
             .fetch_one(&self.pool)
-            .await
-        {
+            .await;
+
+        debug!(target: "perf", "find_cycle_by_book() elapsed={}ms", start.elapsed().as_millis());
+
+        match result {
             Ok(cycle) => {
                 Some(cycle)
             }
@@ -301,6 +309,7 @@ impl Db for DbPostgres {
 
     async fn find_book(&self, number: u32) -> Option<Book> {
         let mut result = None;
+        let start = Instant::now();
         match sqlx::query_as::<_, Book>(
             "select * from hefte where number = $1")
             .bind(number as i32)
@@ -315,6 +324,8 @@ impl Db for DbPostgres {
                 error!("Couldn't retrieve book {number}: {e}");
             }
         }
+
+        debug!(target: "perf", "find_book() elapsed={}ms", start.elapsed().as_millis());
 
         result
     }

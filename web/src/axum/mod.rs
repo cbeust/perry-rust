@@ -2,6 +2,7 @@ mod cookie;
 mod response;
 
 use std::net::SocketAddr;
+use std::time::Instant;
 use axum::extract::{Path, Query, State};
 use axum::response::{IntoResponse, Response};
 use axum::{Form, Router};
@@ -35,8 +36,9 @@ pub async fn main_axum(config: Config, state: PerryState) -> std::io::Result<()>
     async fn log_middleware(request: Request<Body>, next: Next) -> Response {
         let uri = request.uri().clone();
         let method = request.method().clone();
+        let start = Instant::now();
         let response = next.run(request).await;
-        debug!("=== {method} \"{uri}\": {}", response.status());
+        debug!("=== {method} \"{uri}\": {} elapsed={}ms", response.status(), start.elapsed().as_millis());
         response
     }
 

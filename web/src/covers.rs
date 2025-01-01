@@ -55,9 +55,11 @@ async fn find_cover_image(book_number: u32, db: &Arc<Box<dyn Db>>) -> PrResult {
     // Try to get the image from the database
     match db.find_cover(book_number).await {
         None => {
+            info!("Did not find cover for {book_number} in database");
             fetch_cover_and_insert_into_db(book_number, db).await
         }
         Some(image) => {
+            info!("Found cover for {book_number} in database");
             PrResultBuilder::image(image.image)
         }
     }

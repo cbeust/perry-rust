@@ -40,7 +40,7 @@ fn _main() {
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    init_logging(false, true);
+    init_logging(false, false, false);
     let config = create_config();
 
     info!("Starting server on port {}, config.database_url: {}", config.port,
@@ -57,14 +57,16 @@ async fn main() -> std::io::Result<()> {
     main_axum(config, state).await
 }
 
-pub fn init_logging(sqlx: bool, web: bool) {
-    let debug_sqlx = if sqlx { "debug" } else { "info" };
+pub fn init_logging(sqlx: bool, web: bool, perf: bool) {
+    let debug_sqlx = if sqlx { "trace" } else { "info" };
     let debug_web = if web { "trace" } else { "info" };
+    let perf = if perf { "debug" } else { "info" };
 
     let filter = EnvFilter::from_default_env()
         .add_directive(format!("sqlx::query={debug_sqlx}").parse().unwrap())
         .add_directive(format!("perry::axum={debug_web}").parse().unwrap())
-        .add_directive("info".parse().unwrap())
+        .add_directive(format!("perf={perf}").parse().unwrap())
+        .add_directive("debug".parse().unwrap())
         ;
 
         let subscriber = FmtSubscriber::builder()

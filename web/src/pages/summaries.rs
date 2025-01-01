@@ -43,9 +43,10 @@ pub async fn api_summaries_logic(state: &PerryState, book_number: u32) -> PrResu
             state.db.find_cycle_by_book(book_number),
             state.db.find_book(book_number),
             state.cover_finder.find_cover_url(book_number),
-            PerryPedia{}.find_cover_url(book_number))
+            // PerryPedia{}.find_cover_url(book_number)
+        )
         {
-            (Some(summary), Some(cycle), Some(book), cover_url, perry_pedia) => {
+            (Some(summary), Some(cycle), Some(book), cover_url /*, perry_pedia */) => {
                 let cycle_number = cycle.number;
                 let summary_date = summary.date.clone();
                 TemplateSummary {
@@ -61,10 +62,10 @@ pub async fn api_summaries_logic(state: &PerryState, book_number: u32) -> PrResu
                     href_edit: "".into(),
                     email_mailing_list: "".into(),
                     cover_url: cover_url.unwrap_or("".to_string()),
-                    perry_pedia: perry_pedia.unwrap_or("".into())
+                    perry_pedia: "".into()
                 }
             }
-            (_, Some(cycle), book, cover_url, _perry_pedia) => {
+            (_, Some(cycle), book, cover_url) => {
                 let (book_title, book_author) = match book {
                     Some(book) => { (book.title, book.author) }
                     None => { ("".into(), "".into()) }
@@ -80,7 +81,7 @@ pub async fn api_summaries_logic(state: &PerryState, book_number: u32) -> PrResu
                 result
 
             }
-            (_, _, _, _, _) => {
+            (_, _, _, _) => {
                 TemplateSummary::default()
             }
         }

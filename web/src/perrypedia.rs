@@ -1,9 +1,9 @@
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
 use regex::Regex;
 use tokio::time::timeout;
-use tracing::{info, warn};
+use tracing::{debug, info, warn};
 
 const HOST: &str = "https://www.perrypedia.de";
 pub const TIMEOUT_MS: u64 = 2_000;
@@ -62,10 +62,15 @@ impl PerryPedia {
 #[async_trait]
 impl CoverFinder for PerryPedia {
     async fn find_cover_url(&self, n: u32) -> Option<String> {
+        let start = Instant::now();
+
         let number = format!("{n:04}");
         let re = Regex::new(&format!(".*(/mediawiki.*/PR{number}.jpg)")).unwrap();
         let url = format!("{HOST}/wiki/Datei:PR{number:04}.jpg");
         let r = timeout(Duration::from_millis(TIMEOUT_MS), Self::read_url(url)).await;
+
+        debug!(target: "perf", "find_cover_url() elapsed={}ms", start.elapsed().as_millis());
+
         let result = match r {
             Ok(Some(text)) => {
                 if let Some(cap) = re.captures(&text) {
