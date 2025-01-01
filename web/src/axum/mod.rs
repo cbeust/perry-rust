@@ -106,7 +106,7 @@ pub async fn main_axum(config: Config, state: PerryState) -> std::io::Result<()>
 }
 
 //////////////////////////////////////////////////////
-// Endpoints
+// Handlers (endpoints)
 //////////////////////////////////////////////////////
 
 async fn favicon() -> Response {
@@ -119,8 +119,7 @@ async fn root_head() -> impl IntoResponse {
 }
 
 async fn index(State(state): State<PerryState>, jar: CookieJar) -> Response {
-    let cookie_manager = AxumCookies::new(jar);
-    WrappedPrResult(index_logic(&state, cookie_manager).await).into_response()
+    WrappedPrResult(index_logic(&state, AxumCookies::new(jar)).await).into_response()
 }
 
 async fn cycle(State(state): State<PerryState>, jar: CookieJar) -> impl IntoResponse {
