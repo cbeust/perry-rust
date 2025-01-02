@@ -15,7 +15,7 @@ use axum::{http::{Request}};
 use axum::body::Body;
 use axum::middleware::{from_fn, Next};
 use axum_extra::extract::CookieJar;
-use tracing::{debug, info, warn};
+use tracing::{debug, info, instrument, warn};
 use crate::axum::cookie::AxumCookies;
 use crate::axum::response::{AxumResponse};
 use crate::covers::{cover_logic, delete_cover_logic};
@@ -33,12 +33,13 @@ pub async fn main_axum(config: Config, state: PerryState) -> std::io::Result<()>
     info!("Starting axum");
     let serve_dir = ServeDir::new("web/static").not_found_service(ServeFile::new("static"));
 
+    // #[instrument(target = "url", skip_all)]
     async fn log_middleware(request: Request<Body>, next: Next) -> Response {
         let uri = request.uri().clone();
         let method = request.method().clone();
         let start = Instant::now();
         let response = next.run(request).await;
-        debug!("=== {method} \"{uri}\": {} elapsed={}ms", response.status(), start.elapsed().as_millis());
+        debug!("=== DEBUG {method} \"{uri}\": {} elapsed={}ms", response.status(), start.elapsed().as_millis());
         response
     }
 
