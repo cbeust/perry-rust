@@ -53,22 +53,27 @@ async fn find_cover_image(book_number: u32, db: &Arc<Box<dyn Db>>) -> PrResult {
         None => {
             fetch_cover_and_insert_into_db(book_number, db).await
         }
-        Some(image) => {
-            info!("Found cover for {book_number} in database, url: {:#?}", image.url);
-            if image.url.is_none() {
-                info!("No URL for cover in database, updating it");
-                let perry_pedia = Box::new(PerryPedia);
-                match perry_pedia.find_cover_url(book_number).await {
-                    Some(url) => {
-                        info!("Found url: {url}");
-                        db.update_url_for_cover(book_number, url).await?;
-                    }
-                    None => {
-                        warn!("Found no url");
+        Some(cover) => {
+            match &cover.url {
+                Some(url) => {
+                    info!("Found cover URL for{book_number}: {url}");
+                }
+                None => {
+                    info!("No cover URL for {book_number} in database, fetching it");
+                    let perry_pedia = Box::new(PerryPedia);
+                    match perry_pedia.find_cover_url(book_number).await {
+                        Some(url) => {
+                            info!("Found URL: {url}");
+                            db.update_url_for_cover(book_number, url).await?;
+                        }
+                        None => {
+                            warn!("Found no URL");
+                        }
                     }
                 }
             }
-            PrResultBuilder::image(image.image)
+
+            PrResultBuilder::image(cover.image)
         }
     }
 }
