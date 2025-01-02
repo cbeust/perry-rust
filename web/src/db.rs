@@ -5,7 +5,7 @@ use sqlx::postgres::{PgPoolOptions};
 use sqlx::Row;
 use tracing::{debug, error, info, warn};
 use crate::config::Config;
-use crate::entities::{Book, Cycle, Image, PendingSummary, Summary, User};
+use crate::entities::{Book, Cycle, Cover, PendingSummary, Summary, User};
 use crate::errors::Error::{DeletingCover, FetchingCycles, InsertingBook, InsertingCoverImage, InsertingInPending, InsertingSummary, Unknown, UpdatingBook, UpdatingCoverUrl, UpdatingSummary, UpdatingUser};
 use crate::errors::{DbResult, Error};
 
@@ -35,7 +35,7 @@ pub trait Db: Send + Sync {
     async fn find_books(&self, _cycle_number: u32) -> DbResult<Vec<Book>> { Err(Unknown("find_books() not implemented".into() ))}
     async fn find_summaries(&self, _cycle_number: u32) -> DbResult<Vec<Summary>> { Err(Unknown("find_summaries() not implemented".into() ))}
     async fn find_book(&self, _book_number: u32) -> Option<Book> { None }
-    async fn find_cover(&self, _book_number: u32) -> Option<Image> { None }
+    async fn find_cover(&self, _book_number: u32) -> Option<Cover> { None }
     async fn update_url_for_cover(&self, _book_number: u32, _url: String) -> DbResult<()> { Err(Unknown("update_url_for_cover() not implemented".into() ))}
     async fn delete_cover(&self, _book_number: u32) -> DbResult<()> { Ok(()) }
     async fn insert_cover(&self, _book_number: u32, _url: String, _bytes: Vec<u8>) -> DbResult<()> { Ok(()) }
@@ -342,9 +342,9 @@ impl Db for DbPostgres {
         result
     }
 
-    async fn find_cover(&self, book_number: u32) -> Option<Image> {
+    async fn find_cover(&self, book_number: u32) -> Option<Cover> {
         let mut result = None;
-        match sqlx::query_as::<_, Image>(
+        match sqlx::query_as::<_, Cover>(
             "select * from covers where number = $1")
             .bind(book_number as i32)
             .fetch_one(&self.pool)

@@ -42,12 +42,13 @@ pub async fn api_summaries_logic(state: &PerryState, book_number: u32) -> PrResu
             state.db.find_cycle_by_book(book_number),
             state.db.find_book(book_number),
             state.cover_finder.find_cover_url(book_number),
-            // PerryPedia{}.find_cover_url(book_number)
+            state.db.find_cover(book_number),
         )
         {
-            (Some(summary), Some(cycle), Some(book), cover_url /*, perry_pedia */) => {
+            (Some(summary), Some(cycle), Some(book), cover_url, cover) => {
                 let cycle_number = cycle.number;
                 let summary_date = summary.date.clone();
+                let perry_pedia_url = cover.map_or("".into(), |c| c.url.unwrap_or("".to_string()));
                 TemplateSummary {
                     found: true,
                     number: book_number,
@@ -61,15 +62,16 @@ pub async fn api_summaries_logic(state: &PerryState, book_number: u32) -> PrResu
                     href_edit: "".into(),
                     email_mailing_list: "".into(),
                     cover_url: cover_url.unwrap_or("".to_string()),
-                    perry_pedia: "".into()
+                    perry_pedia: perry_pedia_url,
                 }
             }
-            (_, Some(cycle), book, cover_url) => {
+            (_, Some(cycle), book, cover_url, cover) => {
                 let (book_title, book_author) = match book {
                     Some(book) => { (book.title, book.author) }
                     None => { ("".into(), "".into()) }
                 };
                 let mut result = TemplateSummary::default();
+                let perry_pedia_url = cover.map_or("".into(), |c| c.url.unwrap_or("".to_string()));
                 result.cycle = cycle;
                 result.german_title = book_title;
                 result.book_author = book_author;
@@ -77,10 +79,11 @@ pub async fn api_summaries_logic(state: &PerryState, book_number: u32) -> PrResu
                 result.summary.number = book_number as i32;
                 result.number = book_number;
                 result.cover_url = cover_url.unwrap_or("".to_string());
+                result.perry_pedia = perry_pedia_url;
                 result
 
             }
-            (_, _, _, _) => {
+            (_, _, _, _, _) => {
                 TemplateSummary::default()
             }
         }
