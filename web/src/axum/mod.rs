@@ -7,7 +7,6 @@ use axum::extract::{Path, Query, State};
 use axum::response::{IntoResponse, Response};
 use axum::{Form, Router};
 use axum::routing::{get, post};
-use tracing::log::{warn};
 use tower_http::services::{ServeDir, ServeFile};
 use crate::config::Config;
 use crate::{CookieManager, PerryState};
@@ -16,7 +15,7 @@ use axum::{http::{Request}};
 use axum::body::Body;
 use axum::middleware::{from_fn, Next};
 use axum_extra::extract::CookieJar;
-use tracing::{debug, info};
+use tracing::{debug, info, warn};
 use crate::axum::cookie::AxumCookies;
 use crate::axum::response::{AxumResponse};
 use crate::covers::{cover_logic, delete_cover_logic};
@@ -217,8 +216,13 @@ async fn delete_cover(State(state): State<PerryState>, jar: CookieJar, Path(book
     wrap!(delete_cover_logic(&state, AxumCookies::new(jar), book_number), state)
 }
 
-async fn php_display_summary(State(state): State<PerryState>, Query(params): Query<DisplaySummaryQueryParams>)
+async fn php_display_summary(State(state): State<PerryState>, params: Option<Query<DisplaySummaryQueryParams>>)
     -> Response
 {
-    wrap!(php_display_summary_logic(params), state)
+    if let Some(Query(params)) = params {
+        wrap!(php_display_summary_logic(params), state)
+    } else {
+        warn!("Couldn't parse query parameters for displaySummary.php");
+        AxumResponse::redirect(Urls::root())
+    }
 }

@@ -4,7 +4,6 @@ use actix_web::cookie::{Cookie};
 use actix_web::cookie::time::OffsetDateTime;
 use actix_web::HttpRequest;
 use async_trait::async_trait;
-use tracing::log::trace;
 use crate::{CookieManager, COOKIE_AUTH_TOKEN};
 use crate::db::Db;
 use crate::entities::User;

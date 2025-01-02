@@ -3,8 +3,7 @@ use async_trait::async_trait;
 use sqlx::{Pool, Postgres};
 use sqlx::postgres::{PgPoolOptions};
 use sqlx::Row;
-use tracing::{debug, error, info};
-use tracing::log::warn;
+use tracing::{debug, error, info, warn};
 use crate::config::Config;
 use crate::entities::{Book, Cycle, Image, PendingSummary, Summary, User};
 use crate::errors::Error::{DeletingCover, FetchingCycles, InsertingBook, InsertingCoverImage, InsertingInPending, InsertingSummary, Unknown, UpdatingBook, UpdatingSummary, UpdatingUser};
@@ -103,6 +102,18 @@ impl DbPostgres {
                 {
                     Ok(pool) => {
                         info!("Successfully connected to database URL:{url}");
+                        info!("Migrating...");
+                        match sqlx::migrate!("../migrations")
+                            .run(&pool)
+                            .await
+                        {
+                            Ok(o) => {
+                                info!("Migration successful: {o:#?}");
+                            }
+                            Err(e) => {
+                                error!("Migration failed: {e}");
+                            }
+                        }
                         Some(Self { pool })
                     }
                     Err(e) => {

@@ -5,7 +5,6 @@ use actix_web::{App, HttpRequest, HttpResponse, HttpServer};
 use actix_web::web::{Data, Form, FormConfig, get, head, Path, post, Query, resource};
 use serde::Deserialize;
 use tracing::{error, info};
-use tracing::log::warn;
 use crate::actix::cookies::ActixCookies;
 use crate::actix::response::Response;
 use crate::config::Config;

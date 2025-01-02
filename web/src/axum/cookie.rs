@@ -3,7 +3,7 @@ use async_trait::async_trait;
 use axum_extra::extract::cookie::Cookie;
 use axum_extra::extract::CookieJar;
 use cookie::time::Duration;
-use tracing::log::trace;
+use tracing::trace;
 use crate::{CookieManager, COOKIE_AUTH_TOKEN};
 use crate::db::Db;
 use crate::entities::User;
