@@ -67,6 +67,8 @@ pub fn init_logging(sqlx: bool, web: bool, perf: bool) {
     let directive = [
         format!("sqlx={sqlx}"),
         format!("perry::axum={web}"),
+        // Show the URL's being queried (Heroku already shows them so INFO by default
+        "url=debug".into(),
         format!("perf={perf}"),
         "info".into(),
     ]
