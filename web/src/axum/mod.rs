@@ -15,7 +15,7 @@ use axum::{http::{Request}};
 use axum::body::Body;
 use axum::middleware::{from_fn, Next};
 use axum_extra::extract::CookieJar;
-use tracing::{debug, info, instrument, warn};
+use tracing::{debug, info, warn};
 use crate::axum::cookie::AxumCookies;
 use crate::axum::response::{AxumResponse};
 use crate::covers::{cover_logic, delete_cover_logic};
