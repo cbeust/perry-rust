@@ -19,6 +19,7 @@ impl IntoResponse for WrappedPrResult {
             }
             Err(err) => {
                 // self.1.send_email(ADMIN, &format!("Encountered error: {err}"), "".into()).unwrap();
+                error!("Encountered error: {err}");
                 err.into_response()
             }
         }
