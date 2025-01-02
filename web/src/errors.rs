@@ -4,6 +4,7 @@ use crate::errors::OkContent::Redirect;
 
 pub type DbResult<T> = Result<T, Error>;
 
+#[derive(Debug)]
 pub enum OkContent {
     Root,
     Ok,
@@ -47,7 +48,9 @@ impl PrResultBuilder {
 pub enum Error {
     InsertingSummary(String, i32),
     UpdatingSummary(String, i32),
+    FetchingCycle(String, u32),
     FetchingCycles(String),
+    FetchingBook(String, u32),
     InsertingBook(String, i32),
     UpdatingBook(String, i32),
     UpdatingUser(String, String),
@@ -71,6 +74,8 @@ impl Display for Error {
             InsertingSummary(e, n) => { format!("Error inserting summary {n}: {e}") }
             UpdatingSummary(e, n) => { format!("Error updating summary {n}: {e}") }
             FetchingCycles(e) => { format!("Error fetching cycles: {e}") }
+            FetchingCycle(e, n) => { format!("Error fetching cycle {n}: {e}") }
+            FetchingBook(e, n) => { format!("Error fetching book {n}: {e}") }
             InsertingBook(e, n) => { format!("Error inserting book {n}: {e}") }
             UpdatingBook(e, n) => { format!("Error updating book {n}: {e}") }
             UpdatingUser(e, username) => { format!("Error updating user {username}: {e}") }

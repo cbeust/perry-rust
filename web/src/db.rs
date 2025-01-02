@@ -7,8 +7,8 @@ use tracing::{debug, error, info};
 use tracing::log::warn;
 use crate::config::Config;
 use crate::entities::{Book, Cycle, Image, PendingSummary, Summary, User};
-use crate::errors::Error::{DeletingCover, FetchingCycles, InsertingBook, InsertingCoverImage, InsertingInPending, InsertingSummary, UpdatingBook, UpdatingSummary, UpdatingUser};
-use crate::errors::DbResult;
+use crate::errors::Error::{DeletingCover, FetchingCycles, InsertingBook, InsertingCoverImage, InsertingInPending, InsertingSummary, Unknown, UpdatingBook, UpdatingSummary, UpdatingUser};
+use crate::errors::{DbResult, Error};
 
 pub async fn create_db(config: &Config) -> Box<dyn Db> {
     match DbPostgres::maybe_new(&config).await {
@@ -31,10 +31,10 @@ pub trait Db: Send + Sync {
     async fn fetch_summary_count(&self) -> u16 { 4200 }
     async fn fetch_book_count(&self) -> u16 { 4200 }
     async fn fetch_most_recent_summaries(&self) -> Vec<Summary> { Vec::new() }
-    async fn find_cycle(&self, _cycle_number: u32) -> Option<Cycle> { None }
+    async fn find_cycle(&self, _cycle_number: u32) -> DbResult<Cycle> { Err(Unknown("find_cycles() not implemented".into() ))}
     async fn find_cycle_by_book(&self, _book_number: u32) -> Option<Cycle> { None }
-    async fn find_books(&self, _cycle_number: u32) -> Vec<Book> { Vec::new() }
-    async fn find_summaries(&self, _cycle_number: u32) -> Vec<Summary> { Vec::new() }
+    async fn find_books(&self, _cycle_number: u32) -> DbResult<Vec<Book>> { Err(Unknown("find_books() not implemented".into() ))}
+    async fn find_summaries(&self, _cycle_number: u32) -> DbResult<Vec<Summary>> { Err(Unknown("find_summaries() not implemented".into() ))}
     async fn find_book(&self, _book_number: u32) -> Option<Book> { None }
     async fn find_cover(&self, _book_number: u32) -> Option<Image> { None }
     async fn delete_cover(&self, _book_number: u32) -> DbResult<()> { Ok(()) }
@@ -209,8 +209,7 @@ impl Db for DbPostgres {
         result
     }
 
-    async fn find_cycle(&self, number: u32) -> Option<Cycle> {
-        let mut result = None;
+    async fn find_cycle(&self, number: u32) -> DbResult<Cycle> {
         match sqlx::query_as::<_, Cycle>(
             "select * from cycles where number = $1")
             .bind(number as i32)
@@ -219,14 +218,13 @@ impl Db for DbPostgres {
         {
             Ok(cycle) => {
                 info!("Found cycle {}: {}", number, cycle.german_title);
-                result = Some(cycle)
+                Ok(cycle)
             }
             Err(e) => {
-                error!("find_cycle(): couldn't retrieve cycle {number}: {e}");
+                // error!("find_cycle(): couldn't retrieve cycle {number}: {e}");
+                Err(Error::FetchingCycle(format!("Couldn't find cycle {number}: {e}"), number))
             }
         }
-
-        result
     }
 
     async fn find_cycle_by_book(&self, book_number: u32) -> Option<Cycle> {
@@ -251,10 +249,9 @@ impl Db for DbPostgres {
         }
     }
 
-    async fn find_books(&self, cycle_number: u32) -> Vec<Book> {
-        let mut result = Vec::new();
+    async fn find_books(&self, cycle_number: u32) -> DbResult<Vec<Book>> {
         match self.find_cycle(cycle_number).await {
-            Some(cycle) => {
+            Ok(cycle) => {
                 let start = cycle.start;
                 let end = cycle.end;
                 match sqlx::query_as::<_, Book>(
@@ -266,25 +263,24 @@ impl Db for DbPostgres {
                 {
                     Ok(books) => {
                         info!("Found {} books in cycle {cycle_number}", books.len());
-                        result = books;
+                        Ok(books)
                     }
                     Err(e) => {
-                        error!("find_books(): couldn't retrieve book for cycle {cycle_number}: {e}");
+                        Err(Error::FetchingCycle(format!("find_books(): Couldn't fetch cycle {cycle_number}: {e}"),
+                            cycle_number))
                     }
                 }
             }
-            None => {
-                error!("Couldn't find book in cycle {cycle_number}");
+            Err(e) => {
+                Err(Error::FetchingCycle(format!("find_books(): Couldn't fetch cycle {cycle_number}: {e}"),
+                    cycle_number))
             }
         }
-
-        result
     }
 
-    async fn find_summaries(&self, cycle_number: u32) -> Vec<Summary> {
-        let mut result = Vec::new();
+    async fn find_summaries(&self, cycle_number: u32) -> DbResult<Vec<Summary>> {
         match self.find_cycle(cycle_number).await {
-            Some(cycle) => {
+            Ok(cycle) => {
                 let start = cycle.start;
                 let end = cycle.end;
                 match sqlx::query_as::<_, Summary>(
@@ -296,19 +292,19 @@ impl Db for DbPostgres {
                 {
                     Ok(summaries) => {
                         info!("Found {} summaries in cycle {cycle_number}", summaries.len());
-                        result = summaries;
+                        Ok(summaries)
                     }
                     Err(e) => {
-                        error!("find_summaries(): couldn't retrieve book for cycle {cycle_number}: {e}");
+                        Err(Error::FetchingBook(format!("Couldn't fetch summaries for cycle {cycle_number}: {e}"),
+                            cycle_number))
                     }
                 }
             }
-            None => {
-                error!("Couldn't find book in cycle {cycle_number}");
+            Err(e) => {
+                Err(Error::FetchingBook(format!("Couldn't find cycle {cycle_number}: {e}"),
+                    cycle_number))
             }
         }
-
-        result
     }
 
     async fn find_book(&self, number: u32) -> Option<Book> {

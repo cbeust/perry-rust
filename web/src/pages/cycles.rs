@@ -6,7 +6,7 @@ use serde_json::json;
 use tracing::*;
 use crate::banner_info::BannerInfo;
 use crate::entities::{Book, Cycle, Summary};
-use crate::errors::{PrResult, PrResultBuilder};
+use crate::errors::{Error, PrResult, PrResultBuilder};
 use crate::{CookieManager, PerryState};
 use crate::url::Urls;
 
@@ -59,11 +59,11 @@ pub async fn index_logic<T>(state: &PerryState, cookie_manager: impl CookieManag
 }
 
 pub async fn api_cycles_logic(state: &PerryState, number: u32) -> PrResult {
-    let json = match state.db.find_cycle(number).await {
-        Some(cycle) => {
+    match state.db.find_cycle(number).await {
+        Ok(cycle) => {
             let mut books: Vec<TemplateBook> = Vec::new();
-            let db_books = state.db.find_books(number).await;
-            let db_summaries = state.db.find_summaries(number).await;
+            let db_books = state.db.find_books(number).await.unwrap_or(Vec::new());
+            let db_summaries = state.db.find_summaries(number).await.unwrap_or(Vec::new());
             let mut map: HashMap<i32, String> = HashMap::new();
             for summary in db_summaries {
                 map.insert(summary.number, summary.english_title);
@@ -92,15 +92,12 @@ pub async fn api_cycles_logic(state: &PerryState, number: u32) -> PrResult {
                 german_title,
                 href_back: Urls::root(),
             };
-            serde_json::to_string(&json!(template_cycle)).unwrap()
+            PrResultBuilder::json(serde_json::to_string(&json!(template_cycle)).unwrap())
         }
-        None => {
-            error!("Couldn't find cycle {number}");
-            "{}".into()
+        Err(e) => {
+            Err(Error::FetchingCycle(format!("Couldn't fetch cycle {number}: {e}"), number))
         }
-    };
-
-    PrResultBuilder::json(json)
+    }
 }
 
 pub fn to_pretty_date(date: Option<String>) -> String {
@@ -126,7 +123,7 @@ pub fn to_pretty_date(date: Option<String>) -> String {
             }
             None => {
                 // Couldn't parse date December 5, 2024: input contains invalid characters
-                warn!("Couldn't parse date {date}");
+                warn!("Couldn't parse date: \"{date}\"");
                 "".into()
             }
         }

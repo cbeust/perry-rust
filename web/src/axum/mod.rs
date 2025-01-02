@@ -18,7 +18,7 @@ use axum::middleware::{from_fn, Next};
 use axum_extra::extract::CookieJar;
 use tracing::{debug, info};
 use crate::axum::cookie::AxumCookies;
-use crate::axum::response::{AxumResponse, WrappedPrResult};
+use crate::axum::response::{AxumResponse};
 use crate::covers::{cover_logic, delete_cover_logic};
 use crate::email::api_send_email_logic;
 use crate::logic::{login_logic, LoginFormData};
@@ -28,6 +28,7 @@ use crate::pages::edit::{edit_summary_logic, FormData};
 use crate::pages::pending::pending_logic;
 use crate::pages::summaries::{api_summaries_logic, DisplaySummaryQueryParams, php_display_summary_logic, post_summary_logic, SingleSummaryData, summaries_logic, summaries_post_logic};
 use crate::url::Urls;
+use crate::axum::response::WrappedPrResult;
 
 pub async fn main_axum(config: Config, state: PerryState) -> std::io::Result<()> {
     info!("Starting axum");
@@ -120,52 +121,61 @@ async fn root_head() -> impl IntoResponse {
     AxumResponse::ok()
 }
 
+// This macro wraps PrResult into a value that can convert into a Response
+macro_rules! wrap {
+    ($logic:expr,$state:expr) => {
+        WrappedPrResult($logic.await, $state.email_service.clone()).into_response()
+    };
+}
+
 async fn index(State(state): State<PerryState>, jar: CookieJar) -> Response {
-    WrappedPrResult(index_logic(&state, AxumCookies::new(jar)).await).into_response()
+    wrap!(index_logic(&state, AxumCookies::new(jar)), state)
 }
 
 async fn cycle(State(state): State<PerryState>, jar: CookieJar) -> impl IntoResponse {
-    WrappedPrResult(cycle_logic(&state, AxumCookies::new(jar)).await).into_response()
+    wrap!(cycle_logic(&state, AxumCookies::new(jar)), state)
 }
 
 async fn api_cycle(State(state): State<PerryState>, Path(number): Path<u32>) -> impl IntoResponse {
-    WrappedPrResult(api_cycles_logic(&state, number).await).into_response()
+    wrap!(api_cycles_logic(&state, number), state)
 }
 
 async fn cover(State(state): State<PerryState>, Path(book_number): Path<u32>) -> Response {
-    WrappedPrResult(cover_logic(&state, book_number).await).into_response()
+    wrap!(cover_logic(&state, book_number), state)
 }
 
-async fn summaries_post(Form(form_data): Form<SingleSummaryData>) -> impl IntoResponse {
-    WrappedPrResult(summaries_post_logic(form_data).await).into_response()
+async fn summaries_post(State(state): State<PerryState>, Form(form_data): Form<SingleSummaryData>)
+    -> impl IntoResponse
+{
+    wrap!(summaries_post_logic(form_data), state)
 }
 
 async fn summaries(State(state): State<PerryState>, jar: CookieJar) -> impl IntoResponse {
-    WrappedPrResult(summaries_logic(&state, AxumCookies::new(jar)).await).into_response()
+    wrap!(summaries_logic(&state, AxumCookies::new(jar)), state)
 }
 
 async fn edit_summary(State(state): State<PerryState>, jar: CookieJar, Path(book_number): Path<u32>)
     -> impl IntoResponse
 {
-    WrappedPrResult(edit_summary_logic(&state, AxumCookies::new(jar), book_number).await).into_response()
+    wrap!(edit_summary_logic(&state, AxumCookies::new(jar), book_number), state)
 }
 
 async fn post_summary(State(state): State<PerryState>, jar: CookieJar, Form(form_data): Form<FormData>)
     -> Response
 {
-    WrappedPrResult(post_summary_logic(&state, AxumCookies::new(jar), form_data).await).into_response()
+    wrap!(post_summary_logic(&state, AxumCookies::new(jar), form_data), state)
 }
 
 async fn api_summaries(State(state): State<PerryState>, Path(book_number): Path<u32>) -> Response {
-    WrappedPrResult(api_summaries_logic(&state, book_number).await).into_response()
+    wrap!(api_summaries_logic(&state, book_number), state)
 }
 
 async fn api_send_email(State(state): State<PerryState>, Path(book_number): Path<u32>) -> Response {
-    WrappedPrResult(api_send_email_logic(&state, book_number).await).into_response()
+    wrap!(api_send_email_logic(&state, book_number), state)
 }
 
 async fn pending(State(state): State<PerryState>, jar: CookieJar) -> Response {
-    WrappedPrResult(pending_logic(&state, AxumCookies::new(jar)).await).into_response()
+    wrap!(pending_logic(&state, AxumCookies::new(jar)), state)
 }
 
 async fn pending_delete_all() -> Response {
@@ -204,9 +214,11 @@ async fn logout(jar: CookieJar) -> Response {
 }
 
 async fn delete_cover(State(state): State<PerryState>, jar: CookieJar, Path(book_number): Path<u32>) -> Response {
-    WrappedPrResult(delete_cover_logic(&state, AxumCookies::new(jar), book_number).await).into_response()
+    wrap!(delete_cover_logic(&state, AxumCookies::new(jar), book_number), state)
 }
 
-async fn php_display_summary(Query(params): Query<DisplaySummaryQueryParams>) -> Response {
-    WrappedPrResult(php_display_summary_logic(params).await).into_response()
+async fn php_display_summary(State(state): State<PerryState>, Query(params): Query<DisplaySummaryQueryParams>)
+    -> Response
+{
+    wrap!(php_display_summary_logic(params), state)
 }

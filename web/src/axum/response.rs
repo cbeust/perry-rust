@@ -1,18 +1,26 @@
+use std::sync::Arc;
 use axum::body::Body;
 use axum::http::{header, StatusCode};
 use axum::response::{Html, IntoResponse, Redirect, Response};
 use axum_extra::extract::cookie::Cookie;
 use tracing::{debug, error};
+use crate::email::EmailService;
 use crate::errors::{Error, OkContent, PrResult};
 use crate::url::Urls;
 
-pub struct WrappedPrResult(pub PrResult);
+#[allow(dead_code)]
+pub struct WrappedPrResult(pub PrResult, pub Arc<Box<dyn EmailService>>);
 
 impl IntoResponse for WrappedPrResult {
     fn into_response(self) -> Response {
         match self.0 {
-            Ok(content) => { content.into_response() }
-            Err(err) => { err.into_response() }
+            Ok(content) => {
+                content.into_response()
+            }
+            Err(err) => {
+                // self.1.send_email(ADMIN, &format!("Encountered error: {err}"), "".into()).unwrap();
+                err.into_response()
+            }
         }
     }
 }
