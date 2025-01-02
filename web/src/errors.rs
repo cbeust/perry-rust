@@ -63,6 +63,7 @@ pub enum Error {
     CouldNotFindCoverImage(String, i32),
     UnknownCoverImageError(i32),
     DeletingCover(String, i32),
+    UpdatingCoverUrl(String, i32),
     Unknown(String),
 }
 
@@ -89,6 +90,7 @@ impl Display for Error {
             CouldNotFindCoverImage(e, n) => { format!("Couldn't load cover image for {n}: {e}") }
             UnknownCoverImageError(n) => { format!("Couldn't load cover image for {n}") }
             DeletingCover(e, n) => { format!("Couldn't delete cover {n}: {e}") }
+            UpdatingCoverUrl(e, n) => { format!("Couldn't update cover URL for book {n}: {e}") }
             Unknown(s) => { format!("Unknown error: {s}") }
         };
 

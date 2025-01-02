@@ -4,7 +4,7 @@ use std::time::Duration;
 use image::imageops::FilterType;
 use image::{ImageFormat, load_from_memory};
 use tokio::time::timeout;
-use tracing::{debug, error, info};
+use tracing::{debug, error, info, warn};
 use crate::db::Db;
 use crate::errors::Error::{CouldNotFindCoverImage, PerryPediaCouldNotFind, UnknownCoverImageError};
 use crate::errors::{OkContent, PrResult, PrResultBuilder};
@@ -48,18 +48,26 @@ pub async fn cover_logic(state: &PerryState, book_number: u32) -> PrResult {
 }
 
 async fn find_cover_image(book_number: u32, db: &Arc<Box<dyn Db>>) -> PrResult {
-    // if book_number >= 3287 {
-    //     return fetch_cover_and_insert_into_db(book_number, db).await;
-    // }
-
     // Try to get the image from the database
     match db.find_cover(book_number).await {
         None => {
-            info!("Did not find cover for {book_number} in database");
             fetch_cover_and_insert_into_db(book_number, db).await
         }
         Some(image) => {
-            info!("Found cover for {book_number} in database");
+            info!("Found cover for {book_number} in database, url: {:#?}", image.url);
+            if image.url.is_none() {
+                info!("No URL for cover in database, updating it");
+                let perry_pedia = Box::new(PerryPedia);
+                match perry_pedia.find_cover_url(book_number).await {
+                    Some(url) => {
+                        info!("Found url: {url}");
+                        db.update_url_for_cover(book_number, url).await?;
+                    }
+                    None => {
+                        warn!("Found no url");
+                    }
+                }
+            }
             PrResultBuilder::image(image.image)
         }
     }
@@ -85,7 +93,7 @@ async fn fetch_cover_and_insert_into_db(book_number: u32, db: &Arc<Box<dyn Db>>)
                             info!("Found cover for {book_number} at {url2}, \
                                         inserting it into the database after shrinking it \
                                          from {} to {} bytes", len, new_bytes.len());
-                            db.insert_cover(book_number, new_bytes.clone()).await?;
+                            db.insert_cover(book_number, url2.clone(), new_bytes.clone()).await?;
                             PrResultBuilder::image(new_bytes)
                         }
                         Err(e) => {

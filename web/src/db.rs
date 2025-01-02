@@ -6,7 +6,7 @@ use sqlx::Row;
 use tracing::{debug, error, info, warn};
 use crate::config::Config;
 use crate::entities::{Book, Cycle, Image, PendingSummary, Summary, User};
-use crate::errors::Error::{DeletingCover, FetchingCycles, InsertingBook, InsertingCoverImage, InsertingInPending, InsertingSummary, Unknown, UpdatingBook, UpdatingSummary, UpdatingUser};
+use crate::errors::Error::{DeletingCover, FetchingCycles, InsertingBook, InsertingCoverImage, InsertingInPending, InsertingSummary, Unknown, UpdatingBook, UpdatingCoverUrl, UpdatingSummary, UpdatingUser};
 use crate::errors::{DbResult, Error};
 
 pub async fn create_db(config: &Config) -> Box<dyn Db> {
@@ -36,8 +36,9 @@ pub trait Db: Send + Sync {
     async fn find_summaries(&self, _cycle_number: u32) -> DbResult<Vec<Summary>> { Err(Unknown("find_summaries() not implemented".into() ))}
     async fn find_book(&self, _book_number: u32) -> Option<Book> { None }
     async fn find_cover(&self, _book_number: u32) -> Option<Image> { None }
+    async fn update_url_for_cover(&self, _book_number: u32, _url: String) -> DbResult<()> { Err(Unknown("update_url_for_cover() not implemented".into() ))}
     async fn delete_cover(&self, _book_number: u32) -> DbResult<()> { Ok(()) }
-    async fn insert_cover(&self, _book_number: u32, _bytes: Vec<u8>) -> DbResult<()> { Ok(()) }
+    async fn insert_cover(&self, _book_number: u32, _url: String, _bytes: Vec<u8>) -> DbResult<()> { Ok(()) }
     async fn insert_summary(&self, _summary: Summary) -> DbResult<()> { Ok(()) }
     async fn update_summary(&self, _summary: Summary) -> DbResult<()> { Ok(()) }
     async fn update_or_insert_book(&self, _book: Book) -> DbResult<()> { Ok(()) }
@@ -343,16 +344,39 @@ impl Db for DbPostgres {
 
     async fn find_cover(&self, book_number: u32) -> Option<Image> {
         let mut result = None;
-        if let Ok(image) = sqlx::query_as::<_, Image>(
+        match sqlx::query_as::<_, Image>(
             "select * from covers where number = $1")
             .bind(book_number as i32)
             .fetch_one(&self.pool)
             .await
         {
-            result = Some(image)
+            Ok(image) => {
+                result = Some(image)
+            }
+            Err(e) => {
+                error!("Error trying to fetch cover for {book_number}: {e}")
+            }
         }
 
         result
+    }
+
+    async fn update_url_for_cover(&self, book_number: u32, url: String) -> DbResult<()>
+    {
+        match sqlx::query!("update covers set url = $2::text where number = $1",
+                book_number as i32, url)
+            .execute(&self.pool)
+            .await
+        {
+            Ok(_) => {
+                info!("Updated cover URL for {book_number}: {url}");
+                Ok(())
+            }
+            Err(error) => {
+                error!("Error updating URL for {book_number}: {error}");
+                Err(UpdatingCoverUrl(error.to_string(), book_number as i32))
+            }
+        }
     }
 
     async fn delete_cover(&self, book_number: u32) -> DbResult<()> {
@@ -371,14 +395,14 @@ impl Db for DbPostgres {
         }
     }
 
-    async fn insert_cover(&self, book_number: u32, bytes: Vec<u8>) -> DbResult<()> {
-        match sqlx::query!("insert into covers (number, image, size) values ($1, $2, $3)",
-            book_number as i32, bytes, bytes.len() as i32)
+    async fn insert_cover(&self, book_number: u32, url: String, bytes: Vec<u8>) -> DbResult<()> {
+        match sqlx::query!("insert into covers (number, url, image, size) values ($1, $2, $3, $4)",
+            book_number as i32, url, bytes, bytes.len() as i32)
             .execute(&self.pool)
             .await
         {
             Ok(_) => {
-                info!("Inserted new cover image for book {book_number}");
+                info!("Inserted new cover image for book {book_number}, url:${url}");
                 Ok(())
             }
             Err(error) => {

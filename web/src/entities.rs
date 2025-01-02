@@ -15,6 +15,7 @@ pub struct User {
 #[derive(Clone, Debug, sqlx::FromRow)]
 pub struct Image {
     pub number: i32,
+    pub url: Option<String>,
     pub image: Vec<u8>,
     pub size: i32,
 }
