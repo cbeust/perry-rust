@@ -56,7 +56,7 @@ async fn find_cover_image(book_number: u32, db: &Arc<Box<dyn Db>>) -> PrResult {
         Some(cover) => {
             match &cover.url {
                 Some(url) => {
-                    info!("Found cover URL for{book_number}: {url}");
+                    info!("Found cover URL for {book_number}: {url}");
                 }
                 None => {
                     info!("No cover URL for {book_number} in database, fetching it");
