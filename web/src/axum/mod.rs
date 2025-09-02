@@ -229,13 +229,27 @@ async fn php_display_summary(State(state): State<PerryState>, params: Option<Que
     }
 }
 
-async fn cycles_insert_form() -> Response {
-    let html = include_str!("../../templates/insert_cycle.html");
-    AxumResponse::html(html.to_string())
+async fn cycles_insert_form(State(state): State<PerryState>, jar: CookieJar) -> Response {
+    let cookie_manager = AxumCookies::new(jar);
+    match cookie_manager.find_user(state.db.clone()).await {
+        Some(u) if u.level == 0 => {
+            let html = include_str!("../../templates/insert_cycle.html");
+            AxumResponse::html(html.to_string())
+        }
+        _ => {
+            AxumResponse::redirect(Urls::root())
+        }
+    }
 }
 
-async fn cycles_insert(State(state): State<PerryState>, Form(form_data): Form<CycleFormData>)
+async fn cycles_insert(State(state): State<PerryState>, jar: CookieJar, Form(form_data): Form<CycleFormData>)
     -> Response
 {
-    wrap!(insert_cycle_logic(&state, form_data), state)
+    let cookie_manager = AxumCookies::new(jar);
+    // Check if user is logged in - only allow access if authenticated
+    if cookie_manager.find_user(state.db.clone()).await.is_some() {
+        wrap!(insert_cycle_logic(&state, form_data), state)
+    } else {
+        AxumResponse::redirect(Urls::root())
+    }
 }
