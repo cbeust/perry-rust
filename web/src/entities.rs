@@ -28,7 +28,7 @@ impl User {
 
 impl Display for User {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&format!("[User login:{}]", self.login))
+        f.write_str(&format!("[User login:{} level:{}]", self.login, self.level))
     }
 }
 
