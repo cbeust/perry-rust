@@ -83,7 +83,6 @@ pub async fn main_axum(config: Config, state: PerryState) -> std::io::Result<()>
         .route("/covers/{number}/delete", get(delete_cover))
 
         // PHP backward compatibility
-        .route("/php/displaySummary.php", get(php_display_summary))
 
         // State
         .with_state(state)
@@ -218,15 +217,15 @@ async fn delete_cover(State(state): State<PerryState>, jar: CookieJar, Path(book
     wrap!(delete_cover_logic(&state, AxumCookies::new(jar), book_number), state)
 }
 
-async fn php_display_summary(State(state): State<PerryState>, params: Option<Query<DisplaySummaryQueryParams>>)
+async fn php_display_summary(State(state): State<PerryState>, Query(params): Query<DisplaySummaryQueryParams>)
     -> Response
 {
-    if let Some(Query(params)) = params {
-        wrap!(php_display_summary_logic(params), state)
-    } else {
-        warn!("Couldn't parse query parameters for displaySummary.php");
-        AxumResponse::redirect(Urls::root())
-    }
+    wrap!(php_display_summary_logic(params), state)
+}
+
+async fn php_display_summary_fallback() -> Response {
+    warn!("Couldn't parse query parameters for displaySummary.php");
+    AxumResponse::redirect(Urls::root())
 }
 
 async fn cycles_insert_form(State(state): State<PerryState>, jar: CookieJar) -> Response {
