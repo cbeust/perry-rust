@@ -197,3 +197,35 @@ impl HtmlTemplate {
         }
     }
 }
+
+#[derive(Deserialize)]
+pub struct CycleFormData {
+    pub number: i32,
+    pub german_title: String,
+    pub english_title: String,
+    pub short_title: String,
+    pub start: i32,
+    pub end: i32,
+}
+
+pub async fn insert_cycle_logic(state: &PerryState, form_data: CycleFormData) -> PrResult {
+    let cycle = Cycle {
+        number: form_data.number,
+        german_title: form_data.german_title,
+        english_title: form_data.english_title,
+        short_title: form_data.short_title,
+        start: form_data.start,
+        end: form_data.end,
+    };
+
+    match state.db.insert_cycle(cycle).await {
+        Ok(_) => {
+            info!("Successfully inserted cycle {}", form_data.number);
+            PrResultBuilder::redirect("/".to_string())
+        }
+        Err(e) => {
+            error!("Failed to insert cycle: {}", e);
+            Err(e)
+        }
+    }
+}

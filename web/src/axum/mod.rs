@@ -22,7 +22,7 @@ use crate::covers::{cover_logic, delete_cover_logic};
 use crate::email::api_send_email_logic;
 use crate::logic::{login_logic, LoginFormData};
 use crate::pages::cycle::cycle_logic;
-use crate::pages::cycles::{api_cycles_logic, index_logic};
+use crate::pages::cycles::{api_cycles_logic, index_logic, insert_cycle_logic, CycleFormData};
 use crate::pages::edit::{edit_summary_logic, FormData};
 use crate::pages::pending::pending_logic;
 use crate::pages::summaries::{api_summaries_logic, DisplaySummaryQueryParams, php_display_summary_logic, post_summary_logic, SingleSummaryData, summaries_logic, summaries_post_logic};
@@ -58,6 +58,7 @@ pub async fn main_axum(config: Config, state: PerryState) -> std::io::Result<()>
         .route("/", get(index).head(root_head))
         .route("/cycles/{number}", get(cycle))
         .route("/api/cycles/{number}", get(api_cycle))
+        .route("/cycles/insert", get(cycles_insert_form).post(cycles_insert))
 
         // Summaries
         .route("/summaries", post(summaries_post))
@@ -226,4 +227,15 @@ async fn php_display_summary(State(state): State<PerryState>, params: Option<Que
         warn!("Couldn't parse query parameters for displaySummary.php");
         AxumResponse::redirect(Urls::root())
     }
+}
+
+async fn cycles_insert_form() -> Response {
+    let html = include_str!("../../templates/insert_cycle.html");
+    AxumResponse::html(html.to_string())
+}
+
+async fn cycles_insert(State(state): State<PerryState>, Form(form_data): Form<CycleFormData>)
+    -> Response
+{
+    wrap!(insert_cycle_logic(&state, form_data), state)
 }

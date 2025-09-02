@@ -49,6 +49,7 @@ pub trait Db: Send + Sync {
     async fn insert_summary_in_pending(&self, _book: Book, _summary: Summary)
         -> DbResult<()> { Ok(()) }
     async fn find_pending_summaries(&self) -> Vec<PendingSummary> { Vec::new() }
+    async fn insert_cycle(&self, _cycle: Cycle) -> DbResult<()> { Ok(()) }
 }
 
 #[derive(Clone)]
@@ -549,6 +550,32 @@ impl Db for DbPostgres {
             Err(e) => {
                 error!("find_pending_summaries(): couldn't retrieve pending: {e}");
                 Vec::new()
+            }
+        }
+    }
+
+    async fn insert_cycle(&self, cycle: Cycle) -> DbResult<()> {
+        let english_title = cycle.english_title.clone();
+        let cycle_number = cycle.number;
+        match sqlx::query(
+            "insert into cycles (number, german_title, english_title, short_title, start, \"end\") \
+             values ($1, $2, $3, $4, $5, $6)")
+            .bind(cycle.number)
+            .bind(cycle.german_title)
+            .bind(cycle.english_title) 
+            .bind(cycle.short_title)
+            .bind(cycle.start)
+            .bind(cycle.end)
+            .execute(&self.pool)
+            .await
+        {
+            Ok(_) => {
+                info!("Inserted new cycle {}: \"{}\"", cycle_number, english_title);
+                Ok(())
+            }
+            Err(error) => {
+                error!("Error inserting new cycle {}: {error}", cycle_number);
+                Err(Error::Unknown(format!("Error inserting cycle {}: {error}", cycle_number)))
             }
         }
     }
