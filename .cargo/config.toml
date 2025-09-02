@@ -1,2 +1,10 @@
+[build]
+target = "x86_64-pc-windows-msvc"
+#target = "x86_64-pc-windows-gnu"
+
+[target.x86_64-pc-windows-gnu]
+rustflags = ["-C", "debuginfo=2"]
+
 [target.x86_64-pc-windows-msvc]
-rustflags = ["-C", "debuginfo=0", "-C", "link-arg=/DEBUG:NONE"]
+# The link-arg is to avoid a LINKER error about PDB size. However, breakpoints no longer work :/
+rustflags = ["-C", "debuginfo=2", "-C", "link-arg=/DEBUG:NONE"]
