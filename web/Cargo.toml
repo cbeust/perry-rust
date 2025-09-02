@@ -6,42 +6,28 @@ default-run = "perry"
 
 [dependencies]
 
-axum = { version = "0.8.0-rc.1" }
-axum-extra = { version = "0.10.0-rc.1", features = [ "cookie"] }
+axum = { version = "0.8.4" }
+axum-extra = { version = "0.10.1", features = [ "cookie"] }
 cookie = "0.18.1"
-tower-http = { version = "0.6.2", features = [ "fs", "trace" ] }
+tower-http = { version = "0.6.6", features = [ "fs", "trace" ] }
 
-#actix-web = { version = "4.9.0" }
-#actix-files = "0.6.6"
-#actix-session = { version = "0.10.1", features = [ "cookie-session"] }
-#actix-web-httpauth = "0.8.2"
-#actix-http = "3.8.9"
-sqlx = { version = "0.8", features = [ "runtime-tokio", "postgres", "runtime-tokio-rustls" ] }
-tokio = { version = "1.41.0", features = [ "macros" , "rt-multi-thread"] }
-#diesel = { version = "2.2.4", features = ["postgres"] }
-#pq-sys = { version = "0.6.3", features = ["bundled"] }
-#openssl-sys = { version = "0.9.104", features = ["vendored"] }
-dotenvy = "0.15.7"
-bon = "2.3.0"
+sqlx = { version = "0.8.6", features = [ "runtime-tokio", "postgres", "runtime-tokio-rustls" ] }
+tokio = { version = "1.47.1", features = [ "macros" , "rt-multi-thread"] }
+bon = "3.7.2"
 futures = "0.3.31"
-tracing = "0.1.40"
-tracing-subscriber = { version = "0.3.18", features = [ "env-filter" ] }
-env_logger = "0.11.5"
-#ramhorns = "1.0.1" # {  version ="1.0.1", features = [ "default" ] }
-handlebars = "6.1.0"
-serde = { version = "1.0.211", features = [ "derive" ] }
-serde_json = "1.0.132"
-askama = "0.12.1"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.20", features = [ "env-filter" ] }
+serde = { version = "1.0.219", features = [ "derive" ] }
+serde_json = "1.0.143"
+askama = "0.14.0"
 figment = { version = "0.10.19", features = [ "env", "toml", "json" ] }
-async-trait = "0.1.83"
-reqwest = "0.12.8"
-regex = "1.11.0"
-chrono = "0.4.38"
+async-trait = "0.1.89"
+reqwest = "0.12.23"
+regex = "1.11.2"
+chrono = "0.4.41"
 sha2 = { version = "0.10.8", features = ["default"] }
-uuid = { version = "1.11.0", features = ["v4"] }
-lettre = "0.11.10"
-anyhow = "1.0.93"
+uuid = { version = "1.18.1", features = ["v4"] }
+lettre = "0.11.18"
 dotenv = "0.15.0"
-image = "0.25.5"
-http = "0.2.12"
-tower = "0.5.2"
+image = "0.25.6"
+http = "1.3.1"
