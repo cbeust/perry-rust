@@ -4,3 +4,6 @@ members = [
     "db"
 ]
 resolver = "2"
+
+[profile.dev]
+debug = false
