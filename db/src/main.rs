@@ -1,6 +1,7 @@
 use std::{env};
 use std::fs::File;
 use std::process::exit;
+use ammonia::clean;
 use clap::{Arg, Command};
 use figment::Figment;
 use figment::providers::{Format, Toml};
@@ -11,11 +12,13 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use crate::images::images;
 use crate::import::run_import;
+use crate::json::export_json;
 
 mod import;
 mod db;
 mod test;
 mod images;
+mod json;
 
 pub fn init_logging(sqlx: bool) {
     let debug_sqlx = if sqlx { "debug" } else { "info" };
@@ -53,6 +56,8 @@ pub async fn main() -> Result<(), sqlx::Error> {
 
     let matches = Command::new("db")
         .about("Database operations")
+        .subcommand(Command::new("json")
+                        .about("Export the database in JSON"))
         .subcommand_required(true)
         .subcommand(
             Command::new("import")
@@ -88,6 +93,17 @@ pub async fn main() -> Result<(), sqlx::Error> {
                 }
                 Err(e) => {
                     error!("Error while processing images: {e}");
+                }
+            }
+        }
+        Some(("json", _)) => {
+            info!("Exporting JSON");
+            match export_json(&args).await {
+                Ok(_) => {
+                    info!("Done exporting JSON");
+                }
+                Err(e) => {
+                    error!("Error while exporting JSON: {e}");
                 }
             }
         }
