@@ -12,13 +12,13 @@ use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 use crate::images::images;
 use crate::import::run_import;
-use crate::json::export_json;
+use crate::export::{to_json, to_xml};
 
 mod import;
 mod db;
 mod test;
 mod images;
-mod json;
+mod export;
 
 pub fn init_logging(sqlx: bool) {
     let debug_sqlx = if sqlx { "debug" } else { "info" };
@@ -57,7 +57,9 @@ pub async fn main() -> Result<(), sqlx::Error> {
     let matches = Command::new("db")
         .about("Database operations")
         .subcommand(Command::new("json")
-                        .about("Export the database in JSON"))
+            .about("Export the database in JSON"))
+        .subcommand(Command::new("xml")
+            .about("Export the database in XML"))
         .subcommand_required(true)
         .subcommand(
             Command::new("import")
@@ -96,9 +98,21 @@ pub async fn main() -> Result<(), sqlx::Error> {
                 }
             }
         }
+        Some(("xml", _)) => {
+            info!("Exporting XML");
+            match to_xml(&args).await {
+                Ok(_) => {
+                    info!("Done exporting XML");
+                }
+                Err(e) => {
+                    error!("Error while exporting XML: {e}");
+                }
+            }
+        }
+
         Some(("json", _)) => {
             info!("Exporting JSON");
-            match export_json(&args).await {
+            match to_json(&args).await {
                 Ok(_) => {
                     info!("Done exporting JSON");
                 }
