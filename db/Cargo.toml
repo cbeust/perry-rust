@@ -3,10 +3,6 @@ name = "db"
 version = "0.1.0"
 edition = "2021"
 
-[profile.dev]
-debug = true
-opt-level = 0
-
 [dependencies]
 figment = { version = "0.10.19", features = [ "env", "toml" ] }
 serde = { version = "1.0.211", features = [ "derive" ] }
